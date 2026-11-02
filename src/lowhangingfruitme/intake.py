@@ -139,6 +139,10 @@ def audit_from_csv(
     rule_path: str | Path, transactions_path: str | Path,
     settlements_path: str | Path, *, source_system: str,
     completeness: dict[str, bool], controls: dict[str, Any] | None = None,
+    approval_receipt: dict[str, Any] | None = None,
+    approval_key: bytes | None = None,
+    approval_scope: dict[str, str] | None = None,
+    contract_source_path: str | Path | None = None,
 ) -> dict[str, Any]:
     """End-to-end local CSV -> validated dataset -> existing audit() function.
 
@@ -165,9 +169,19 @@ def audit_from_csv(
         "settlements": settlements["entries"],
         "completeness": completeness,
     }
+    document_sha256 = None
+    if contract_source_path is not None:
+        contract_source_path = Path(contract_source_path)
+        if contract_source_path.is_symlink() or not contract_source_path.is_file():
+            raise ValueError("contract source must be a regular local file, not a symlink")
+        if not 0 < contract_source_path.stat().st_size <= 20 * 1024 * 1024:
+            raise ValueError("contract source must be nonempty and <=20MB")
+        document_sha256 = sha256(contract_source_path.read_bytes()).hexdigest()
     readiness = assess_readiness(
         payload["rule"], payload["transactions"], payload["settlements"],
         payload["completeness"], controls,
+        approval_receipt=approval_receipt, approval_key=approval_key,
+        approval_scope=approval_scope, document_sha256=document_sha256,
     )
     if not readiness["audit_admissible"]:
         # This is a pre-audit diagnostics result, never a money finding.
@@ -183,7 +197,14 @@ def audit_from_csv(
             "completeness_source": "operator_assertion_not_independently_verified",
         }
     result = audit(payload)
+    # Only the validated, scoped receipt elevates a calculation to evidence
+    # status. The lower-level calculator alone is never an approval authority.
+    assert readiness["approval_verification"] is not None
+    result["warnings"] = [w for w in result["warnings"] if w != "UNVERIFIED_APPROVAL_CONTEXT"]
+    if result["status"] == "REVIEW_REQUIRED" and not result["warnings"]:
+        result["status"] = "EVIDENCED"
     result["audit_executed"] = True
+    result["approval_verification"] = readiness["approval_verification"]
     result["readiness"] = readiness
     result["imports"] = [
         {k: v for k, v in item.items() if k != "entries"}
