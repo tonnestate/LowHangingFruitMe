@@ -1,4 +1,4 @@
-# Implementation status – LowHangingFruitMe v0.2.0
+# Implementation status – LowHangingFruitMe v0.3.0
 
 **Stand:** 02.11.2026. Produktentwicklung, kein kommerzieller oder produktiver Betrieb. Der aktuelle Revisionsnachweis steht in [EVIDENCE.md](../EVIDENCE.md); keine behaupteten Live-Kunden- oder ERP-Erfolge.
 
@@ -12,12 +12,14 @@
 
 **Repository:** installierbares Python-Paket, getrennte optionale Abhängigkeiten, GitHub Actions Matrix, synthetische Testdateien, AGENTS.md, SECURITY.md, CHANGELOG.md, EVIDENCE.md, THIRD_PARTY_NOTICES.md und ausführliche Konzept- und Donor-Dokumentation.
 
+**Data-Readiness-Gate v0.3.0:** Strikte Überprüfung des freigegebenen Vertrags, von Lieferant/Währung/Periode, eindeutig zugeordneten Buchungen sowie Vergleich von Zeilenanzahl und Nettosummen mit einem separat gelieferten Kontrollreport. Ohne Kontrollen liefert der CSV-Pfad nur einen eingeschränkten Diagnosebericht, bei Abweichung keine Bonusberechnung. Die Quelle und Verlässlichkeit des separat gelieferten Reports werden noch nicht unabhängig verifiziert; auch READY_FOR_AUDIT ist daher keine Zusicherung kaufmännischer Datenvollständigkeit.
+
 ## Ungeprüfte Aspekte und klare Grenzen
 
 - GitHub Actions ist der tatsächliche Testnachweis; nicht jede neu geschriebene Testdatei wurde lokal ausgeführt. Ergebnisse mit Run-ID in EVIDENCE.md festhalten.
 - Docling wurde noch nicht anhand echter annotierter Vertragsdokumente in einer isolierten Produktionsumgebung benchmarkgetestet. Docling selbst ist noch kein Beleg für ein vollständig funktionierendes Dokumentenprodukt.
 - Kein XLSX-/XML-Importer oder kundenspezifisches Spaltenmapping; Eingaben müssen aktuell das veröffentlichte kanonische CSV-Schema erfüllen.
-- Kein unabhängiger Nachweis für Vollständigkeit der Einkaufsperiode und der Vertragsnachträge. Die drei Pflichtflags sind externe Angaben und niemals ein algorithmischer Nachweis.
+- Kein unabhängiger Nachweis für Vollständigkeit der Einkaufsperiode und der Vertragsnachträge. Die drei Pflichtflags und ERP-Kontrollsummen sind externe Angaben und niemals ein algorithmischer Nachweis. Der neue Gate-Status `READY_FOR_AUDIT` bestätigt ausschließlich Konsistenz mit übergebenen Kontrollen.
 - Kein Tenant-Login, Kundenportal, öffentlicher API-Service, Vertragsannahme, gesicherter Upload, Kundenspeicherung oder Download-Workflow.
 - Keine Live-Lexware-/weclapp-/Odoo-/Frappe-/Dolibarr-Schnittstellen, keine Marktplatzfreigabe.
 - Keine Regelinterpretations-/Freigabeoberfläche, keine automatische rechtliche Bewertung, keine juristische Forderungsdurchsetzung.
@@ -39,6 +41,7 @@ lhfm audit-csv --rule tests/fixtures/rule.json \
   --transactions tests/fixtures/transactions.csv \
   --settlements tests/fixtures/settlements.csv \
   --source-system sample-erp \
+  --controls tests/fixtures/source_controls.json \
   --confirm-transactions-complete \
   --confirm-settlements-complete \
   --confirm-agreements-complete

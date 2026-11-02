@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.0 – data-readiness and independent control-total reconciliation (development; 2026-11-02)
+
+- Added deterministic supplier/period/contract scope gate before the canonical CSV audit.
+- Requires separately supplied ERP control-report row counts and net totals for both purchasing and rebate settlements to allow the calculation path.
+- Returns explicit `READY_FOR_AUDIT`, `LIMITED` or `NOT_READY` with concrete discrepancies, never a misleading readiness percentage.
+- Blocks generated bonus differences if control totals are missing, ambiguous, or inconsistent; explicit customer completeness flags alone cannot grant audit admission.
+- Control reports are **customer/operator supplied**, not cryptographically authenticated ERP source exports. Commercial completeness and legal claim confirmation remain unproven.
+- Expanded synthetic regression tests for admission, mismatch, scope, duplicates and false completeness assertions.
+
 ## 0.2.0 – import slice (development; 2026-11-02)
 
 - Strict source-cited Frictionless CSV importer for purchases and supplier settlement data.
