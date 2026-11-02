@@ -119,15 +119,8 @@ class ApprovalRegistry:
         connection = self._connect()
         try:
             with connection.cursor() as cursor:
-                cursor.execute(
-                    """SELECT role, active FROM lhfm_reviewer_grants
-                       WHERE tenant_id=%s AND legal_entity_id=%s AND reviewer_id=%s
-                       FOR UPDATE""",
-                    (tenant_id, legal_entity_id, actor),
-                )
-                role = cursor.fetchone()
-                if not role or role["role"] != "contract_reviewer" or not role["active"]:
-                    raise PermissionError("actor cannot revoke in this tenant/entity")
+                # Approval row first, then reviewer grant: same lock order as
+                # audit guard. Reversing it would permit a real InnoDB deadlock.
                 cursor.execute(
                     """SELECT state FROM lhfm_approval_records
                        WHERE approval_id=%s AND tenant_id=%s AND legal_entity_id=%s
@@ -137,6 +130,15 @@ class ApprovalRegistry:
                 row = cursor.fetchone()
                 if row is None:
                     raise ValueError("approval not found in authenticated scope")
+                cursor.execute(
+                    """SELECT role, active FROM lhfm_reviewer_grants
+                       WHERE tenant_id=%s AND legal_entity_id=%s AND reviewer_id=%s
+                       FOR UPDATE""",
+                    (tenant_id, legal_entity_id, actor),
+                )
+                role = cursor.fetchone()
+                if not role or role["role"] != "contract_reviewer" or not role["active"]:
+                    raise PermissionError("actor cannot revoke in this tenant/entity")
                 if row["state"] == "REVOKED":
                     connection.commit()
                     return False
