@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.5.0 – persistent approval registry and dispatch lock (development; 2026-11-02)
+
+- Added MariaDB/InnoDB tables for scoped reviewer grants, unique approval IDs, immutable approval digests, ACTIVE/REVOKED status and append-only ISSUE/REVOKE events.
+- Added atomic registration and idempotent revocation, with real role-grant lookup.
+- Reverified HMAC, tenant, contract source and registered approval at calculation dispatch; locked row until computation finishes, preventing revocation from committing between check and computation.
+- Removed ability to promote a signed receipt to final CSV audit without a persistent registry.
+- Added MariaDB integration tests and CI service for Python 3.11/3.12.
+- No real authentication/IdP, live user management, key rotation, distributed job queue or production deployment. Caller-supplied actor identity is **not independently authenticated** by the library.
+
 ## 0.4.0 – contract rule approval integrity (development; 2026-11-02)
 
 - HMAC-SHA256 signed receipts bind a canonical rule revision to a specific contract file's SHA256, a tenant/legal entity, reviewer claim, role, source revision and approval timestamp.

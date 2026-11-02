@@ -27,3 +27,6 @@ Read actual GitHub main HEAD and these files before editing: docs/CONCEPT.md, do
 Docling integration requires separate optional installation and real PDF acceptance on the actual deployment host.
 
 **CI-only receipt generation:** `tests/scripts/make_synthetic_approval.py` assumes a fictitious reviewer and MUST NOT be exposed in production. Real issuance requires upstream authenticated actor, role/tenant authorization, stable backend key custody, replay/revocation storage and audit log.
+
+## Registry requirement (v0.5.0)
+Canonical customer CSV audits require a registered ACTIVE approval with matching tenant/entity scope and a live reviewer grant. All final calculations must execute inside `ApprovalRegistry.guard()` so a concurrent revoke cannot commit between verification and completion. The future login/IdP must authenticate the actor; passing a reviewer ID to the library is not authentication. Never expose test-only reviewer provisioning or signer scripts.

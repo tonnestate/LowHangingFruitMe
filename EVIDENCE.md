@@ -66,3 +66,9 @@ Executed on Python 3.11 and Python 3.12:
 - Tests cover HMAC signature tampering, rule amount/revision/source-reference mutation, wrong document digest, wrong tenant/company, future-dated approval, unapproved or uncited rule, missing key and missing proof.
 
 **Hard limitation:** The receipt's listed reviewer is not authenticated by this standalone module; there is no database of authorized reviewers, no revocation store, no persistent approved source registry and no production-grade key management. CI creates a random key for each run and a fictitious signer solely for synthetic testing. A signed receipt alone does not authenticate a real employee or establish a legally enforceable claim. Do not expose the signing function publicly.
+
+## v0.5.0 – MariaDB-based approval registry
+
+The source includes `ApprovalRegistry.register()`, `revoke()` and `guard()`, plus dedicated InnoDB DDL and real MariaDB CI tests. The registry is intentionally isolated from any existing TonnEstate database. The GitHub Actions CI creates `lhfm_test` with synthetic grants, using no customer data.
+
+**Validation status:** See the newest GitHub Actions run for the current main SHA. An authenticated real identity-provider connection and production reviewer authorization are **not** implemented. The registry is not a legally compliant signature/consent service by itself.
