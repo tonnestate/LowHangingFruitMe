@@ -1,0 +1,37 @@
+{
+  "schema_version": "1.0",
+  "description": "Canonical strict CSV intake for LowHangingFruitMe v0.2",
+  "encoding": "UTF-8 or UTF-8 BOM",
+  "delimiter": ",",
+  "transaction_fields": [
+    "external_id",
+    "supplier_id",
+    "date",
+    "currency",
+    "amount_net",
+    "kind",
+    "posted",
+    "basis"
+  ],
+  "settlement_fields": [
+    "external_id",
+    "supplier_id",
+    "date",
+    "currency",
+    "amount_net",
+    "kind",
+    "posted",
+    "agreement_id",
+    "period_start",
+    "period_end"
+  ],
+  "rules": [
+    "ISO YYYY-MM-DD dates",
+    "Decimal amount_net strings with dot decimal and no thousands grouping",
+    "true/false boolean posted field",
+    "settlement agreement and full period matching required to auto-allocate",
+    "explicit external completeness assertions, never inferred from successful CSV parse",
+    "strict ordered field names and no unexpected/missing columns"
+  ],
+  "status": "documented canonical contract; no public API"
+}
