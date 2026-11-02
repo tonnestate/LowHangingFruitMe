@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lowhangingfruitme"
-version = "0.6.0"
+version = "0.7.0"
 description = "Evidence-based supplier rebate audit kernel and optional source adapters"
 requires-python = ">=3.11"
 dependencies = []
@@ -14,7 +14,8 @@ import = ["frictionless>=5.0,<6"]
 docs = ["docling>=2.70,<3"]
 registry = ["PyMySQL>=1.1,<2"]
 auth = ["PyJWT[crypto]>=2.10,<3"]
-all = ["frictionless>=5.0,<6", "docling>=2.70,<3", "PyMySQL>=1.1,<2", "PyJWT[crypto]>=2.10,<3"]
+universal = ["openpyxl>=3.1,<4", "defusedxml>=0.7,<1"]
+all = ["frictionless>=5.0,<6", "docling>=2.70,<3", "PyMySQL>=1.1,<2", "PyJWT[crypto]>=2.10,<3", "openpyxl>=3.1,<4", "defusedxml>=0.7,<1"]
 
 [project.scripts]
 lhfm = "lowhangingfruitme.intake_cli:main"
