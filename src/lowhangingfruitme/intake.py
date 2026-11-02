@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any
 
 from .rebate import Entry, BonusRule, audit
+from .readiness import assess_readiness
 
 MAX_CSV_BYTES = 10 * 1024 * 1024
 MAX_ROWS = 100_000
@@ -137,7 +138,7 @@ def import_csv(
 def audit_from_csv(
     rule_path: str | Path, transactions_path: str | Path,
     settlements_path: str | Path, *, source_system: str,
-    completeness: dict[str, bool],
+    completeness: dict[str, bool], controls: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """End-to-end local CSV -> validated dataset -> existing audit() function.
 
@@ -164,7 +165,26 @@ def audit_from_csv(
         "settlements": settlements["entries"],
         "completeness": completeness,
     }
+    readiness = assess_readiness(
+        payload["rule"], payload["transactions"], payload["settlements"],
+        payload["completeness"], controls,
+    )
+    if not readiness["audit_admissible"]:
+        # This is a pre-audit diagnostics result, never a money finding.
+        return {
+            "status": "REVIEW_REQUIRED" if readiness["status"] == "LIMITED" else "NOT_CALCULABLE",
+            "audit_executed": False, "readiness": readiness,
+            "difference_net": None, "expected_bonus_net": None, "recorded_bonus_net": None,
+            "billable_recovery_net": "0.00", "fee_due_net": "0.00",
+            "warnings": [issue["code"] for issue in readiness["issues"]],
+            "imports": [{k: v for k, v in item.items() if k != "entries"}
+                        for item in (txns, settlements)],
+            "rule_file_sha256": rule_digest,
+            "completeness_source": "operator_assertion_not_independently_verified",
+        }
     result = audit(payload)
+    result["audit_executed"] = True
+    result["readiness"] = readiness
     result["imports"] = [
         {k: v for k, v in item.items() if k != "entries"}
         for item in (txns, settlements)

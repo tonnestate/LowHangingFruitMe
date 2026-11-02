@@ -11,6 +11,7 @@ from lowhangingfruitme.intake import COLUMNS, audit_from_csv, import_csv
 
 FIXTURE = json.loads((Path(__file__).parent / "fixtures" / "flat_rebate.json").read_text(encoding="utf-8"))
 HAS_FRICTIONLESS = importlib.util.find_spec("frictionless") is not None
+CONTROLS = json.loads((Path(__file__).parent / "fixtures" / "source_controls.json").read_text(encoding="utf-8"))
 
 
 def csv_row(entry, fields):
@@ -40,7 +41,7 @@ class RealFrictionlessImportTests(unittest.TestCase):
     def run_audit(self, completeness=None):
         return audit_from_csv(
             self.rule, self.purchase, self.credit, source_system="erp",
-            completeness=completeness or {
+            controls=deepcopy(CONTROLS), completeness=completeness or {
                 "transactions_complete": True,
                 "settlements_complete": True,
                 "agreements_complete": True,
@@ -50,6 +51,8 @@ class RealFrictionlessImportTests(unittest.TestCase):
     def test_import_real_frictionless_and_full_kernel_path(self):
         report = self.run_audit()
         self.assertEqual(report["status"], "EVIDENCED")
+        self.assertTrue(report["audit_executed"])
+        self.assertTrue(report["readiness"]["audit_admissible"])
         self.assertEqual(report["eligible_base_net"], "200000.00")
         self.assertEqual(report["recorded_bonus_net"], "1500.00")
         self.assertEqual(report["difference_net"], "2500.00")
@@ -72,7 +75,7 @@ class RealFrictionlessImportTests(unittest.TestCase):
             "agreements_complete": False,
         })
         self.assertEqual(report["status"], "REVIEW_REQUIRED")
-        self.assertIn("TRANSACTIONS_INCOMPLETE", report["warnings"])
+        self.assertIn("SOURCE_COMPLETENESS_NOT_ATTESTED", report["warnings"])
 
     def test_wrong_csv_headers_rejected(self):
         self.purchase.write_text("bad,header\n1,2\n", encoding="utf-8")
@@ -121,8 +124,9 @@ class RealFrictionlessImportTests(unittest.TestCase):
         credits[0]["period_end"] = ""
         self.write_rows("settlements", self.credit, credits)
         report = self.run_audit()
-        self.assertEqual(report["recorded_bonus_net"], "0.00")
-        self.assertIn("UNALLOCATED_SETTLEMENT", report["warnings"])
+        self.assertFalse(report["audit_executed"])
+        self.assertIsNone(report["recorded_bonus_net"])
+        self.assertIn("UNALLOCATED_OR_OUTSIDE_SCOPE", report["warnings"])
 
     def test_false_completeness_structure_rejected(self):
         with self.assertRaisesRegex(ValueError, "explicit boolean"):

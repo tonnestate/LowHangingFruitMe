@@ -15,6 +15,7 @@ def main() -> int:
     csv_cmd.add_argument("--transactions", required=True, type=Path)
     csv_cmd.add_argument("--settlements", required=True, type=Path)
     csv_cmd.add_argument("--source-system", required=True)
+    csv_cmd.add_argument("--controls", type=Path, help="Separate ERP source-control report JSON")
     csv_cmd.add_argument("--confirm-transactions-complete", action="store_true")
     csv_cmd.add_argument("--confirm-settlements-complete", action="store_true")
     csv_cmd.add_argument("--confirm-agreements-complete", action="store_true")
@@ -26,6 +27,7 @@ def main() -> int:
             output = audit_from_csv(
                 args.rule, args.transactions, args.settlements,
                 source_system=args.source_system,
+                controls=json.loads(args.controls.read_text(encoding="utf-8")) if args.controls else None,
                 completeness={
                     "transactions_complete": args.confirm_transactions_complete,
                     "settlements_complete": args.confirm_settlements_complete,
@@ -34,7 +36,7 @@ def main() -> int:
             )
         else:
             output = extract_pdf(args.file)
-    except (ValueError, KeyError, TypeError, OSError, RuntimeError) as exc:
+    except (ValueError, KeyError, TypeError, OSError, RuntimeError, json.JSONDecodeError) as exc:
         print(f"intake rejected: {exc}", file=sys.stderr)
         return 2
     print(json.dumps(output, ensure_ascii=False, indent=2, sort_keys=True))

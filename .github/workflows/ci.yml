@@ -37,6 +37,7 @@ jobs:
             --transactions tests/fixtures/transactions.csv \
             --settlements tests/fixtures/settlements.csv \
             --source-system sample-erp \
+            --controls tests/fixtures/source_controls.json \
             --confirm-transactions-complete \
             --confirm-settlements-complete \
             --confirm-agreements-complete
