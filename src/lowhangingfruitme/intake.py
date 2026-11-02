@@ -50,7 +50,7 @@ def _validate_with_frictionless(path: Path, fields: tuple[str, ...]) -> None:
     # Business-typed values are *also* verified by Entry.load below.
     schema = Schema.from_descriptor({"fields": [{"name": name, "type": "string"} for name in fields]})
     try:
-        resource = Resource(path=str(path), schema=schema, encoding="utf-8-sig")
+        resource = Resource(path=path.name, basepath=str(path.parent), schema=schema, encoding="utf-8-sig")
         report = resource.validate(limit_errors=20)
     except Exception as exc:
         raise ValueError(f"frictionless could not validate {path.name}: {exc}") from exc
