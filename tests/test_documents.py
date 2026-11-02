@@ -1,5 +1,4 @@
 """Test source-referenced Docling document normalization without claiming OCR QA."""
-import importlib.util
 from pathlib import Path
 import tempfile
 from types import SimpleNamespace
@@ -56,12 +55,6 @@ class DoclingNormalizationTests(unittest.TestCase):
             link.symlink_to(source)
             with self.assertRaisesRegex(ValueError, "not a symlink"):
                 extract_pdf(link)
-
-    @unittest.skipUnless(importlib.util.find_spec("docling"), "Docling not installed")
-    def test_real_docling_conversion_in_explicit_integration_environment(self):
-        """Not run in default CI; manual acceptance needs a real, labeled PDF fixture."""
-        # Separate fixture-based OCR/layout benchmark is necessary before go-live.
-        self.assertTrue(importlib.util.find_spec("docling") is not None)
 
 
 if __name__ == "__main__":
