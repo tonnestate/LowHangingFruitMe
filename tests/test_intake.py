@@ -5,12 +5,15 @@ import importlib.util
 import json
 from pathlib import Path
 import tempfile
+import os
+from uuid import uuid4
 import unittest
 
 from lowhangingfruitme.intake import COLUMNS, audit_from_csv, import_csv
 from datetime import datetime, timezone
 from hashlib import sha256
 from lowhangingfruitme.approval import issue_approval
+from lowhangingfruitme.approval_registry import ApprovalRegistry
 
 FIXTURE = json.loads((Path(__file__).parent / "fixtures" / "flat_rebate.json").read_text(encoding="utf-8"))
 HAS_FRICTIONLESS = importlib.util.find_spec("frictionless") is not None
@@ -22,7 +25,7 @@ def csv_row(entry, fields):
             entry.get(field, "") or "" for field in fields}
 
 
-@unittest.skipUnless(HAS_FRICTIONLESS, "real Frictionless installation required")
+@unittest.skipUnless(HAS_FRICTIONLESS and bool(os.environ.get("LHFM_DB_HOST")), "Frictionless and MariaDB required")
 class RealFrictionlessImportTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
@@ -34,7 +37,7 @@ class RealFrictionlessImportTests(unittest.TestCase):
             "approval_receipt": issue_approval(
                 FIXTURE["rule"], key=b"test-approval-key-" * 3,
                 tenant_id="T-SYN-1", legal_entity_id="LE-SYN-1",
-                reviewer_id="REVIEWER-SYN-1", approval_id="APPROVAL-SYN-1",
+                reviewer_id="REVIEWER-SYN-1", approval_id="APPROVAL-SYN-" + uuid4().hex,
                 source_revision_id="REV-SYN-1",
                 document_sha256=sha256(self.contract.read_bytes()).hexdigest(),
                 approved_at=datetime.now(timezone.utc),
@@ -43,6 +46,15 @@ class RealFrictionlessImportTests(unittest.TestCase):
             "approval_scope": {"tenant_id": "T-SYN-1", "legal_entity_id": "LE-SYN-1"},
             "contract_source_path": self.contract,
         }
+        self.registry = ApprovalRegistry.from_environment()
+        self.proof_kwargs["approval_registry"] = self.registry
+        self.registry.register(
+            self.proof_kwargs["approval_receipt"],
+            rule=FIXTURE["rule"], key=self.proof_kwargs["approval_key"],
+            document_sha256=sha256(self.contract.read_bytes()).hexdigest(),
+            tenant_id="T-SYN-1", legal_entity_id="LE-SYN-1",
+            authenticated_actor_id="REVIEWER-SYN-1",
+        )
         self.rule = self.root / "rule.json"
         self.rule.write_text(json.dumps(FIXTURE["rule"]), encoding="utf-8")
         self.purchase = self.root / "transactions.csv"
@@ -72,6 +84,7 @@ class RealFrictionlessImportTests(unittest.TestCase):
         self.assertTrue(report["audit_executed"])
         self.assertTrue(report["readiness"]["audit_admissible"])
         self.assertEqual(report["approval_verification"]["approval_integrity"], "HMAC_SHA256_VERIFIED")
+        self.assertEqual(report["approval_verification"]["revocation_status"], "ACTIVE_LOCKED_AT_DISPATCH")
         self.assertEqual(report["eligible_base_net"], "200000.00")
         self.assertEqual(report["recorded_bonus_net"], "1500.00")
         self.assertEqual(report["difference_net"], "2500.00")
@@ -175,6 +188,28 @@ class RealFrictionlessImportTests(unittest.TestCase):
         self.assertIsNone(report["difference_net"])
         self.assertEqual(report["fee_due_net"], "0.00")
         self.assertIn("NET_TOTAL_MISMATCH", report["warnings"])
+
+    def test_revoked_registered_receipt_blocks_audit(self):
+        self.assertTrue(self.registry.revoke(
+            self.proof_kwargs["approval_receipt"]["approval_id"],
+            tenant_id="T-SYN-1", legal_entity_id="LE-SYN-1",
+            authenticated_actor_id="REVIEWER-SYN-1"))
+        report = self.run_audit()
+        self.assertFalse(report["audit_executed"])
+        self.assertIsNone(report["difference_net"])
+        self.assertIn("APPROVAL_NOT_ACTIVE_AT_DISPATCH", report["warnings"])
+
+    def test_unregistered_context_blocks_even_signed_receipt(self):
+        proof = dict(self.proof_kwargs)
+        del proof["approval_registry"]
+        report = audit_from_csv(
+            self.rule, self.purchase, self.credit, source_system="erp",
+            controls=deepcopy(CONTROLS), **proof,
+            completeness={"transactions_complete": True,
+                          "settlements_complete": True, "agreements_complete": True},
+        )
+        self.assertFalse(report["audit_executed"])
+        self.assertIn("APPROVAL_REGISTRY_UNAVAILABLE", report["warnings"])
 
     def test_forged_true_flag_without_receipt_cannot_run_audit(self):
         report = audit_from_csv(
