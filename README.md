@@ -1,3 +1,5 @@
+![LowHangingFruitMe – Neon-Banner](docs/Neon-Low-Hanging-FruitMe-Banner.png)
+
 # LowHangingFruitMe
 
 **B2B Revenue Recovery for FruitStack.** Ein eigenständiger, beleggestützter Prüfdienst für nicht vollständig realisierte Lieferantenboni und vertraglich eindeutige Einkaufskonditionen.
