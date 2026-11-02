@@ -42,3 +42,14 @@ This ledger is updated only with concrete executed SHA, run ID and observed resu
 **GitHub Actions:** [41502347254](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41502347254) — completed / success.
 
 On **both Python 3.11 and 3.12**, the runner actually installed the package with Frictionless, executed 35 tests, exercised both CLI paths, built an sdist and wheel, and installed the wheel in a fresh virtual environment followed by a kernel smoke test. These are packaging and synthetic software-verification results, not claims about live ERP connectivity, customer data or Docling model performance.
+
+## Data-Readiness Gate v0.3.0 – verified on main
+
+**Source tested:** [571f8503a254aba58f09295865b0aa49ee88a7bb](https://github.com/tonnestate/LowHangingFruitMe/commit/571f8503a254aba58f09295865b0aa49ee88a7bb)  
+**GitHub Actions run:** [41505245535](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41505245535) – completed / success.
+
+Both Python 3.11 and 3.12 runners successfully installed real Frictionless, compiled source/tests, ran **52 unit/integration tests**, completed JSON and CSV CLI smoke checks, built wheel + sdist and performed fresh-wheel installation smoke checks. Tests included matching source controls, missing controls, a control-total mismatch preventing calculation, unsupported supplier/period and unapproved rule.
+
+**Observed limitation:** The control values are independently *supplied* (as a separate document) but their ERP origin is **not independently verified** by the code. A READY_FOR_AUDIT result means the provided controls match the provided data, never a certification of the underlying customer's complete accounting history. The source control manifest can be forged or circular. Real ERP reporting metadata, independent account reconciliation and approved reviewer identity are separate future release gates.
+
+**CI defect found and resolved:** The initial smoke test used a different `source_system` identifier than the control fixture; it was corrected without bypassing the consistency check. In the successful run, the source identity matches exactly. Synthetic tests are not evidence of recovered customer money.
