@@ -13,6 +13,7 @@ from typing import Any
 
 from .rebate import Entry, BonusRule, audit
 from .readiness import assess_readiness
+from .approval_registry import ApprovalRegistry
 
 MAX_CSV_BYTES = 10 * 1024 * 1024
 MAX_ROWS = 100_000
@@ -143,6 +144,7 @@ def audit_from_csv(
     approval_key: bytes | None = None,
     approval_scope: dict[str, str] | None = None,
     contract_source_path: str | Path | None = None,
+    approval_registry: ApprovalRegistry | None = None,
 ) -> dict[str, Any]:
     """End-to-end local CSV -> validated dataset -> existing audit() function.
 
@@ -183,6 +185,17 @@ def audit_from_csv(
         approval_receipt=approval_receipt, approval_key=approval_key,
         approval_scope=approval_scope, document_sha256=document_sha256,
     )
+    if approval_registry is None and readiness["audit_admissible"]:
+        # A cryptographically valid receipt alone may be stale, revoked or
+        # not registered. No registry = no final calculation, even in CLI.
+        readiness["status"] = "LIMITED"
+        readiness["audit_admissible"] = False
+        readiness["issues"].append({
+            "code": "APPROVAL_REGISTRY_UNAVAILABLE",
+            "field": "approval_registry",
+            "severity": "WARNING",
+            "explanation": "Persistent approval/revocation verification is unavailable",
+        })
     if not readiness["audit_admissible"]:
         # This is a pre-audit diagnostics result, never a money finding.
         return {
@@ -196,10 +209,42 @@ def audit_from_csv(
             "rule_file_sha256": rule_digest,
             "completeness_source": "operator_assertion_not_independently_verified",
         }
-    result = audit(payload)
-    # Only the validated, scoped receipt elevates a calculation to evidence
-    # status. The lower-level calculator alone is never an approval authority.
-    assert readiness["approval_verification"] is not None
+    # This is the DISPATCH boundary: repeat signature+source+scope checks
+    # and lock the registry row across the calculation. Revoke/disable cannot
+    # commit in another process while the protected calculation is running.
+    assert approval_registry is not None
+    assert approval_receipt is not None and approval_key is not None
+    assert approval_scope is not None and document_sha256 is not None
+    try:
+        with approval_registry.guard(
+            approval_receipt, rule=rule, key=approval_key,
+            document_sha256=document_sha256,
+            tenant_id=approval_scope["tenant_id"],
+            legal_entity_id=approval_scope["legal_entity_id"],
+        ) as dispatch_approval:
+            result = audit(payload)
+    except (PermissionError, ValueError) as exc:
+        readiness["status"] = "NOT_READY"
+        readiness["audit_admissible"] = False
+        readiness["issues"].append({
+            "code": "APPROVAL_NOT_ACTIVE_AT_DISPATCH",
+            "field": "approval_registry", "severity": "BLOCKER",
+            "explanation": str(exc),
+        })
+        return {
+            "status": "NOT_CALCULABLE", "audit_executed": False,
+            "readiness": readiness,
+            "difference_net": None, "expected_bonus_net": None,
+            "recorded_bonus_net": None, "billable_recovery_net": "0.00",
+            "fee_due_net": "0.00",
+            "warnings": [item["code"] for item in readiness["issues"]],
+            "imports": [{k: v for k, v in item.items() if k != "entries"}
+                        for item in (txns, settlements)],
+            "rule_file_sha256": rule_digest,
+            "completeness_source": "operator_assertion_not_independently_verified",
+        }
+    # Verified registry status at dispatch, not just a signed local receipt.
+    readiness["approval_verification"] = dispatch_approval
     result["warnings"] = [w for w in result["warnings"] if w != "UNVERIFIED_APPROVAL_CONTEXT"]
     if result["status"] == "REVIEW_REQUIRED" and not result["warnings"]:
         result["status"] = "EVIDENCED"
