@@ -4,12 +4,13 @@
 
 **B2B Revenue Recovery for FruitStack.** Ein eigenständiger, beleggestützter Prüfdienst für nicht vollständig realisierte Lieferantenboni und vertraglich eindeutige Einkaufskonditionen.
 
-**Version:** 0.6.0 (OIDC-Access-Token-Prüfung und Freigabe-Service, Entwicklung)  
+**Version:** 0.7.0 (universeller Import von ERP-Exporten, Entwicklung)  
 **Status:** ausführbare Bonusengine und lokale CSV-/PDF-Adapter; **kein** Kundenportal, keine Live-ERP-Anbindung, keine rechtliche Forderungseinziehung und keine produktiv validierte Rückgewinnung.
 
 ## Was funktioniert
 
 - Deterministische Berechnung von Jahresboni, rückwirkenden und marginalen Staffeln sowie festen Schwellenprämien; Dezimalarithmetik, Retouren, Gutschriften, Stornierungen und eindeutige Vertragsperioden.
+- **ERP-unabhängiger Import:** Erkennung und Spaltenvorschläge für CSV- und XLSX-Exporte; XML-Rechnungen, PDF und DOCX werden zunächst nur dem Dokumentenweg zugeordnet. Erst ein explizit bestätigtes Spaltenmapping erzeugt kanonische Buchungsdaten mit Originaldatei-Hash und Zeilenherkunft. Noch keine Lexware-, Odoo-, SAP-, Sage-, NetSuite- oder P21/Eclipse-Connectoren.
 - Einlieferung kanonischer Einkaufs- und Gutschriften-CSV mit **Frictionless** als echtem Schema-Prüfer und anschließend strenger fachlicher Validierung; Herkunftsverweise auf Datei-Hash und Quellzeile.
 - **Freigabenachweis:** Vertragsregel und konkrete Dokumentdatei werden per SHA-256 mit einer HMAC-signierten Bestätigung verknüpft. Der CSV-Pfad verlangt Mandanten- und Gesellschaftsbindung; `approved: true` allein genügt nicht. Keine produktive Prüfer-Authentifizierung oder Widerrufsverwaltung.
 - **Verifizierte Access-Tokens:** RFC-9068-kompatible RS256-Signaturprüfung anhand einer vertrauenswürdig bereitgestellten öffentlichen JWKS, Prüfung von Aussteller, Audience, Client-ID, Gültigkeit und Berechtigungsumfang. Eine durch MariaDB berechtigte Person kann Regeln über `AuthenticatedApprovalService` freigeben, widerrufen und eingeschränkte Audits starten. **Noch keine Live-IdP-Anbindung oder öffentliche API.**
@@ -24,10 +25,18 @@
 Python >= 3.11; die reine Rechenengine benötigt keine externen Runtime-Abhängigkeiten.
 
 ~~~bash
-python -m pip install -e ".[import,registry,auth]"
+python -m pip install -e ".[import,registry,auth,universal]"
 python -m unittest discover -s tests -v
 python -m lowhangingfruitme.cli tests/fixtures/flat_rebate.json
 ~~~
+
+Dateien vorab klassifizieren – ohne ERP-Verbindung und ohne automatische Freigabe:
+
+~~~bash
+lhfm inspect-source --file tests/fixtures/transactions.csv --dataset transactions
+~~~
+
+Beliebig benannte CSV-/Excel-Spalten können mit einer **zuvor geprüften und bestätigten Mapping-Datei** normalisiert werden. Der neue Befehl `lhfm normalize-source --file <export.csv> --dataset transactions --source-system erp --plan <mapping.json> --output <kanonisch.csv>` schreibt nur in eine neue Datei und überschreibt keine vorhandenen Daten. Siehe [Universal Import](docs/UNIVERSAL_IMPORT.md).
 
 CSV-End-to-End-Prüfung mit **synthetischen** Dateien:
 
@@ -90,6 +99,7 @@ Angedachtes Kundenangebot: eine einmalige Prüfung gegen **10 % von der nachweis
 - [Signierte Regel-Freigaben und ihre Grenzen](docs/RULE_APPROVAL.md)
 - [MariaDB-Freigaberegister, Widerruf und transaktionale Sperre](docs/APPROVAL_REGISTRY.md)
 - [Authentifizierung und JWT-Trust-Boundaries](docs/AUTHENTICATION.md)
+- [Universeller ERP-Export-Import und Vertrauensgrenzen](docs/UNIVERSAL_IMPORT.md)
 - [Release-Evidenz](EVIDENCE.md), [Changelog](CHANGELOG.md), [Sicherheit](SECURITY.md), [Agentenvorgaben](AGENTS.md), [Drittherstellerhinweise](THIRD_PARTY_NOTICES.md)
 
 Das öffentliche Repo enthält ausschließlich eigene Implementierung und synthetische Testdaten. Es wurden keine Fremd-ERP-Quelltexte kopiert. Für das Projekt wurde noch **keine Open-Source-Distributionslizenz festgelegt**; öffentlich lesbarer Code ist nicht automatisch frei zur Weiterverwendung.

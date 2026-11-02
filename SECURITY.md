@@ -29,3 +29,9 @@ The existing CLI is a local development tool. Its `--tenant-id` argument is not 
 Use dedicated JWT **access** tokens, not OIDC ID tokens or bearer JWTs with generic `typ`; require `at+jwt` and fixed RS256, trusted HTTPS issuer, unique API audience, approved client ID, time-limited validity and server-provisioned public JWKS. Never honor token-provided JWKS URLs. The bearer-token verifier is a library, not login/session management. All HTTP adapters must derive actors from verified access tokens; do not forward untrusted reviewer IDs to lower-level registry methods.
 
 Static public JWKS must be rotated through a trusted deployment mechanism. Protect the HMAC approval signing key separately from the JWT public verification keys. Do not provision active reviewer grants based solely on token claims. The signing authority for JWTs belongs to a selected external IdP, not this repository. Before production, verify IdP configuration, key rotation, user offboarding, administrative grants, tenant isolation and token revocation behavior.
+
+## Universal source import (v0.7.0)
+
+CSV/XLSX and office files are untrusted data. The local helper limits file size, ZIP expansion and row/cell counts, and refuses Excel formulas as trusted financial amounts; it is **not** a hardened malware-scanning or OS-isolated upload service. The XML document classifier uses defusedxml to block entity expansion/XXE. All mapping suggestions are untrusted until manually reviewed, and the reviewed plan is bound to exact source bytes. Do not upload customer financial documents via public CI or send them to outside model services. Source ERP connectors, if implemented, should be read-only with restricted field/tenant/period permissions; no write-back to journals or credits.
+
+We do not have a SOC 2 Type II report. Do not advertise SOC 2, ISO certifications or third-party auditor endorsement unless a corresponding actual, scoped and current independent report exists.

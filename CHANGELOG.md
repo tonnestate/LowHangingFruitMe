@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.7.0 – ERP-neutral local intake (development; 2026-11-02)
+
+- Accepts noncanonical UTF-8 CSV and selected worksheets of XLSX for inspection; suggests DE/EN columns without approving them.
+- Requires exact SHA-256-bound source mapping plan and explicit reviewer confirmation before generating canonical purchases/settlements. Rejects duplicate source IDs, missing posting status, guessed settlement periods and incompatible decimal/date formats.
+- Recognizes XML invoice (UBL Invoice/CreditNote and CII), PDF and DOCX as separate document routes; does not yet extract complete invoices or supplier contract rules.
+- Preserves original source row/file lineage in audit reports; normalized data pass through the existing Frictionless, Data Readiness and MariaDB/HMAC-gated calculation.
+- Adds an interactive-CLI-equivalent inspection command and an explicit non-overwriting normalize command, with synthetic integration/negative tests.
+- No vendor ERP-native integration, no public upload, no SOC 2 Type II report, no live customer data, no automatic approval, no 3% fee ledger.
+
 ## 0.6.0 – signed access token and scoped approval service (development; 2026-11-02)
 
 - Added PyJWT[crypto] RSA/RS256 JWT access-token verification following the RFC 9068 at+jwt token profile, with configured issuer, audience, trusted public JWKS, client allowlist and expiry checks.

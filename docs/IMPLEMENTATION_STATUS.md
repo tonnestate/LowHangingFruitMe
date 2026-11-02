@@ -1,4 +1,4 @@
-# Implementation status – LowHangingFruitMe v0.6.0
+# Implementation status – LowHangingFruitMe v0.7.0
 
 **Stand:** 02.11.2026. Produktentwicklung, kein kommerzieller oder produktiver Betrieb. Der aktuelle Revisionsnachweis steht in [EVIDENCE.md](../EVIDENCE.md); keine behaupteten Live-Kunden- oder ERP-Erfolge.
 
@@ -20,11 +20,13 @@
 
 **JWT-Authentifizierung v0.6.0:** Standardsbasierte RS256-Prüfung von OAuth-Access-Tokens (nicht ID-Tokens) mit vordefinierter issuer-/audience-/client-ID-Bindung, fester öffentlicher JWKS und maximaler Gültigkeitsdauer. `AuthenticatedApprovalService` koppelt die verifizierte Tokenidentität mit aktiven MariaDB-Reviewer-Grants, schränkt Freigabe/Widerruf auf konkrete Rechte ein und führt bei Audit-Ausführung einen erneuten Tokencheck im bereits transaktional geschützten Dispatch aus. Die echte RSA-/MariaDB-Kombination ist mit synthetisch generierten Schlüsseln in CI getestet. Kein realer Identity-Provider verbunden.
 
+**Universeller ERP-Export-Import v0.7.0:** Neue lokale Bibliothek `universal_import.py` erkennt CSV (UTF-8, Komma/Semikolon/Tab), XLSX (explizite Blattauswahl, Formeln blockiert) sowie XML-Rechnungen, PDF und DOCX zur **weiteren Klassifizierung**. Ein Vorschlagsmapping von deutschen und englischen Spaltennamen kann geprüft und ausdrücklich bestätigt werden. Eine an den SHA-256-Hash der Originaldatei gebundene Mappingfreigabe normalisiert belegreferenzierte Einkaufs-/Gutschriftenlisten; anschließend wird der bereits getestete Frictionless/Readiness/HMAC/MariaDB-Auditpfad aufgerufen. Keine automatische Extraktion aller XML-Rechnungsposten, keine vollautomatische Vertragsregelinterpretation, keine echten ERP-Connectoren, keine sichere öffentliche Upload-API. Die Mapping-Bestätigung ist zunächst eine Benutzerangabe, kein kryptografischer Reviewer-Nachweis.
+
 ## Ungeprüfte Aspekte und klare Grenzen
 
 - GitHub Actions ist der tatsächliche Testnachweis; nicht jede neu geschriebene Testdatei wurde lokal ausgeführt. Ergebnisse mit Run-ID in EVIDENCE.md festhalten.
 - Docling wurde noch nicht anhand echter annotierter Vertragsdokumente in einer isolierten Produktionsumgebung benchmarkgetestet. Docling selbst ist noch kein Beleg für ein vollständig funktionierendes Dokumentenprodukt.
-- Kein XLSX-/XML-Importer oder kundenspezifisches Spaltenmapping; Eingaben müssen aktuell das veröffentlichte kanonische CSV-Schema erfüllen.
+- XLSX und flexibel benannte CSV lassen sich mit **manuell bestätigtem** Mapping in kanonische CSV normalisieren. XML-Rechnungen werden bislang nur erkannt/klassifiziert, nicht fachlich positionsweise übernommen. Kein produktiver Upload, keine vollständigen kundenspezifischen ERP-Formatprofile.
 - Kein unabhängiger Nachweis für Vollständigkeit der Einkaufsperiode und der Vertragsnachträge. Die drei Pflichtflags und ERP-Kontrollsummen sind externe Angaben und niemals ein algorithmischer Nachweis. Der neue Gate-Status `READY_FOR_AUDIT` bestätigt ausschließlich Konsistenz mit übergebenen Kontrollen.
 - **Verifizierte JWT-Subjektidentität ist implementiert, aber noch keine produktive IdP-Anmeldung.** DB-Grants und Widerruf sind vorhanden; externe Benutzeranlage/-sperrung, administratives Provisioning, JWKS-Rotation und Keyrotation fehlen. Der direkte lokale CLI-Testweg ist weiterhin ausdrücklich kein authentifizierter Kundendienst. Die HMAC-Signatur belegt nur, dass die Daten mit dem verwendeten Secret signiert wurden; kein gesetzlicher oder externer Identitätsnachweis. Die lokale CLI nimmt Tenant-/Gesellschaftskennung als Parameter und ist kein sicheres Kundentor.
 - Kein Tenant-Login, Kundenportal, öffentlicher API-Service, Vertragsannahme, gesicherter Upload, Kundenspeicherung oder Download-Workflow.
@@ -64,4 +66,4 @@ Für PDF: optional `python -m pip install -e ".[docs]"`, dann `lhfm extract-pdf 
 
 ## Nächster produktbezogener Schritt
 
-Echte anonymisierte und rechtmäßig bereitgestellte Testdokumente mit manuellem Goldstandard gegen Docling und den Rechenkern prüfen; Spaltenmapping und fehlende Buchungsdaten definieren. Danach eine sichere, mandantenfähige API mit Kundenportal und bestätigten Vertragsbedingungen. Keine ungestützten Release- oder Return-on-Investment-Aussagen.
+Reale synthetisch nachgebildete Exportvarianten je ERP und XRechnung/ZUGFeRD fachlich gegen das kanonische Modell benchmarken; CI und sichere Dateiverarbeitung ausbauen. Echte anonymisierte und rechtmäßig bereitgestellte Testdokumente mit manuellem Goldstandard gegen Docling und den Rechenkern prüfen; Spaltenmapping und fehlende Buchungsdaten definieren. Danach eine sichere, mandantenfähige API mit Kundenportal und bestätigten Vertragsbedingungen. Keine ungestützten Release- oder Return-on-Investment-Aussagen.
