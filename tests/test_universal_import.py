@@ -7,6 +7,8 @@ from pathlib import Path
 import tempfile
 import unittest
 import os
+import subprocess
+import sys
 from uuid import uuid4
 from datetime import datetime, timezone
 
@@ -171,6 +173,34 @@ class UniversalMappingTests(unittest.TestCase):
         )
         with self.assertRaises(ValueError):
             inspect_source(xml)
+
+    def test_cli_inspect_shows_mapping_without_approval(self):
+        run = subprocess.run(
+            [sys.executable, "-m", "lowhangingfruitme.intake_cli",
+             "inspect-source", "--file", str(self.txn),
+             "--dataset", "transactions"],
+            check=False, capture_output=True, text=True,
+        )
+        self.assertEqual(run.returncode, 0, run.stderr)
+        result = json.loads(run.stdout)
+        self.assertEqual(result["proposed_mapping"]["external_id"], ["Belegnummer"])
+        self.assertFalse(result["audit_ready"])
+
+    def test_cli_normalize_requires_plan_and_refuses_overwrite(self):
+        p = self.root / "mapping.json"
+        p.write_text(json.dumps(plan(self.txn, "transactions", TX_MAP)), encoding="utf-8")
+        out = self.root / "normalized.csv"
+        cmd = [sys.executable, "-m", "lowhangingfruitme.intake_cli",
+               "normalize-source", "--file", str(self.txn),
+               "--dataset", "transactions", "--source-system", "erp",
+               "--plan", str(p), "--output", str(out)]
+        run = subprocess.run(cmd, check=False, capture_output=True, text=True)
+        self.assertEqual(run.returncode, 0, run.stderr)
+        self.assertTrue(out.is_file())
+        self.assertEqual(len(list(csv.DictReader(out.open(encoding="utf-8")))), 2)
+        repeated = subprocess.run(cmd, check=False, capture_output=True, text=True)
+        self.assertEqual(repeated.returncode, 2)
+        self.assertIn("rejected", repeated.stderr)
 
     def test_xlsx_preview_and_normalization(self):
         from openpyxl import Workbook
