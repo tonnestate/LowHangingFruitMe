@@ -6,6 +6,7 @@ from pathlib import Path
 import sys
 from .documents import extract_pdf
 from .intake import audit_from_csv
+from .approval import key_from_environment
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="LowHangingFruitMe source intake")
@@ -15,6 +16,10 @@ def main() -> int:
     csv_cmd.add_argument("--transactions", required=True, type=Path)
     csv_cmd.add_argument("--settlements", required=True, type=Path)
     csv_cmd.add_argument("--source-system", required=True)
+    csv_cmd.add_argument("--approval", type=Path, help="Signed approval receipt JSON")
+    csv_cmd.add_argument("--contract-source", type=Path, help="Exact reviewed contract source file")
+    csv_cmd.add_argument("--tenant-id", help="Tenant identity from trusted scope")
+    csv_cmd.add_argument("--legal-entity-id", help="Legal entity identity from trusted scope")
     csv_cmd.add_argument("--controls", type=Path, help="Separate ERP source-control report JSON")
     csv_cmd.add_argument("--confirm-transactions-complete", action="store_true")
     csv_cmd.add_argument("--confirm-settlements-complete", action="store_true")
@@ -27,6 +32,11 @@ def main() -> int:
             output = audit_from_csv(
                 args.rule, args.transactions, args.settlements,
                 source_system=args.source_system,
+                approval_receipt=json.loads(args.approval.read_text(encoding="utf-8")) if args.approval else None,
+                approval_key=key_from_environment() if args.approval else None,
+                approval_scope={"tenant_id": args.tenant_id, "legal_entity_id": args.legal_entity_id}
+                    if args.approval else None,
+                contract_source_path=args.contract_source,
                 controls=json.loads(args.controls.read_text(encoding="utf-8")) if args.controls else None,
                 completeness={
                     "transactions_complete": args.confirm_transactions_complete,
