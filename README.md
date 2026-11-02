@@ -1,39 +1,70 @@
 # LowHangingFruitMe
 
-**FruitStack Revenue-Recovery-Produkt: nicht realisierte Lieferantenboni und Konditionsdifferenzen aufspüren, nachvollziehbar berechnen und tatsächlich realisierte Rückvergütungen abrechnen.**
+**B2B Revenue Recovery for FruitStack.** Ein eigenständiger, beleggestützter Prüfdienst für nicht vollständig realisierte Lieferantenboni und vertraglich eindeutige Einkaufskonditionen.
 
-Status (02.11.2026): **Rebate-Kernel 0.1.0 lokal implementiert und mit synthetischen Fällen getestet; keine Live-Kundendaten, kein Portal, keine ERP-Connectoren, keine validierten Rückgewinnungsraten.** Dieses öffentliche Repository enthält keine vertraulichen Kunden-, Vertrags- oder FruitStack-Daten.
+**Version:** 0.2.0 (Source-Intake-Slice, Entwicklung)  
+**Status:** ausführbare Bonusengine und lokale CSV-/PDF-Adapter; **kein** Kundenportal, keine Live-ERP-Anbindung, keine rechtliche Forderungseinziehung und keine produktiv validierte Rückgewinnung.
 
-## Verbindliches Zielbild
+## Was funktioniert
 
-- Eigenständiges B2B-Kundenportal mit geschütztem Upload.
-- Versionierte REST-API für Upload, Prüfaufträge, Evidenz, Status und später ERP-Connectoren.
-- KI liest und strukturiert Vertragsklauseln; deterministische Engine berechnet Ansprüche.
-- Beleggestützte Differenzfälle mit Vollständigkeits- und Unsicherheitskennzeichnung.
-- Kunde betreibt die kaufmännische Lieferantenklärung selbst. Keine automatische Forderungseinziehung.
-- Erfolgsvergütung als zu prüfendes Modell: 10 % ausschließlich auf nachgewiesene, zurechenbare, tatsächlich realisierte zusätzliche Nettovergütung.
-- Keine ERP-Neuentwicklung, kein Duplikat des FruitStack-Orchestrators, kein direkter Zugriff auf andere Produktdatenbanken.
+- Deterministische Berechnung von Jahresboni, rückwirkenden und marginalen Staffeln sowie festen Schwellenprämien; Dezimalarithmetik, Retouren, Gutschriften, Stornierungen und eindeutige Vertragsperioden.
+- Einlieferung kanonischer Einkaufs- und Gutschriften-CSV mit **Frictionless** als echtem Schema-Prüfer und anschließend strenger fachlicher Validierung; Herkunftsverweise auf Datei-Hash und Quellzeile.
+- Lokale PDF-Extraktion über **Docling** in belegbare Segmente (Text/Tabellen, Seite, Hash), ausdrücklich **ohne automatische Vertragsregel-Freigabe**.
+- Wiederholbare synthetische Regressionstests, GitHub Actions für Python 3.11/3.12, getrennte Entwicklungs- und Betriebsgrenzen.
+- Jeder Bericht trennt rechnerische Differenz, unsichere Datenlage und tatsächlich realisierte sowie abrechenbare Erfolge.
 
-## Konzeptdokumente
+## Installation und reproduzierbarer lokaler Test
 
-1. [Produkt und Architektur](docs/CONCEPT.md)
-2. [GitHub-Donoren und Übernahmebedingungen](docs/DONORS.md)
-3. [Datenmodell, API und Prüfregeln](docs/API_AND_DATA.md)
-4. [Vertragsmodell, Erlöserfassung und Datenschutz](docs/LEGAL_AND_REVENUE.md)
-5. [Implementierung, Abnahme und Markteintritt](docs/DELIVERY_PLAN.md)
+Python >= 3.11; die reine Rechenengine benötigt keine externen Runtime-Abhängigkeiten.
 
-## Evidenzregel
+~~~bash
+python -m pip install -e ".[import]"
+python -m unittest discover -s tests -v
+python -m lowhangingfruitme.cli tests/fixtures/flat_rebate.json
+~~~
 
-VERIFIED bedeutet: anhand verlinkter Quelle / konkretem Repo-Dateiinhalt nachvollzogen. PLANNED bedeutet: für LowHangingFruitMe spezifiziert, aber nicht implementiert. UNVERIFIED bedeutet: noch durch Tests, Verträge, technische Freigaben oder reale Kundendaten zu klären.
+CSV-End-to-End-Prüfung mit **synthetischen** Dateien:
 
-Es wurde kein Fremdcode kopiert oder ausgeführt. Donoren sind Auswahlkandidaten, keine unüberprüft installierten Abhängigkeiten.
+~~~bash
+lhfm audit-csv \
+  --rule tests/fixtures/rule.json \
+  --transactions tests/fixtures/transactions.csv \
+  --settlements tests/fixtures/settlements.csv \
+  --source-system sample-erp \
+  --confirm-transactions-complete \
+  --confirm-settlements-complete \
+  --confirm-agreements-complete
+~~~
 
-## Ausführbarer Stand (Kernel 0.1.0)
+Die drei Bestätigungen sind **explizite externe Angaben** und kein technischer Vollständigkeitsbeweis. Ohne diese Bestätigungen liefert der Audit lediglich einen Prüfstatus mit Einschränkungen. Bei vollständig bestätigtem synthetischem Beispiel: 200.000 EUR anrechenbarer Nettobezug, 2 % Bonus, 1.500 EUR Gutschrift → 2.500 EUR **rechnerische Differenz**, 0 EUR automatisch abrechenbares Erfolgshonorar.
 
-Python >=3.11, keine Laufzeit-Abhängigkeiten. Die Rechenengine ist bewusst ohne KI und Netzwerkzugriff:
+Docling separat installieren und lokal ein PDF unter Vorbehalt der Sicherheitsbedingungen prüfen:
 
-    python -m pip install -e .
-    python -m unittest discover -s tests -v
-    python -m lowhangingfruitme.cli tests/fixtures/flat_rebate.json
+~~~bash
+python -m pip install -e ".[docs]"
+lhfm extract-pdf --file /path/to/your/local-contract.pdf
+~~~
 
-Beispiel: 200.000 EUR bonusfähige Nettobasis, 2 % Bonus, 1.500 EUR Gutschrift ergeben 2.500 EUR **rechnerische** Differenz, **keinen** realisierten/abrechenbaren Erfolg. Siehe [Implementierungsstatus](docs/IMPLEMENTATION_STATUS.md).
+**Achtung:** Der Docling-Adapter ist ein lokaler Prototyp ohne isolierten Upload-Worker, echte OCR-Qualitätsabnahme oder garantierte Offline-Modellbereitstellung. Keine Kundendokumente vor Prüfung des Host-Sicherheitskonzepts verarbeiten.
+
+## Produktarchitektur
+
+Kundenportal / Upload / ERP-Connector / REST-API (**geplant**) → Intake-Adapter (CSV-Frictionless/PDF-Docling) → bestätigte Vertragsregel → deterministischer Audit → belegte Differenzakte → Recovery-Ledger und erfolgsabhängige Abrechnung (**geplant**).
+
+Es wird **kein** eigenständiges ERP oder FruitStack-Orchestrierungssystem dupliziert. Kernberechnung und Datenimport sind plattformunabhängig. Lexware, weclapp, Odoo, ERPNext/Frappe, Dolibarr und Oro sind recherchierte Integrations-/Distributionsziele; sie sind **nicht produktiv angebunden**.
+
+## Geschäft und Grenzen
+
+Angedachtes Kundenangebot: eine einmalige Prüfung gegen **10 % von der nachweislich, zurechenbar und wirtschaftlich tatsächlich realisierten zusätzlichen Nettovergütung**. Erfolgshonorar, RDG-Abgrenzung, Datenschutz und Vertragstexte sind vor kommerziellem Start extern rechtlich zu prüfen. Das Produkt betreibt im ersten Umfang weder Inkasso noch autonomes Forderungsmanagement.
+
+## Dokumentation
+
+- [Fach- und Architekturkonzept](docs/CONCEPT.md)
+- [Donorenregister und Lizenzgrenzen](docs/DONORS.md)
+- [Kanonischer Datenvertrag und API-Spezifikation](docs/API_AND_DATA.md)
+- [Vertrags- und Vergütungsmodell](docs/LEGAL_AND_REVENUE.md)
+- [Lieferplan und Abnahmekriterien](docs/DELIVERY_PLAN.md)
+- [Tatsächlicher Implementierungsstand](docs/IMPLEMENTATION_STATUS.md)
+- [Release-Evidenz](EVIDENCE.md), [Changelog](CHANGELOG.md), [Sicherheit](SECURITY.md), [Agentenvorgaben](AGENTS.md), [Drittherstellerhinweise](THIRD_PARTY_NOTICES.md)
+
+Das öffentliche Repo enthält ausschließlich eigene Implementierung und synthetische Testdaten. Es wurden keine Fremd-ERP-Quelltexte kopiert. Für das Projekt wurde noch **keine Open-Source-Distributionslizenz festgelegt**; öffentlich lesbarer Code ist nicht automatisch frei zur Weiterverwendung.
