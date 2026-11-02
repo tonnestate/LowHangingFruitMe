@@ -140,3 +140,33 @@ Keine Donor-Copy&Paste-Aktion ohne einen genehmigten Record. Für GPL-/AGPL-/MPL
 - https://github.com/pymupdf/PyMuPDF
 
 **Forschungsstatus:** keine Donor-Library in LowHangingFruitMe installiert; keine Sicherheits-/Performancebenchmarks ausgeführt; genaue Release-Pins und eigene Lizenz-/Security-Abnahme sind bewusst noch offen.
+
+
+## 8. Ergänzende Recherche: konkrete ERP-Connector-Donoren (02.11.2026)
+
+Diese Projekte sind als **Implementierungsreferenz für einzelne Adapter**, nicht als komplette LowHangingFruitMe-Architektur zu verwenden. Lizenzdateien und GitHub-Metadaten wurden einzeln geprüft.
+
+| ID | Repository | Beobachteter Stand/Lizenz | Konkrete Empfehlung |
+|---|---|---|---|
+| C01 | [weclapp/sdk](https://github.com/weclapp/sdk) | **Offizieller** TypeScript-SDK-Generator, MIT, nicht archiviert; erzeugt Typen/Services aus dem OpenAPI-Dokument der jeweiligen weclapp-Instanz | **Erster technischer SDK-Kandidat für weclapp**. Nur lesende Einkauf-/Supplier-/Credit-Endpunkte generieren/nutzen und Feldumfang in einem Testmandanten prüfen. Kein automatisches Schreibrecht |
+| C02 | [Sysix/lexoffice-php-api](https://github.com/Sysix/lexoffice-php-api) | MIT, nicht archiviert; PHP 8.1+, PSR-18 HTTP-Client; laut README keine eingebauten Rate Limits oder umfassende Fehlerchecks | **Guter Referenz-/Clientdonor nur bei PHP-Portal/Adapter.** Bei geplantem Python-Kern nicht PHP allein wegen SDK einführen; offizielle Lexware REST-API direkt ansprechen |
+| C03 | [Baebeca-Solutions/lexware-php-api](https://github.com/Baebeca-Solutions/lexware-php-api) | AGPLv3 im öffentlichen Code; Projekt bietet laut README eine **gesonderte kommerzielle Lizenz** (dort mit 200 EUR netto angegeben; vor Kauf erneut prüfen) | **Nicht unter AGPL in proprietären Service übernehmen.** Erst kommerzielle Lizenz bewerten, wenn tatsächlich eine PHP-Integration nötig ist |
+| C04 | [marselsel/Lexware-MCP-Server](https://github.com/marselsel/Lexware-MCP-Server) | MIT, nicht archiviert; einzelmandantenbezogener MCP-Service mit Accounting-Tools | **Nur API-/Sicherheitsreferenz.** MCP-Agenten-Server ist für deterministischen, mehrmandantenfähigen Finance-Datenimport kein Ersatz für einen begrenzten Read-only-REST-Connector |
+| C05 | [frappe/frappe-client](https://github.com/frappe/frappe-client) | MIT, aber **seit 31.03.2026 archiviert** | **Nicht als neue produktive Kernabhängigkeit.** Frappe-REST-API/aktuelle Framework-Dokumentation direkt verwenden oder aktiv gepflegten Client nach Lizenzprüfung auswählen |
+| C06 | [Dolibarr/dolibarr](https://github.com/Dolibarr/dolibarr/blob/develop/htdocs/api/README.md) | offizieller REST-API- und ModuleBuilder-Code, GPL-3.0 | **D3 Referenz.** Für ein externes Tool API mit autorisiertem Benutzer-Token verwenden; eigenes Dolibarr-Modul als eigenständig GPL-konformes, dünnes Paket nur bei Bedarf |
+
+**Integrationsempfehlung konkret:**
+
+- Der zentrale LowHangingFruitMe-Service bleibt Python/FastAPI. Für Lexware Office **kein** zweiter PHP-Microservice nur wegen eines Libraries. Ein kleiner Python-REST-Client gegen https://developers.lexware.io/docs/ ist kürzer, besser kontrollierbar und vermeidet zusätzliche Laufzeit-/Lizenzlast.
+- Bei weclapp ist ein kleiner TypeScript-Connector auf Basis des **offiziellen MIT-SDKs** sinnvoll, wenn die API-Discovery und Authentisierung am Tenant technisch möglich sind. Er sendet kanonische, minimal erforderliche Nutzdaten an unsere zentrale API.
+- Der Frappe-Connector wird nicht auf ein archiviertes Python-SDK gegründet. Er nutzt Frappe-interne Dokument-APIs für die installierte App oder aktuelle offizielle HTTP-API-Routen für einen externen Client.
+- Ein Odoo-/Dolibarr-Modul hat eigenen Releasezyklus, Lizenz, Security-Review und Store-Zulassung. **Keine** GPL-/AGPL-Codebasis wird in die proprietäre Rechenengine hineinkopiert.
+- Weder MCP-Tools noch automatisch generierte SDKs garantieren Vollständigkeit der Einkaufs- und Bonusdaten; Datenfeld- und Periodenprüfungen bleiben zwingend.
+
+**Primärquellen:**
+- https://github.com/weclapp/sdk/blob/master/README.md und https://github.com/weclapp/sdk/blob/master/LICENSE
+- https://github.com/Sysix/lexoffice-php-api/blob/development/README.md und https://github.com/Sysix/lexoffice-php-api/blob/development/LICENSE
+- https://github.com/Baebeca-Solutions/lexware-php-api/blob/master/README.md und https://github.com/Baebeca-Solutions/lexware-php-api/blob/master/LICENSE
+- https://github.com/marselsel/Lexware-MCP-Server/blob/main/README.md
+- https://github.com/frappe/frappe-client (GitHub-Archivstatus)
+- https://github.com/Dolibarr/dolibarr/blob/develop/htdocs/api/README.md
