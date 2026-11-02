@@ -57,6 +57,30 @@ class ApprovalRegistry:
     def _require_actor(value: str) -> str:
         return _nonempty(value, "authenticated_actor_id")
 
+    def require_scoped_reviewer(
+        self, *, tenant_id: str, legal_entity_id: str, actor_id: str,
+    ) -> None:
+        """Preflight scoped authorization; repeat under guard at dispatch."""
+        actor = self._require_actor(actor_id)
+        connection = self._connect()
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """SELECT role, active FROM lhfm_reviewer_grants
+                       WHERE tenant_id=%s AND legal_entity_id=%s
+                         AND reviewer_id=%s""",
+                    (tenant_id, legal_entity_id, actor),
+                )
+                grant = cursor.fetchone()
+                if not grant or grant["role"] != "contract_reviewer" or not grant["active"]:
+                    raise PermissionError("actor lacks an active tenant/entity grant")
+            connection.commit()
+        except Exception:
+            connection.rollback()
+            raise
+        finally:
+            connection.close()
+
     def register(self, receipt: dict[str, Any], *, rule: dict[str, Any],
                  key: bytes, document_sha256: str,
                  tenant_id: str, legal_entity_id: str,
@@ -170,7 +194,8 @@ class ApprovalRegistry:
     @contextmanager
     def guard(self, receipt: dict[str, Any], *, rule: dict[str, Any],
               key: bytes, document_sha256: str, tenant_id: str,
-              legal_entity_id: str) -> Iterator[dict[str, str]]:
+              legal_entity_id: str,
+              acting_reviewer_id: str | None = None) -> Iterator[dict[str, str]]:
         """Hold an InnoDB row lock while the actual calculation executes.
 
         This guarantees the revoke transaction cannot commit during this guard.
@@ -181,6 +206,10 @@ class ApprovalRegistry:
             receipt, rule, key=key, tenant_id=tenant_id,
             legal_entity_id=legal_entity_id, document_sha256=document_sha256,
         )
+        if acting_reviewer_id is not None and not hmac.compare_digest(
+            self._require_actor(acting_reviewer_id), verified["reviewer_id"]
+        ):
+            raise PermissionError("authenticated audit actor differs from approved reviewer")
         digest = sha256(_json_bytes(receipt)).hexdigest()
         connection = self._connect()
         try:
