@@ -72,3 +72,12 @@ Executed on Python 3.11 and Python 3.12:
 The source includes `ApprovalRegistry.register()`, `revoke()` and `guard()`, plus dedicated InnoDB DDL and real MariaDB CI tests. The registry is intentionally isolated from any existing TonnEstate database. The GitHub Actions CI creates `lhfm_test` with synthetic grants, using no customer data.
 
 **Validation status:** See the newest GitHub Actions run for the current main SHA. An authenticated real identity-provider connection and production reviewer authorization are **not** implemented. The registry is not a legally compliant signature/consent service by itself.
+
+### Verified database acceptance (real MariaDB 11.4)
+
+- Commit tested: [7591f49cbb71b6be6145e343d74bbfa92233e557](https://github.com/tonnestate/LowHangingFruitMe/commit/7591f49cbb71b6be6145e343d74bbfa92233e557)
+- Workflow: [GitHub Actions 41521838285](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41521838285) – **completed/success** for Python 3.11 and 3.12.
+- **81 tests**, successful on both matrix versions. Both runners used an actual isolated MariaDB 11.4 service, synthetic reviewer grant, registration, revocation and locking checks. Frictionless import, approved CSV CLI smoke, wheel/sdist build and clean wheel installation smoke also passed.
+- Concurrent revoke test deliberately attempts a revoke while an audit holds the InnoDB row lock. The revoke does not complete inside the protected interval and succeeds after guard release.
+- Limitations: no real IdP, real finance transactions, legal contract verification, authorized reviewer onboarding, production database and no external penetration test.
+
