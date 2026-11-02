@@ -128,6 +128,35 @@ class RealFrictionlessImportTests(unittest.TestCase):
         self.assertIsNone(report["recorded_bonus_net"])
         self.assertIn("UNALLOCATED_OR_OUTSIDE_SCOPE", report["warnings"])
 
+    def test_no_control_totals_produce_diagnostics_not_claim(self):
+        report = audit_from_csv(
+            self.rule, self.purchase, self.credit, source_system="erp",
+            completeness={"transactions_complete": True,
+                          "settlements_complete": True,
+                          "agreements_complete": True},
+        )
+        self.assertFalse(report["audit_executed"])
+        self.assertEqual(report["status"], "REVIEW_REQUIRED")
+        self.assertIsNone(report["difference_net"])
+        self.assertIn("SOURCE_CONTROLS_MISSING", report["warnings"])
+
+    def test_reconciliation_mismatch_prevents_calculation(self):
+        controls = deepcopy(CONTROLS)
+        controls["transactions"]["net_total"] = "999999.00"
+        report = audit_from_csv(
+            self.rule, self.purchase, self.credit, source_system="erp",
+            controls=controls,
+            completeness={"transactions_complete": True,
+                          "settlements_complete": True,
+                          "agreements_complete": True},
+        )
+        self.assertFalse(report["audit_executed"])
+        self.assertEqual(report["status"], "NOT_CALCULABLE")
+        self.assertIsNone(report["expected_bonus_net"])
+        self.assertIsNone(report["difference_net"])
+        self.assertEqual(report["fee_due_net"], "0.00")
+        self.assertIn("NET_TOTAL_MISMATCH", report["warnings"])
+
     def test_false_completeness_structure_rejected(self):
         with self.assertRaisesRegex(ValueError, "explicit boolean"):
             self.run_audit({"transactions_complete": True})
