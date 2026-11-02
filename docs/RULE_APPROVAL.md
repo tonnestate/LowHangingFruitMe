@@ -49,3 +49,9 @@ All sample data are synthetic and intentionally fictitious. To reproduce the CI 
 - Security and legal review of signing/approval workflow, customer data and regulated service boundaries.
 
 **Decision:** The next product-level feature should be an authenticated approval/revocation storage boundary before exposing a public API or customer portal.
+
+## v0.5.0 amendment – persistent registry now implemented
+
+The earlier v0.4 descriptions of missing revocation/persistence have now been **partly superseded**. `src/lowhangingfruitme/approval_registry.py` implements MariaDB ACTIVE/REVOKED persistence, scoped reviewer grants and a SELECT FOR UPDATE calculation guard, and the canonical CSV path refuses to produce final findings without a registry.
+
+This does **not** supply actual reviewer authentication, revocation-aware completed-report distribution, service-wide identity integration, production key custody or legal signature status. See [APPROVAL_REGISTRY.md](APPROVAL_REGISTRY.md) and [EVIDENCE.md](../EVIDENCE.md).
