@@ -283,6 +283,9 @@ def audit(payload: dict[str, Any]) -> dict[str, Any]:
     eligible_base = Decimal("0")
     recorded = Decimal("0")
 
+    # This low-level calculator does not authenticate the reviewer.
+    # Full evidence status can only be granted by the signed intake gate.
+    warnings.add("UNVERIFIED_APPROVAL_CONTEXT")
     if not rule.approved:
         warnings.add("RULE_NOT_APPROVED")
     if not confirmed_txns:
