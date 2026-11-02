@@ -17,3 +17,9 @@ Report vulnerabilities privately via GitHub private vulnerability reporting when
 ## Production release requirements
 
 Tenant and role isolation, secure upload pipeline, independent completeness controls, at-rest encryption, retention and deletion, dependency/SBOM review, execution sandbox, end-to-end and security testing, backup/restore proof, and contractual/legal approval.
+
+## Approval integrity (v0.4.0)
+
+`LHFM_APPROVAL_KEY_HEX` must only be injected from a protected backend secret store, never be accepted as an end-user field or committed to source. Treat the key as a tenant/organization-authority credential: restrict signer usage to authenticated, authorized contract reviewers, log issuance, use stable unique approval IDs and maintain a revocation/supersession database before real customer operation. HMAC is **not** a qualified electronic signature, independent identity proof or cryptographic validation of the contract's business meaning. The test factory in `tests/scripts/` MUST NOT be deployed or exposed.
+
+The existing CLI is a local development tool. Its `--tenant-id` argument is not trustworthy authorization; no externally accessible API may accept arbitrary tenant claims as access control. All role and scope checks must be imposed by the future authenticated service.

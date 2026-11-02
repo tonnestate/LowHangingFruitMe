@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.0 – contract rule approval integrity (development; 2026-11-02)
+
+- HMAC-SHA256 signed receipts bind a canonical rule revision to a specific contract file's SHA256, a tenant/legal entity, reviewer claim, role, source revision and approval timestamp.
+- The canonical CSV audit is fail-closed: unsigned, altered, wrong-tenant, wrong-document or invalid approval does not produce a final monetary finding.
+- The standalone numerical calculator now reports REVIEW_REQUIRED and UNVERIFIED_APPROVAL_CONTEXT without an authorized approval intake.
+- Synthetic CI approval factory, fresh ephemeral CI keys, tampering/scope tests and full CLI smoke.
+- Deliberate limitations: no production IAM, no revocation/persistence of receipt IDs, no genuine legal signature, no validated human identity; HMAC source integrity is not a production authorization system.
+
 ## 0.3.0 – data-readiness and independent control-total reconciliation (development; 2026-11-02)
 
 - Added deterministic supplier/period/contract scope gate before the canonical CSV audit.

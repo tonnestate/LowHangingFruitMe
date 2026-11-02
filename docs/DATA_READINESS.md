@@ -8,11 +8,17 @@ Outcomes:
 
 | Gate status | Meaning | Next step |
 |---|---|---|
-| READY_FOR_AUDIT | Submitted data are internally valid, the approved rule is cited, supplied ERP control-report row counts and net sums reconcile exactly, required scope and completeness attestations are present | Run deterministic calculation; retain all caveats |
+| READY_FOR_AUDIT | Submitted data are internally valid, the rule has a verified signed approval receipt bound to the exact contract-document digest, and supplied ERP control-report row counts and net sums reconcile exactly, required scope and completeness attestations are present | Run deterministic calculation; retain all caveats |
 | LIMITED | No hard contradiction, but separate control totals or completeness attestations are missing | Request missing evidence; return diagnostics without a calculated claim |
 | NOT_READY | A material contradiction exists, such as mismatched net total/row count, unknown credit allocation, wrong supplier, unposted transactions, missing rule evidence or unapproved rule | Correct/re-export or authorize review; do **not** compute a difference |
 
 All three statuses include `external_ledger_completeness_proven=false`. A control file provided by the same customer may still omit source records; comparing two customer-supplied numbers is not a third-party audit.
+
+## Mandatory approval gate since v0.4.0
+
+An `approved=true` rule flag is not trusted. A canonical CSV audit also requires a signed HMAC-SHA256 approval receipt, a current exact source-document file, a trusted HMAC key, tenant and legal-entity scopes and a matching rule revision. Missing proof produces `LIMITED` and no financial finding; a tampered/wrong-scope receipt produces `NOT_READY` and no financial finding. Direct low-level JSON calculation is explicitly review-only.
+
+The HMAC proves message integrity if the signing key remains secret. **This prototype does not authenticate reviewers, maintain a revocation ledger or independently verify source-document authenticity.** See [RULE_APPROVAL](RULE_APPROVAL.md).
 
 ## Minimal control input
 
@@ -46,7 +52,7 @@ The contract rule still requires `approved=true` and clause evidence. In v0.3.0 
 
 ## Run
 
-Install real Frictionless and execute:
+Install real Frictionless, first create a **synthetic** approval using the README commands and then execute:
 
 ~~~bash
 python -m pip install -e ".[import]"
@@ -56,6 +62,10 @@ lhfm audit-csv \
   --settlements tests/fixtures/settlements.csv \
   --source-system erp \
   --controls tests/fixtures/source_controls.json \
+  --approval /tmp/lhfm-approval.json \
+  --contract-source tests/fixtures/synthetic_agreement.txt \
+  --tenant-id T-SYN-1 \
+  --legal-entity-id LE-SYN-1 \
   --confirm-transactions-complete \
   --confirm-settlements-complete \
   --confirm-agreements-complete

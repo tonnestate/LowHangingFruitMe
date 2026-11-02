@@ -1,4 +1,4 @@
-# Implementation status – LowHangingFruitMe v0.3.0
+# Implementation status – LowHangingFruitMe v0.4.0
 
 **Stand:** 02.11.2026. Produktentwicklung, kein kommerzieller oder produktiver Betrieb. Der aktuelle Revisionsnachweis steht in [EVIDENCE.md](../EVIDENCE.md); keine behaupteten Live-Kunden- oder ERP-Erfolge.
 
@@ -14,12 +14,15 @@
 
 **Data-Readiness-Gate v0.3.0:** Strikte Überprüfung des freigegebenen Vertrags, von Lieferant/Währung/Periode, eindeutig zugeordneten Buchungen sowie Vergleich von Zeilenanzahl und Nettosummen mit einem separat gelieferten Kontrollreport. Ohne Kontrollen liefert der CSV-Pfad nur einen eingeschränkten Diagnosebericht, bei Abweichung keine Bonusberechnung. Die Quelle und Verlässlichkeit des separat gelieferten Reports werden noch nicht unabhängig verifiziert; auch READY_FOR_AUDIT ist daher keine Zusicherung kaufmännischer Datenvollständigkeit.
 
+**Regelfreigabe v0.4.0:** HMAC-SHA256-signiertes Freigabereceipt mit festem Regelhash, freigegebenem Originaldokument-Hash, tenant_id, legal_entity_id, reviewer_id, reviewer_role, source_revision_id, approval_id und Zeitstempel. CSV-Intake und Data-Readiness prüfen die Signatur gegen einen geheimen, nur serverseitig bereitzustellenden Schlüssel und vergleichen Regel, Mandant/Gesellschaft und tatsächlich eingelesene Vertragsdatei. Ohne verifizierten Beleg kein finaler Auditstatus. Die direkte reine Rechenengine meldet bei fehlender Autorisierung `REVIEW_REQUIRED`, selbst bei `approved=true`. CI-Testfälle sind rein synthetisch.
+
 ## Ungeprüfte Aspekte und klare Grenzen
 
 - GitHub Actions ist der tatsächliche Testnachweis; nicht jede neu geschriebene Testdatei wurde lokal ausgeführt. Ergebnisse mit Run-ID in EVIDENCE.md festhalten.
 - Docling wurde noch nicht anhand echter annotierter Vertragsdokumente in einer isolierten Produktionsumgebung benchmarkgetestet. Docling selbst ist noch kein Beleg für ein vollständig funktionierendes Dokumentenprodukt.
 - Kein XLSX-/XML-Importer oder kundenspezifisches Spaltenmapping; Eingaben müssen aktuell das veröffentlichte kanonische CSV-Schema erfüllen.
 - Kein unabhängiger Nachweis für Vollständigkeit der Einkaufsperiode und der Vertragsnachträge. Die drei Pflichtflags und ERP-Kontrollsummen sind externe Angaben und niemals ein algorithmischer Nachweis. Der neue Gate-Status `READY_FOR_AUDIT` bestätigt ausschließlich Konsistenz mit übergebenen Kontrollen.
+- **Noch keine produktiv authentifizierte Prüferidentität, Berechtigungsprüfung, Freigabe-Widerrufsliste oder eindeutige Genehmigungs-ID-Datenbank.** Die HMAC-Signatur belegt nur, dass die Daten mit dem verwendeten Secret signiert wurden; kein gesetzlicher oder externer Identitätsnachweis. Die lokale CLI nimmt Tenant-/Gesellschaftskennung als Parameter und ist kein sicheres Kundentor.
 - Kein Tenant-Login, Kundenportal, öffentlicher API-Service, Vertragsannahme, gesicherter Upload, Kundenspeicherung oder Download-Workflow.
 - Keine Live-Lexware-/weclapp-/Odoo-/Frappe-/Dolibarr-Schnittstellen, keine Marktplatzfreigabe.
 - Keine Regelinterpretations-/Freigabeoberfläche, keine automatische rechtliche Bewertung, keine juristische Forderungsdurchsetzung.
@@ -42,10 +45,16 @@ lhfm audit-csv --rule tests/fixtures/rule.json \
   --settlements tests/fixtures/settlements.csv \
   --source-system sample-erp \
   --controls tests/fixtures/source_controls.json \
+  --approval /tmp/lhfm-approval.json \
+  --contract-source tests/fixtures/synthetic_agreement.txt \
+  --tenant-id T-SYN-1 \
+  --legal-entity-id LE-SYN-1 \
   --confirm-transactions-complete \
   --confirm-settlements-complete \
   --confirm-agreements-complete
 ~~~
+
+Vor dem CSV-Beispiel muss das **synthetische** Test-Rezept aus dem [README](../README.md) den Zufallsschlüssel und den signierten Testbeleg erzeugen. Ohne diese Vorarbeit läuft die Freigabe aus Sicherheitsgründen nicht.
 
 Für PDF: optional `python -m pip install -e ".[docs]"`, dann `lhfm extract-pdf --file <lokaler-pfad.pdf>`. Nicht als freigegebenes Kunden-Upload-Interface einsetzen.
 

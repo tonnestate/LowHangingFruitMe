@@ -53,3 +53,16 @@ Both Python 3.11 and 3.12 runners successfully installed real Frictionless, comp
 **Observed limitation:** The control values are independently *supplied* (as a separate document) but their ERP origin is **not independently verified** by the code. A READY_FOR_AUDIT result means the provided controls match the provided data, never a certification of the underlying customer's complete accounting history. The source control manifest can be forged or circular. Real ERP reporting metadata, independent account reconciliation and approved reviewer identity are separate future release gates.
 
 **CI defect found and resolved:** The initial smoke test used a different `source_system` identifier than the control fixture; it was corrected without bypassing the consistency check. In the successful run, the source identity matches exactly. Synthetic tests are not evidence of recovered customer money.
+
+## Contract-source-bound rule approval v0.4.0 (implemented and CI validated)
+
+**Tested commit:** [6119d3172e0196d5e8c5cd8297d95b0fcbb69a4d](https://github.com/tonnestate/LowHangingFruitMe/commit/6119d3172e0196d5e8c5cd8297d95b0fcbb69a4d)  
+**GitHub Actions run:** [41516848479](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41516848479) – success on main.
+
+Executed on Python 3.11 and Python 3.12:
+- **72 unit/integration tests** per runner – passed.
+- Actual Frictionless integration, compile check, unapproved JSON calculator preview, sign-and-verify synthetic approval for canonical CSV audit, source import CLI – passed.
+- Source distribution and wheel builds, clean wheel installation plus preview smoke – passed.
+- Tests cover HMAC signature tampering, rule amount/revision/source-reference mutation, wrong document digest, wrong tenant/company, future-dated approval, unapproved or uncited rule, missing key and missing proof.
+
+**Hard limitation:** The receipt's listed reviewer is not authenticated by this standalone module; there is no database of authorized reviewers, no revocation store, no persistent approved source registry and no production-grade key management. CI creates a random key for each run and a fictitious signer solely for synthetic testing. A signed receipt alone does not authenticate a real employee or establish a legally enforceable claim. Do not expose the signing function publicly.
