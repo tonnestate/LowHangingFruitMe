@@ -14,14 +14,13 @@ if __name__ == "__main__":
     try:
         with c.cursor() as cursor:
             sql = Path("sql/001_approval_registry.sql").read_text(encoding="utf-8")
-            for statement in sql.split(";"):
-                # Remove comment-only lines before dispatching each statement
-                statement = "\n".join(
-                    line for line in statement.splitlines()
-                    if line.strip() and not line.lstrip().startswith("--")
-                ).strip()
-                if statement:
-                    cursor.execute(statement)
+            statements = "\n".join(
+                line for line in sql.splitlines()
+                if line.strip() and not line.lstrip().startswith("--")
+            )
+            for statement in statements.split(";"):
+                if statement.strip():
+                    cursor.execute(statement.strip())
             cursor.execute(
                 """INSERT INTO lhfm_reviewer_grants
                    (tenant_id, legal_entity_id, reviewer_id, role, active)
