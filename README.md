@@ -2,7 +2,7 @@
 
 **FruitStack Revenue-Recovery-Produkt: nicht realisierte Lieferantenboni und Konditionsdifferenzen aufspüren, nachvollziehbar berechnen und tatsächlich realisierte Rückvergütungen abrechnen.**
 
-Status (02.11.2026): **Konzept / keine Produktimplementierung / keine Live-Kundendaten / keine validierten Rückgewinnungsraten.** Dieses öffentliche Repository enthält keine vertraulichen Kunden-, Vertrags- oder FruitStack-Daten.
+Status (02.11.2026): **Rebate-Kernel 0.1.0 lokal implementiert und mit synthetischen Fällen getestet; keine Live-Kundendaten, kein Portal, keine ERP-Connectoren, keine validierten Rückgewinnungsraten.** Dieses öffentliche Repository enthält keine vertraulichen Kunden-, Vertrags- oder FruitStack-Daten.
 
 ## Verbindliches Zielbild
 
@@ -27,3 +27,13 @@ Status (02.11.2026): **Konzept / keine Produktimplementierung / keine Live-Kunde
 VERIFIED bedeutet: anhand verlinkter Quelle / konkretem Repo-Dateiinhalt nachvollzogen. PLANNED bedeutet: für LowHangingFruitMe spezifiziert, aber nicht implementiert. UNVERIFIED bedeutet: noch durch Tests, Verträge, technische Freigaben oder reale Kundendaten zu klären.
 
 Es wurde kein Fremdcode kopiert oder ausgeführt. Donoren sind Auswahlkandidaten, keine unüberprüft installierten Abhängigkeiten.
+
+## Ausführbarer Stand (Kernel 0.1.0)
+
+Python >=3.11, keine Laufzeit-Abhängigkeiten. Die Rechenengine ist bewusst ohne KI und Netzwerkzugriff:
+
+    python -m pip install -e .
+    python -m unittest discover -s tests -v
+    python -m lowhangingfruitme.cli tests/fixtures/flat_rebate.json
+
+Beispiel: 200.000 EUR bonusfähige Nettobasis, 2 % Bonus, 1.500 EUR Gutschrift ergeben 2.500 EUR **rechnerische** Differenz, **keinen** realisierten/abrechenbaren Erfolg. Siehe [Implementierungsstatus](docs/IMPLEMENTATION_STATUS.md).
