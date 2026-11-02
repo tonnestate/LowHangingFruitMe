@@ -1,0 +1,133 @@
+"""Frictionless-based CSV import tests with real library, no mocked success path."""
+import csv
+from copy import deepcopy
+import importlib.util
+import json
+from pathlib import Path
+import tempfile
+import unittest
+
+from lowhangingfruitme.intake import COLUMNS, audit_from_csv, import_csv
+
+FIXTURE = json.loads((Path(__file__).parent / "fixtures" / "flat_rebate.json").read_text(encoding="utf-8"))
+HAS_FRICTIONLESS = importlib.util.find_spec("frictionless") is not None
+
+
+def csv_row(entry, fields):
+    return {field: ("true" if entry["posted"] else "false") if field == "posted" else
+            entry.get(field, "") or "" for field in fields}
+
+
+@unittest.skipUnless(HAS_FRICTIONLESS, "real Frictionless installation required")
+class RealFrictionlessImportTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        self.rule = self.root / "rule.json"
+        self.rule.write_text(json.dumps(FIXTURE["rule"]), encoding="utf-8")
+        self.purchase = self.root / "transactions.csv"
+        self.credit = self.root / "settlements.csv"
+        self.write_rows("transactions", self.purchase, FIXTURE["transactions"])
+        self.write_rows("settlements", self.credit, FIXTURE["settlements"])
+
+    def write_rows(self, kind, path, entries):
+        with path.open("w", encoding="utf-8", newline="") as stream:
+            writer = csv.DictWriter(stream, fieldnames=COLUMNS[kind])
+            writer.writeheader()
+            writer.writerows(csv_row(entry, COLUMNS[kind]) for entry in entries)
+
+    def run_audit(self, completeness=None):
+        return audit_from_csv(
+            self.rule, self.purchase, self.credit, source_system="erp",
+            completeness=completeness or {
+                "transactions_complete": True,
+                "settlements_complete": True,
+                "agreements_complete": True,
+            },
+        )
+
+    def test_import_real_frictionless_and_full_kernel_path(self):
+        report = self.run_audit()
+        self.assertEqual(report["status"], "EVIDENCED")
+        self.assertEqual(report["eligible_base_net"], "200000.00")
+        self.assertEqual(report["recorded_bonus_net"], "1500.00")
+        self.assertEqual(report["difference_net"], "2500.00")
+        self.assertEqual(report["fee_due_net"], "0.00")
+        self.assertEqual(report["imports"][0]["validation"], "frictionless+kernel")
+        self.assertEqual(report["imports"][0]["row_count"], 2)
+        self.assertEqual(report["imports"][1]["row_count"], 1)
+        self.assertEqual(report["completeness_source"], "operator_assertion_not_independently_verified")
+
+    def test_csv_source_reference_includes_file_hash_and_line(self):
+        data = import_csv(self.purchase, "transactions", source_system="erp")
+        self.assertTrue(data["entries"][0]["evidence_refs"][0].startswith(
+            "sha256:" + data["file_sha256"] + "#row=2"))
+        self.assertEqual(data["entries"][1]["evidence_refs"][0].split("#row=")[1], "3")
+
+    def test_incomplete_data_not_implied_complete_by_clean_csv(self):
+        report = self.run_audit({
+            "transactions_complete": False,
+            "settlements_complete": False,
+            "agreements_complete": False,
+        })
+        self.assertEqual(report["status"], "REVIEW_REQUIRED")
+        self.assertIn("TRANSACTIONS_INCOMPLETE", report["warnings"])
+
+    def test_wrong_csv_headers_rejected(self):
+        self.purchase.write_text("bad,header\n1,2\n", encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "header mismatch"):
+            self.run_audit()
+
+    def test_duplicate_header_rejected(self):
+        self.purchase.write_text("external_id,external_id\n1,2\n", encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "duplicate"):
+            self.run_audit()
+
+    def test_invalid_amount_rejected_without_repair(self):
+        txns = deepcopy(FIXTURE["transactions"])
+        txns[0]["amount_net"] = "12.000,99"
+        self.write_rows("transactions", self.purchase, txns)
+        with self.assertRaisesRegex(ValueError, "invalid decimal"):
+            self.run_audit()
+
+    def test_reversal_wrong_sign_rejected(self):
+        credits = deepcopy(FIXTURE["settlements"])
+        credits[0]["kind"] = "REVERSAL"
+        self.write_rows("settlements", self.credit, credits)
+        with self.assertRaisesRegex(ValueError, "negative amount"):
+            self.run_audit()
+
+    def test_duplicate_identity_rejected(self):
+        txns = deepcopy(FIXTURE["transactions"])
+        txns.append(deepcopy(txns[0]))
+        self.write_rows("transactions", self.purchase, txns)
+        with self.assertRaisesRegex(ValueError, "duplicate external identity"):
+            self.run_audit()
+
+    def test_boolean_string_rejected(self):
+        txns = deepcopy(FIXTURE["transactions"])
+        txns[0]["posted"] = "YES"
+        self.write_rows("transactions", self.purchase, txns)
+        # This helper converts truthy values to "true"; write a raw value.
+        text = self.purchase.read_text(encoding="utf-8").replace(",true,INVOICE", ",YES,INVOICE", 1)
+        self.purchase.write_text(text, encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "posted must be true/false"):
+            self.run_audit()
+
+    def test_partial_settlement_without_period_is_not_matched(self):
+        credits = deepcopy(FIXTURE["settlements"])
+        credits[0]["period_start"] = ""
+        credits[0]["period_end"] = ""
+        self.write_rows("settlements", self.credit, credits)
+        report = self.run_audit()
+        self.assertEqual(report["recorded_bonus_net"], "0.00")
+        self.assertIn("UNALLOCATED_SETTLEMENT", report["warnings"])
+
+    def test_false_completeness_structure_rejected(self):
+        with self.assertRaisesRegex(ValueError, "explicit boolean"):
+            self.run_audit({"transactions_complete": True})
+
+
+if __name__ == "__main__":
+    unittest.main()
