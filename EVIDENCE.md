@@ -35,3 +35,10 @@ Before any production release: dependency lock/SBOM, malware-safe upload archite
 Original deterministic Decimal-based calculation slice contains 19 synthetic regression tests; source remains part of v0.2.0. These tests are executed again within the 35-test CI suite above.
 
 This ledger is updated only with concrete executed SHA, run ID and observed result, never with an unexecuted planned test.
+
+## Reproducible distribution check on main
+
+**Verified commit:** [136a189c9f92433d54a5e5a2f8618bd419a4ad20](https://github.com/tonnestate/LowHangingFruitMe/commit/136a189c9f92433d54a5e5a2f8618bd419a4ad20)  
+**GitHub Actions:** [41502347254](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41502347254) — completed / success.
+
+On **both Python 3.11 and 3.12**, the runner actually installed the package with Frictionless, executed 35 tests, exercised both CLI paths, built an sdist and wheel, and installed the wheel in a fresh virtual environment followed by a kernel smoke test. These are packaging and synthetic software-verification results, not claims about live ERP connectivity, customer data or Docling model performance.
