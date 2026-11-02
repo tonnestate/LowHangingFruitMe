@@ -35,7 +35,7 @@ SETTLE_MAP = {
 def plan(file: Path, dataset: str, mapping: dict, *, sheet=None):
     return {
         "source_sha256": sha256(file.read_bytes()).hexdigest(),
-        "dataset": dataset, "mapping": mapping,
+        "dataset": dataset, "mapping": dict(mapping),
         "constants": {"currency": "EUR", "basis": "INVOICE"}
             if dataset == "transactions" else {"currency": "EUR"},
         "sheet_name": sheet, "decimal_format": "DE",
