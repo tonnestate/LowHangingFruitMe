@@ -170,3 +170,17 @@ Diese Projekte sind als **Implementierungsreferenz für einzelne Adapter**, nich
 - https://github.com/marselsel/Lexware-MCP-Server/blob/main/README.md
 - https://github.com/frappe/frappe-client (GitHub-Archivstatus)
 - https://github.com/Dolibarr/dolibarr/blob/develop/htdocs/api/README.md
+
+
+## 9. Reale Übernahmestände im Code (02.11.2026, Ergänzung)
+
+Diese aktuelle Statusmatrix ist maßgeblich, wo frühere Recherchetabellen einen noch nicht eingebauten Donor beschreiben.
+
+| Donor | Tatsächliche Einbindung | Evidenz | Noch nicht nachgewiesen |
+|---|---|---|---|
+| Frictionless | **ADOPTED FOR LOCAL CSV IMPORT** in `src/lowhangingfruitme/intake.py`, Runtime-Extra `lowhangingfruitme[import]` | Echter Frictionless-Validator in Python-3.11/3.12-CI ausgeführt; Run [41501902562](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41501902562) erfolgreich; dabei wurde Frictionless 5.21.0 installiert | Reale ERP-Exporte, XLSX, kundenspezifisches Mapping, vollständiger SBOM-/Lock-Check |
+| Docling | **ADAPTER IMPLEMENTED / REAL PDF CONVERSION NOT VALIDATED** in `src/lowhangingfruitme/documents.py`, Runtime-Extra `lowhangingfruitme[docs]` | Adapter-Syntax und die Fundstellen-Normalisierung an synthetischem DoclingDocument-ähnlichem Testobjekt geprüft | Echte Docling-Konvertierung, Scans/OCR, Abhängigkeiten/Modelle, Datenqualität, RAM/CPU und Sicherheitsisolation |
+| invoice2data / RapidFuzz | **RESEARCHED ONLY** | Quellcode, README und Lizenzen untersucht | Kein Runtime-Adapter und kein Leistungsbenchmark |
+| weclapp SDK / Lexware-Clients / ERP-Module | **REFERENCE ONLY** | Repositorien/Lizenzunterlagen untersucht | Kein produktiver Datensync, kein Testkonto, keine Marktplatzzulassung |
+
+Im aktuellen `pyproject.toml` sind Versionen als kompatible Bereiche spezifiziert, noch **nicht** als komplett deterministische Lockdatei. Eine gelungene CI-Installation mit Frictionless 5.21.0 ist keine Garantie, dass alle zukünftigen auflösbaren Versionen identisch funktionieren. Vor Produktionsrelease muss ein reproduzierbarer Lock-/SBOM-Prozess erstellt und auf dem Zielhost getestet werden.
