@@ -20,7 +20,8 @@ def settlement(external_id="CREDIT-2", amount="1000.00", **changes):
 class RebateEngineTests(unittest.TestCase):
     def test_f01_flat_rate_and_return_and_credit(self):
         result = audit(BASE)
-        self.assertEqual(result["status"], "EVIDENCED")
+        self.assertEqual(result["status"], "REVIEW_REQUIRED")
+        self.assertIn("UNVERIFIED_APPROVAL_CONTEXT", result["warnings"])
         self.assertEqual(result["eligible_base_net"], "200000.00")
         self.assertEqual(result["expected_bonus_net"], "4000.00")
         self.assertEqual(result["recorded_bonus_net"], "1500.00")

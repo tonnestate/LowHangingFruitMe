@@ -8,6 +8,9 @@ import tempfile
 import unittest
 
 from lowhangingfruitme.intake import COLUMNS, audit_from_csv, import_csv
+from datetime import datetime, timezone
+from hashlib import sha256
+from lowhangingfruitme.approval import issue_approval
 
 FIXTURE = json.loads((Path(__file__).parent / "fixtures" / "flat_rebate.json").read_text(encoding="utf-8"))
 HAS_FRICTIONLESS = importlib.util.find_spec("frictionless") is not None
@@ -25,6 +28,21 @@ class RealFrictionlessImportTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
+        self.contract = self.root / "contract.txt"
+        self.contract.write_text("SYNTHETIC R1 AGREEMENT: 2 percent bonus for 2025", encoding="utf-8")
+        self.proof_kwargs = {
+            "approval_receipt": issue_approval(
+                FIXTURE["rule"], key=b"test-approval-key-" * 3,
+                tenant_id="T-SYN-1", legal_entity_id="LE-SYN-1",
+                reviewer_id="REVIEWER-SYN-1", approval_id="APPROVAL-SYN-1",
+                source_revision_id="REV-SYN-1",
+                document_sha256=sha256(self.contract.read_bytes()).hexdigest(),
+                approved_at=datetime.now(timezone.utc),
+            ),
+            "approval_key": b"test-approval-key-" * 3,
+            "approval_scope": {"tenant_id": "T-SYN-1", "legal_entity_id": "LE-SYN-1"},
+            "contract_source_path": self.contract,
+        }
         self.rule = self.root / "rule.json"
         self.rule.write_text(json.dumps(FIXTURE["rule"]), encoding="utf-8")
         self.purchase = self.root / "transactions.csv"
@@ -41,7 +59,7 @@ class RealFrictionlessImportTests(unittest.TestCase):
     def run_audit(self, completeness=None):
         return audit_from_csv(
             self.rule, self.purchase, self.credit, source_system="erp",
-            controls=deepcopy(CONTROLS), completeness=completeness or {
+            **self.proof_kwargs, controls=deepcopy(CONTROLS), completeness=completeness or {
                 "transactions_complete": True,
                 "settlements_complete": True,
                 "agreements_complete": True,
@@ -53,6 +71,7 @@ class RealFrictionlessImportTests(unittest.TestCase):
         self.assertEqual(report["status"], "EVIDENCED")
         self.assertTrue(report["audit_executed"])
         self.assertTrue(report["readiness"]["audit_admissible"])
+        self.assertEqual(report["approval_verification"]["approval_integrity"], "HMAC_SHA256_VERIFIED")
         self.assertEqual(report["eligible_base_net"], "200000.00")
         self.assertEqual(report["recorded_bonus_net"], "1500.00")
         self.assertEqual(report["difference_net"], "2500.00")
@@ -131,7 +150,7 @@ class RealFrictionlessImportTests(unittest.TestCase):
     def test_no_control_totals_produce_diagnostics_not_claim(self):
         report = audit_from_csv(
             self.rule, self.purchase, self.credit, source_system="erp",
-            completeness={"transactions_complete": True,
+            **self.proof_kwargs, completeness={"transactions_complete": True,
                           "settlements_complete": True,
                           "agreements_complete": True},
         )
@@ -145,7 +164,7 @@ class RealFrictionlessImportTests(unittest.TestCase):
         controls["transactions"]["net_total"] = "999999.00"
         report = audit_from_csv(
             self.rule, self.purchase, self.credit, source_system="erp",
-            controls=controls,
+            **self.proof_kwargs, controls=controls,
             completeness={"transactions_complete": True,
                           "settlements_complete": True,
                           "agreements_complete": True},
@@ -156,6 +175,39 @@ class RealFrictionlessImportTests(unittest.TestCase):
         self.assertIsNone(report["difference_net"])
         self.assertEqual(report["fee_due_net"], "0.00")
         self.assertIn("NET_TOTAL_MISMATCH", report["warnings"])
+
+    def test_forged_true_flag_without_receipt_cannot_run_audit(self):
+        report = audit_from_csv(
+            self.rule, self.purchase, self.credit, source_system="erp",
+            completeness={"transactions_complete": True, "settlements_complete": True,
+                          "agreements_complete": True},
+            controls=deepcopy(CONTROLS),
+        )
+        self.assertFalse(report["audit_executed"])
+        self.assertIsNone(report["difference_net"])
+        self.assertIn("APPROVAL_RECEIPT_MISSING", report["warnings"])
+
+    def test_changed_contract_file_prevents_calculation(self):
+        self.contract.write_text("REPLACED CONTRACT CONTENT", encoding="utf-8")
+        report = self.run_audit()
+        self.assertFalse(report["audit_executed"])
+        self.assertIn("APPROVAL_INVALID", report["warnings"])
+
+    def test_tampered_signed_rate_does_not_pass(self):
+        json_rule = json.loads(self.rule.read_text(encoding="utf-8"))
+        json_rule["rate"] = "0.03"
+        self.rule.write_text(json.dumps(json_rule), encoding="utf-8")
+        report = self.run_audit()
+        self.assertFalse(report["audit_executed"])
+        self.assertIn("APPROVAL_INVALID", report["warnings"])
+
+    def test_wrong_tenant_cannot_reuse_receipt(self):
+        self.proof_kwargs["approval_scope"] = {
+            "tenant_id": "OTHER-TENANT", "legal_entity_id": "LE-SYN-1",
+        }
+        report = self.run_audit()
+        self.assertFalse(report["audit_executed"])
+        self.assertIn("APPROVAL_INVALID", report["warnings"])
 
     def test_false_completeness_structure_rejected(self):
         with self.assertRaisesRegex(ValueError, "explicit boolean"):

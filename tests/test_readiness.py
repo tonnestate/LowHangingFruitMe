@@ -3,6 +3,8 @@ from copy import deepcopy
 import json
 from pathlib import Path
 import unittest
+from datetime import datetime, timezone
+from lowhangingfruitme.approval import issue_approval
 
 from lowhangingfruitme.readiness import assess_readiness
 
@@ -10,13 +12,36 @@ BASE = json.loads((Path(__file__).parent / "fixtures" / "flat_rebate.json").read
 CONTROLS = json.loads((Path(__file__).parent / "fixtures" / "source_controls.json").read_text())
 
 
-def assess(base=None, controls=CONTROLS):
+KEY = b"synthetic-only-readiness-key-32bytes"
+CONTRACT_SHA = "f" * 64
+
+
+def assess(base=None, controls=CONTROLS, proof=True):
     payload = deepcopy(BASE if base is None else base)
-    return assess_readiness(payload["rule"], payload["transactions"],
-                            payload["settlements"], payload["completeness"], controls)
+    receipt = None
+    if proof and payload["rule"].get("approved") and payload["rule"].get("evidence_refs"):
+        receipt = issue_approval(
+            payload["rule"], key=KEY, tenant_id="T-SYN-1",
+            legal_entity_id="LE-SYN-1", reviewer_id="REVIEWER-SYN-1",
+            approval_id="APPROVAL-SYN-1", source_revision_id="REV-SYN-1",
+            document_sha256=CONTRACT_SHA,
+            approved_at=datetime.now(timezone.utc),
+        )
+    return assess_readiness(
+        payload["rule"], payload["transactions"], payload["settlements"],
+        payload["completeness"], controls,
+        approval_receipt=receipt, approval_key=KEY,
+        approval_scope={"tenant_id":"T-SYN-1","legal_entity_id":"LE-SYN-1"},
+        document_sha256=CONTRACT_SHA,
+    )
 
 
 class ReadinessTests(unittest.TestCase):
+    def test_unsigned_true_rule_remains_limited(self):
+        result = assess(proof=False)
+        self.assertEqual(result["status"], "LIMITED")
+        self.assertFalse(result["audit_admissible"])
+
     def test_ready_when_two_separately_asserted_control_totals_match(self):
         result = assess()
         self.assertEqual(result["status"], "READY_FOR_AUDIT")

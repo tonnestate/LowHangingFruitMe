@@ -28,8 +28,23 @@ jobs:
         run: python -m compileall -q src tests
       - name: Tests
         run: python -m unittest discover -s tests -v
-      - name: Existing kernel CLI smoke
-        run: python -m lowhangingfruitme.cli tests/fixtures/flat_rebate.json
+      - name: Existing kernel CLI smoke (unapproved calculation preview)
+        run: |
+          set +e
+          python -m lowhangingfruitme.cli tests/fixtures/flat_rebate.json > /tmp/lhfm-preview.json
+          status=$?
+          set -e
+          test "$status" -eq 1
+          grep -q 'UNVERIFIED_APPROVAL_CONTEXT' /tmp/lhfm-preview.json
+      - name: Generate ephemeral key for synthetic approval
+        run: |
+          python -c 'import os,secrets; open(os.environ["GITHUB_ENV"],"a").write("LHFM_APPROVAL_KEY_HEX="+secrets.token_hex(32)+"\n")'
+      - name: Generate synthetic approval receipt in CI workspace
+        run: |
+          python tests/scripts/make_synthetic_approval.py \
+            tests/fixtures/rule.json \
+            tests/fixtures/synthetic_agreement.txt \
+            /tmp/lhfm-ci-approval.json
       - name: Source import CLI smoke
         run: |
           lhfm audit-csv \
@@ -38,6 +53,10 @@ jobs:
             --settlements tests/fixtures/settlements.csv \
             --source-system erp \
             --controls tests/fixtures/source_controls.json \
+            --approval /tmp/lhfm-ci-approval.json \
+            --contract-source tests/fixtures/synthetic_agreement.txt \
+            --tenant-id T-SYN-1 \
+            --legal-entity-id LE-SYN-1 \
             --confirm-transactions-complete \
             --confirm-settlements-complete \
             --confirm-agreements-complete
@@ -49,4 +68,9 @@ jobs:
         run: |
           python -m venv /tmp/lowhangingfruitme-wheel
           /tmp/lowhangingfruitme-wheel/bin/python -m pip install dist/*.whl
-          /tmp/lowhangingfruitme-wheel/bin/python -m lowhangingfruitme.cli tests/fixtures/flat_rebate.json
+          set +e
+          /tmp/lowhangingfruitme-wheel/bin/python -m lowhangingfruitme.cli tests/fixtures/flat_rebate.json > /tmp/lhfm-wheel-preview.json
+          status=$?
+          set -e
+          test "$status" -eq 1
+          grep -q 'UNVERIFIED_APPROVAL_CONTEXT' /tmp/lhfm-wheel-preview.json
