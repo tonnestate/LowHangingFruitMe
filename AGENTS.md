@@ -30,3 +30,7 @@ Docling integration requires separate optional installation and real PDF accepta
 
 ## Registry requirement (v0.5.0)
 Canonical customer CSV audits require a registered ACTIVE approval with matching tenant/entity scope and a live reviewer grant. All final calculations must execute inside `ApprovalRegistry.guard()` so a concurrent revoke cannot commit between verification and completion. The future login/IdP must authenticate the actor; passing a reviewer ID to the library is not authentication. Never expose test-only reviewer provisioning or signer scripts.
+
+## Access tokens / auth facade (v0.6.0)
+
+All future customer-facing authentication **must** use `AccessTokenVerifier` and `AuthenticatedApprovalService` or an equally verified boundary. Never expose raw `ApprovalRegistry.register/revoke` or `issue_approval` as endpoints accepting arbitrary `authenticated_actor_id` strings. Accept only RS256 access tokens (`typ=at+jwt`) from configured HTTPS issuer/audience/client; never fetch token-provided key URLs, accept ID tokens, or infer tenant permissions from token claims. The DB reviewer grant must be checked before filesystem access and again within the row-locked calculation. Local CLI remains a synthetic/dev utility, not an HTTP backend.

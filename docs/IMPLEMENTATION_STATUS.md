@@ -1,4 +1,4 @@
-# Implementation status – LowHangingFruitMe v0.5.0
+# Implementation status – LowHangingFruitMe v0.6.0
 
 **Stand:** 02.11.2026. Produktentwicklung, kein kommerzieller oder produktiver Betrieb. Der aktuelle Revisionsnachweis steht in [EVIDENCE.md](../EVIDENCE.md); keine behaupteten Live-Kunden- oder ERP-Erfolge.
 
@@ -18,13 +18,15 @@
 
 **Freigaberegister v0.5.0:** MariaDB-InnoDB-Tabellen für tenant-/gesellschaftsgebundene Reviewer-Grants, unveränderlichen Genehmigungsinhalt, ACTIVE/REVOKED-Zustand und ISSUED/REVOKED-Ereignisse; SQL-basierter Statusabgleich und Rollenscope bei Registrierung und unmittelbar am Audit-Dispatch. Gleichzeitiger Widerruf wartet auf den transaktionalen `SELECT ... FOR UPDATE`-Abschnitt des Audits. Ohne Registry erzeugt das CSV-Interface keine finalen Geldbefunde.
 
+**JWT-Authentifizierung v0.6.0:** Standardsbasierte RS256-Prüfung von OAuth-Access-Tokens (nicht ID-Tokens) mit vordefinierter issuer-/audience-/client-ID-Bindung, fester öffentlicher JWKS und maximaler Gültigkeitsdauer. `AuthenticatedApprovalService` koppelt die verifizierte Tokenidentität mit aktiven MariaDB-Reviewer-Grants, schränkt Freigabe/Widerruf auf konkrete Rechte ein und führt bei Audit-Ausführung einen erneuten Tokencheck im bereits transaktional geschützten Dispatch aus. Die echte RSA-/MariaDB-Kombination ist mit synthetisch generierten Schlüsseln in CI getestet. Kein realer Identity-Provider verbunden.
+
 ## Ungeprüfte Aspekte und klare Grenzen
 
 - GitHub Actions ist der tatsächliche Testnachweis; nicht jede neu geschriebene Testdatei wurde lokal ausgeführt. Ergebnisse mit Run-ID in EVIDENCE.md festhalten.
 - Docling wurde noch nicht anhand echter annotierter Vertragsdokumente in einer isolierten Produktionsumgebung benchmarkgetestet. Docling selbst ist noch kein Beleg für ein vollständig funktionierendes Dokumentenprodukt.
 - Kein XLSX-/XML-Importer oder kundenspezifisches Spaltenmapping; Eingaben müssen aktuell das veröffentlichte kanonische CSV-Schema erfüllen.
 - Kein unabhängiger Nachweis für Vollständigkeit der Einkaufsperiode und der Vertragsnachträge. Die drei Pflichtflags und ERP-Kontrollsummen sind externe Angaben und niemals ein algorithmischer Nachweis. Der neue Gate-Status `READY_FOR_AUDIT` bestätigt ausschließlich Konsistenz mit übergebenen Kontrollen.
-- **Noch keine produktiv authentifizierte Prüferidentität.** DB-Grants und eindeutige Genehmigungs-IDs mit Widerruf wurden ergänzt, jedoch ohne echte IdP-Anmeldung, administratives Provisioning oder belastbare globale Keyrotation. Die HMAC-Signatur belegt nur, dass die Daten mit dem verwendeten Secret signiert wurden; kein gesetzlicher oder externer Identitätsnachweis. Die lokale CLI nimmt Tenant-/Gesellschaftskennung als Parameter und ist kein sicheres Kundentor.
+- **Verifizierte JWT-Subjektidentität ist implementiert, aber noch keine produktive IdP-Anmeldung.** DB-Grants und Widerruf sind vorhanden; externe Benutzeranlage/-sperrung, administratives Provisioning, JWKS-Rotation und Keyrotation fehlen. Der direkte lokale CLI-Testweg ist weiterhin ausdrücklich kein authentifizierter Kundendienst. Die HMAC-Signatur belegt nur, dass die Daten mit dem verwendeten Secret signiert wurden; kein gesetzlicher oder externer Identitätsnachweis. Die lokale CLI nimmt Tenant-/Gesellschaftskennung als Parameter und ist kein sicheres Kundentor.
 - Kein Tenant-Login, Kundenportal, öffentlicher API-Service, Vertragsannahme, gesicherter Upload, Kundenspeicherung oder Download-Workflow.
 - Keine Live-Lexware-/weclapp-/Odoo-/Frappe-/Dolibarr-Schnittstellen, keine Marktplatzfreigabe.
 - Keine Regelinterpretations-/Freigabeoberfläche, keine automatische rechtliche Bewertung, keine juristische Forderungsdurchsetzung.

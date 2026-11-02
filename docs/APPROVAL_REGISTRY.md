@@ -38,3 +38,7 @@ The synthetic approval generator now registers the receipt in MariaDB before the
 CI only tests synthetic records and DB row locking. Business authorization and actual credential assurance are **not** tested until a real identity provider is integrated. A compromised signing key or a trusted caller passing a false identity defeats these administrative checks. Database owner/superuser also has the technical capability to rewrite records; database audit/access controls are a separate security requirement.
 
 Future API/portal cannot be called production-safe until these integration gaps close.
+
+## v0.6.0 authenticated calling boundary
+
+`AuthenticatedApprovalService` uses an RFC 9068 JWT access verifier to derive stable user identity before calling the existing registry. The original low-level registry API still accepts a trusted actor string **for local tools and tests**; it must not be exposed directly through HTTP. The service uses a verified JWT scope plus active scoped MariaDB grant to authorize approve/revoke, and executes an authenticated audit with token/DB rechecks during dispatch. See [AUTHENTICATION.md](AUTHENTICATION.md). There is no production IdP connected or admin grant-provisioning UI.

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.6.0 – signed access token and scoped approval service (development; 2026-11-02)
+
+- Added PyJWT[crypto] RSA/RS256 JWT access-token verification following the RFC 9068 at+jwt token profile, with configured issuer, audience, trusted public JWKS, client allowlist and expiry checks.
+- Rejected token-directed key URLs, untrusted key IDs, untyped/ID JWTs, expired and overlong credentials, missing claims and forged payloads.
+- Added authenticated approval service methods to issue/register/revoke a contract approval and execute canonical CSV audits under active MariaDB reviewer grants.
+- Restricted authenticated auditing to the original contract reviewer and reverified the access token inside the existing row-locked calculation dispatch.
+- Added generated-in-memory RSA cryptographic tests and real MariaDB-backed service integration tests.
+- Still **no deployed IdP, HTTP API, browser login, enterprise user lifecycle, live provider test, secured uploads, external ERP or billing**.
+
 ## 0.5.0 – persistent approval registry and dispatch lock (development; 2026-11-02)
 
 - Added MariaDB/InnoDB tables for scoped reviewer grants, unique approval IDs, immutable approval digests, ACTIVE/REVOKED status and append-only ISSUE/REVOKE events.
