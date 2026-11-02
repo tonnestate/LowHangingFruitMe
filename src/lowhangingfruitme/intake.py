@@ -41,14 +41,14 @@ def _file(path: str | Path, suffix: str, limit: int) -> tuple[Path, str]:
 
 def _validate_with_frictionless(path: Path, fields: tuple[str, ...]) -> None:
     try:
-        from frictionless import Resource
+        from frictionless import Field, Resource, Schema
     except ImportError as exc:
         raise RuntimeError(
             "Frictionless validation is required: install lowhangingfruitme[import]"
         ) from exc
     # Metadata/shape validation is provided by the real Frictionless library.
     # Business-typed values are *also* verified by Entry.load below.
-    schema = {"fields": [{"name": name, "type": "string"} for name in fields]}
+    schema = Schema(fields=[Field(name=name, type="string") for name in fields])
     try:
         resource = Resource(path=str(path), schema=schema, encoding="utf-8-sig")
         report = resource.validate(limit_errors=20)
