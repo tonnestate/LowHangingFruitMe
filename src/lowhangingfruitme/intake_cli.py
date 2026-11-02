@@ -8,6 +8,7 @@ from .documents import extract_pdf
 from .intake import audit_from_csv
 from .approval import key_from_environment
 from .approval_registry import ApprovalRegistry
+from .universal_import import inspect_source, normalize_source
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="LowHangingFruitMe source intake")
@@ -27,6 +28,16 @@ def main() -> int:
     csv_cmd.add_argument("--confirm-agreements-complete", action="store_true")
     pdf_cmd = sub.add_parser("extract-pdf", help="Extract cited PDF segments with Docling")
     pdf_cmd.add_argument("--file", required=True, type=Path)
+    inspect_cmd = sub.add_parser("inspect-source", help="Inspect CSV, XLSX, invoice XML or document")
+    inspect_cmd.add_argument("--file", required=True, type=Path)
+    inspect_cmd.add_argument("--dataset", choices=("transactions", "settlements"))
+    inspect_cmd.add_argument("--sheet")
+    norm_cmd = sub.add_parser("normalize-source", help="Write reviewed canonical CSV without replacing source")
+    norm_cmd.add_argument("--file", required=True, type=Path)
+    norm_cmd.add_argument("--dataset", required=True, choices=("transactions", "settlements"))
+    norm_cmd.add_argument("--source-system", required=True)
+    norm_cmd.add_argument("--plan", required=True, type=Path)
+    norm_cmd.add_argument("--output", required=True, type=Path)
     args = parser.parse_args()
     try:
         if args.action == "audit-csv":
@@ -46,8 +57,20 @@ def main() -> int:
                     "agreements_complete": args.confirm_agreements_complete,
                 },
             )
-        else:
+        elif args.action == "extract-pdf":
             output = extract_pdf(args.file)
+        elif args.action == "inspect-source":
+            output = inspect_source(args.file, dataset=args.dataset, sheet_name=args.sheet)
+        else:
+            mapping_plan = json.loads(args.plan.read_text(encoding="utf-8"))
+            report = normalize_source(args.file, dataset=args.dataset,
+                                      source_system=args.source_system, plan=mapping_plan)
+            canonical = report.pop("canonical_csv")
+            if not args.output.parent.is_dir() or args.output.is_symlink():
+                raise ValueError("output directory missing or output is a symlink")
+            with args.output.open("x", encoding="utf-8", newline="") as target:
+                target.write(canonical)
+            output = {**report, "canonical_file_written": str(args.output)}
     except (ValueError, KeyError, TypeError, OSError, RuntimeError, json.JSONDecodeError) as exc:
         print(f"intake rejected: {exc}", file=sys.stderr)
         return 2
