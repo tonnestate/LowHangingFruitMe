@@ -11,6 +11,7 @@ from pathlib import Path
 import sys
 
 from lowhangingfruitme.approval import issue_approval, key_from_environment
+from lowhangingfruitme.approval_registry import ApprovalRegistry
 
 if __name__ == "__main__":
     rule_path, contract_path, output_path = map(Path, sys.argv[1:4])
@@ -22,5 +23,11 @@ if __name__ == "__main__":
         source_revision_id="REV-SYN-1",
         document_sha256=sha256(contract_path.read_bytes()).hexdigest(),
         approved_at=datetime.now(timezone.utc),
+    )
+    ApprovalRegistry.from_environment().register(
+        receipt, rule=rule, key=key_from_environment(),
+        document_sha256=sha256(contract_path.read_bytes()).hexdigest(),
+        tenant_id="T-SYN-1", legal_entity_id="LE-SYN-1",
+        authenticated_actor_id="REVIEWER-SYN-1",
     )
     output_path.write_text(json.dumps(receipt, indent=2) + "\n", encoding="utf-8")
