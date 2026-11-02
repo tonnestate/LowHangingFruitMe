@@ -13,6 +13,27 @@ jobs:
     name: Kernel and Frictionless (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    services:
+      mariadb:
+        image: mariadb:11.4
+        env:
+          MARIADB_ROOT_PASSWORD: testing-root-only
+          MARIADB_DATABASE: lhfm_test
+          MARIADB_USER: lhfm
+          MARIADB_PASSWORD: testing-user-only
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "healthcheck.sh --connect --innodb_initialized"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      LHFM_DB_HOST: 127.0.0.1
+      LHFM_DB_PORT: "3306"
+      LHFM_DB_USER: lhfm
+      LHFM_DB_PASSWORD: testing-user-only
+      LHFM_DB_NAME: lhfm_test
     strategy:
       fail-fast: false
       matrix:
@@ -23,7 +44,9 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install with real Frictionless validator
-        run: python -m pip install -e ".[import]"
+        run: python -m pip install -e ".[import,registry]"
+      - name: Create isolated registry tables and synthetic reviewer
+        run: python tests/scripts/setup_approval_registry.py
       - name: Compile
         run: python -m compileall -q src tests
       - name: Tests
