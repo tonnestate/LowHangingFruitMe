@@ -7,6 +7,7 @@ import sys
 from .documents import extract_pdf
 from .intake import audit_from_csv
 from .approval import key_from_environment
+from .approval_registry import ApprovalRegistry
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="LowHangingFruitMe source intake")
@@ -37,6 +38,7 @@ def main() -> int:
                 approval_scope={"tenant_id": args.tenant_id, "legal_entity_id": args.legal_entity_id}
                     if args.approval else None,
                 contract_source_path=args.contract_source,
+                approval_registry=ApprovalRegistry.from_environment() if args.approval else None,
                 controls=json.loads(args.controls.read_text(encoding="utf-8")) if args.controls else None,
                 completeness={
                     "transactions_complete": args.confirm_transactions_complete,
