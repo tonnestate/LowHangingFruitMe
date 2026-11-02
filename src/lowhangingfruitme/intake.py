@@ -9,7 +9,7 @@ import csv
 from hashlib import sha256
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from .rebate import Entry, BonusRule, audit
 from .readiness import assess_readiness
@@ -145,6 +145,8 @@ def audit_from_csv(
     approval_scope: dict[str, str] | None = None,
     contract_source_path: str | Path | None = None,
     approval_registry: ApprovalRegistry | None = None,
+    approval_actor_id: str | None = None,
+    reauthorize_before_dispatch: Callable[[], None] | None = None,
 ) -> dict[str, Any]:
     """End-to-end local CSV -> validated dataset -> existing audit() function.
 
@@ -221,7 +223,10 @@ def audit_from_csv(
             document_sha256=document_sha256,
             tenant_id=approval_scope["tenant_id"],
             legal_entity_id=approval_scope["legal_entity_id"],
+            acting_reviewer_id=approval_actor_id,
         ) as dispatch_approval:
+            if reauthorize_before_dispatch is not None:
+                reauthorize_before_dispatch()
             result = audit(payload)
     except (PermissionError, ValueError) as exc:
         readiness["status"] = "NOT_READY"
