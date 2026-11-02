@@ -22,12 +22,12 @@ CONTROLS = json.loads((ROOT / "source_controls.json").read_text(encoding="utf-8"
 TX_MAP = {
     "external_id": "Belegnummer", "supplier_id": "Kreditor",
     "date": "Belegdatum", "amount_net": "Nettobetrag",
-    "posted": "Gebucht",
+    "posted": "Gebucht", "kind": "Belegart",
 }
 SETTLE_MAP = {
     "external_id": "Belegnummer", "supplier_id": "Kreditor",
     "date": "Belegdatum", "amount_net": "Nettobetrag",
-    "posted": "Gebucht", "agreement_id": "Vertragsnr",
+    "posted": "Gebucht", "kind": "Belegart", "agreement_id": "Vertragsnr",
     "period_start": "Bonus_von", "period_end": "Bonus_bis",
 }
 
@@ -36,8 +36,8 @@ def plan(file: Path, dataset: str, mapping: dict, *, sheet=None):
     return {
         "source_sha256": sha256(file.read_bytes()).hexdigest(),
         "dataset": dataset, "mapping": mapping,
-        "constants": {"currency": "EUR", "kind": "PURCHASE", "basis": "INVOICE"}
-            if dataset == "transactions" else {"currency": "EUR", "kind": "CREDIT"},
+        "constants": {"currency": "EUR", "basis": "INVOICE"}
+            if dataset == "transactions" else {"currency": "EUR"},
         "sheet_name": sheet, "decimal_format": "DE",
         "date_format": "DE", "boolean_format": "DE",
         "reviewed_by": "synthetic-test-reviewer", "confirmed": True,
@@ -51,15 +51,15 @@ class UniversalMappingTests(unittest.TestCase):
         self.root = Path(self.tmp.name)
         self.txn = self.root / "Einkauf.csv"
         self.txn.write_text(
-            "Belegnummer;Kreditor;Belegdatum;Nettobetrag;Gebucht;Zusatzinfo\n"
-            "INV-001;SUP-1;10.05.2025;210.000,00;Ja;unmapped\n"
-            "RET-001;SUP-1;10.07.2025;-10.000,00;Ja;unmapped\n",
+            "Belegnummer;Kreditor;Belegdatum;Nettobetrag;Gebucht;Belegart;Zusatzinfo\n"
+            "INV-001;SUP-1;10.05.2025;210.000,00;Ja;PURCHASE;unmapped\n"
+            "RET-001;SUP-1;10.07.2025;-10.000,00;Ja;RETURN;unmapped\n",
             encoding="utf-8",
         )
         self.credits = self.root / "Gutschriften.csv"
         self.credits.write_text(
-            "Belegnummer;Kreditor;Belegdatum;Nettobetrag;Gebucht;Vertragsnr;Bonus_von;Bonus_bis\n"
-            "CREDIT-001;SUP-1;15.01.2026;1.500,00;Ja;AGR-1;01.01.2025;31.12.2025\n",
+            "Belegnummer;Kreditor;Belegdatum;Nettobetrag;Gebucht;Belegart;Vertragsnr;Bonus_von;Bonus_bis\n"
+            "CREDIT-001;SUP-1;15.01.2026;1.500,00;Ja;CREDIT;AGR-1;01.01.2025;31.12.2025\n",
             encoding="utf-8",
         )
 
@@ -99,7 +99,7 @@ class UniversalMappingTests(unittest.TestCase):
 
     def test_changed_file_hash_prevents_reusing_mapping(self):
         p = plan(self.txn, "transactions", TX_MAP)
-        self.txn.write_text(self.txn.read_text() + "OTHER;SUP-1;11.07.2025;1,00;Ja;x\n")
+        self.txn.write_text(self.txn.read_text() + "OTHER;SUP-1;11.07.2025;1,00;Ja;PURCHASE;x\n")
         with self.assertRaisesRegex(ValueError, "bound to this exact"):
             normalize_source(self.txn, dataset="transactions", source_system="erp", plan=p)
 
@@ -131,8 +131,8 @@ class UniversalMappingTests(unittest.TestCase):
 
     def test_ambiguous_synonyms_are_proposed_as_multiple(self):
         self.txn.write_text(
-            "Belegnummer;invoice_number;Kreditor;Belegdatum;Nettobetrag;Gebucht\n"
-            "1;2;SUP-1;10.05.2025;100,00;Ja\n", encoding="utf-8",
+            "Belegnummer;invoice_number;Kreditor;Belegdatum;Nettobetrag;Gebucht;Belegart\n"
+            "1;2;SUP-1;10.05.2025;100,00;Ja;PURCHASE\n", encoding="utf-8",
         )
         info = inspect_source(self.txn, dataset="transactions")
         self.assertEqual(len(info["proposed_mapping"]["external_id"]), 2)
@@ -178,8 +178,8 @@ class UniversalMappingTests(unittest.TestCase):
         ws = wb.active
         ws.title = "ERP_Export"
         ws.append(list(TX_MAP.values()))
-        ws.append(["INV-001", "SUP-1", "10.05.2025", "210.000,00", "Ja"])
-        ws.append(["RET-001", "SUP-1", "10.07.2025", "-10.000,00", "Ja"])
+        ws.append(["INV-001", "SUP-1", "10.05.2025", "210.000,00", "Ja", "PURCHASE"])
+        ws.append(["RET-001", "SUP-1", "10.07.2025", "-10.000,00", "Ja", "RETURN"])
         excel = self.root / "ERP.xlsx"
         wb.save(excel)
         info = inspect_source(excel, dataset="transactions", sheet_name="ERP_Export")
@@ -196,7 +196,7 @@ class UniversalMappingTests(unittest.TestCase):
         wb = Workbook()
         ws = wb.active
         ws.append(list(TX_MAP.values()))
-        ws.append(["INV-001", "SUP-1", "10.05.2025", "=100+1", "Ja"])
+        ws.append(["INV-001", "SUP-1", "10.05.2025", "=100+1", "Ja", "PURCHASE"])
         excel = self.root / "ERP.xlsx"
         wb.save(excel)
         with self.assertRaisesRegex(ValueError, "formulas"):
