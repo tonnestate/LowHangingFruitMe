@@ -7,13 +7,12 @@ network API in this package.
 """
 from __future__ import annotations
 
-from hashlib import sha256
-import json
+from datetime import datetime, timezone
 import os
 from pathlib import Path
 from typing import Any
 
-from .approval import key_from_environment
+from .approval import issue_approval, key_from_environment
 from .approval_registry import ApprovalRegistry
 from .auth import AccessTokenVerifier, VerifiedPrincipal
 from .intake import audit_from_csv
@@ -58,6 +57,36 @@ class AuthenticatedApprovalService:
             actor_id=actor.subject,
         )
         return actor
+
+    def approve(
+        self, access_token: str, *, rule: dict[str, Any],
+        document_sha256: str, source_revision_id: str,
+        approval_id: str, tenant_id: str, legal_entity_id: str,
+    ) -> dict[str, str]:
+        """Sign and register a rule only after real JWT and DB grant validation.
+
+        The caller must supply the digest of a trusted original document.
+        A verified document registry and immutable uploads are not yet built.
+        """
+        actor = self._verified_actor(
+            access_token, scope="lhfm:approval:write",
+            tenant_id=tenant_id, legal_entity_id=legal_entity_id,
+        )
+        receipt = issue_approval(
+            rule, key=self.approval_key,
+            tenant_id=tenant_id, legal_entity_id=legal_entity_id,
+            reviewer_id=actor.subject, reviewer_role="contract_reviewer",
+            approval_id=approval_id, source_revision_id=source_revision_id,
+            document_sha256=document_sha256,
+            approved_at=datetime.now(timezone.utc),
+        )
+        self.registry.register(
+            receipt, rule=rule, key=self.approval_key,
+            document_sha256=document_sha256,
+            tenant_id=tenant_id, legal_entity_id=legal_entity_id,
+            authenticated_actor_id=actor.subject,
+        )
+        return receipt
 
     def register(
         self, access_token: str, *, receipt: dict[str, Any],
