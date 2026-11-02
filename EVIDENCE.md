@@ -1,11 +1,37 @@
-# Release and verification evidence
+# Evidence ledger – LowHangingFruitMe
 
-## Build 0.2.0 – source intake
+Last updated: 2026-11-02. This is a record of observed implementation and CI results, not a production certification.
 
-Repository source inspected on GitHub main at commit 9b2ebd53f1cfb3b8c57c82cc4f68142c40c57ccd before implementation.
+## v0.2.0 – validated source intake
 
-**Implemented in source:** direct Frictionless validation invoked for CSV imports; strict header/type/sign checking; file/row SHA256 evidence; local Docling PDF segment extraction and page evidence; manual rule approval boundary; optional dependency groups and CLI; regression tests; CI workflow.
+**GitHub commit tested:** [a227001d683677db928e48bd58c199cc37d9c3e2](https://github.com/tonnestate/LowHangingFruitMe/commit/a227001d683677db928e48bd58c199cc37d9c3e2)  
+**Observed CI:** [GitHub Actions run 41501902562](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41501902562)  
+**Result:** completed / success on the feature branch prior to fast-forward to main.
 
-**Evidence pending:** GitHub Actions test result for new import slice, full dependency lock/SBOM, actual Docling conversion using annotated real PDF, signed client datasets, production integration, security audit, customer acceptance, contract review.
+| Executed check | Python 3.11 | Python 3.12 |
+|---|---|---|
+| Install package with actual Frictionless dependency | PASS | PASS |
+| Python compileall on source and tests | PASS | PASS |
+| unittest discover: 35 tests | PASS | PASS |
+| Existing JSON rebate-kernel CLI smoke | PASS | PASS |
+| Canonical CSV -> Frictionless -> rebate engine CLI smoke | PASS | PASS |
 
-A commit is not a successful execution and an imported donor is not a proven production integration. Update this file only with actual run ID, tested commit SHA, command, environment and result. Do not call the entire product production-ready while the gates are pending.
+**Observed synthetic sample result:** eligible base EUR 200000.00, expected bonus EUR 4000.00, recorded settlements EUR 1500.00, calculated difference EUR 2500.00; automatic billable success fee EUR 0.00. The data are synthetic; these results are **not real recovered money**.
+
+**Defect detection in CI:** Frictionless integration first failed because an untyped schema dict was passed in place of an internal Schema object. A second failure revealed the field-type constructor requirement. A third failure was the Frictionless unsafe-absolute-path protection. Fixed by using Schema.from_descriptor and a relative resource path with an explicit basepath. The successful run above validates the actual corrected path on both Python versions.
+
+## Verification boundaries
+
+- PDF/Docling: source adapter and mocked document-normalization tests passed, but no real-model or real-document Docling conversion has been executed or benchmarked in this run. Model licensing, OCR quality and runtime resource use remain open.
+- CSV: strict canonical format tested with actual Frictionless, but no XLSX, XML, external ERP format, production data or customer-specific column mapping.
+- Completeness flags remain operator/customer assertions. They are not independent ERP ledger completeness evidence.
+- No secure multi-tenant customer portal, HTTP API, ERP integration, deployment, billing ledger or RDG/legal approval.
+- No real-money recovery and no claim of commercial success.
+
+Before any production release: dependency lock/SBOM, malware-safe upload architecture, tenant and access isolation, realistic documents, invoice provenance, financial subject-matter acceptance and legal review.
+
+## v0.1.0 – core calculation
+
+Original deterministic Decimal-based calculation slice contains 19 synthetic regression tests; source remains part of v0.2.0. These tests are executed again within the 35-test CI suite above.
+
+This ledger is updated only with concrete executed SHA, run ID and observed result, never with an unexecuted planned test.
