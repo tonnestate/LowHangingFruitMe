@@ -54,7 +54,7 @@ lhfm audit-csv \
   --rule tests/fixtures/rule.json \
   --transactions tests/fixtures/transactions.csv \
   --settlements tests/fixtures/settlements.csv \
-  --source-system sample-erp \
+  --source-system erp \
   --controls tests/fixtures/source_controls.json \
   --confirm-transactions-complete \
   --confirm-settlements-complete \

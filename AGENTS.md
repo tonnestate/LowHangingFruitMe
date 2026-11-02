@@ -22,6 +22,6 @@ Read actual GitHub main HEAD and these files before editing: docs/CONCEPT.md, do
     python -m unittest discover -s tests -v
     python -m compileall -q src tests
     python -m lowhangingfruitme.cli tests/fixtures/flat_rebate.json
-    lhfm audit-csv --rule tests/fixtures/rule.json --transactions tests/fixtures/transactions.csv --settlements tests/fixtures/settlements.csv --source-system sample-erp --confirm-transactions-complete --confirm-settlements-complete --confirm-agreements-complete
+    lhfm audit-csv --rule tests/fixtures/rule.json --transactions tests/fixtures/transactions.csv --settlements tests/fixtures/settlements.csv --source-system erp --confirm-transactions-complete --confirm-settlements-complete --confirm-agreements-complete
 
 Docling integration requires separate optional installation and real PDF acceptance on the actual deployment host.
