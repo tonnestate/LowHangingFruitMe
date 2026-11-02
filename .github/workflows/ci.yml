@@ -1,18 +1,42 @@
-name: Python rebate kernel tests
+name: Python quality checks
 on:
   push:
+    branches: [main, "feat/**"]
   pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
 jobs:
-  test:
+  kernel-and-csv:
+    name: Kernel and Frictionless (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-      - name: Install package
-        run: python -m pip install -e .
-      - name: Unit tests
+          python-version: ${{ matrix.python-version }}
+      - name: Install with real Frictionless validator
+        run: python -m pip install -e ".[import]"
+      - name: Compile
+        run: python -m compileall -q src tests
+      - name: Tests
         run: python -m unittest discover -s tests -v
-      - name: Fixture smoke test
+      - name: Existing kernel CLI smoke
         run: python -m lowhangingfruitme.cli tests/fixtures/flat_rebate.json
+      - name: Source import CLI smoke
+        run: |
+          lhfm audit-csv \
+            --rule tests/fixtures/rule.json \
+            --transactions tests/fixtures/transactions.csv \
+            --settlements tests/fixtures/settlements.csv \
+            --source-system sample-erp \
+            --confirm-transactions-complete \
+            --confirm-settlements-complete \
+            --confirm-agreements-complete

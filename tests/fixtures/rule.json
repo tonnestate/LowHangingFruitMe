@@ -1,0 +1,16 @@
+{
+  "rule_id": "RULE-2025-001",
+  "revision": "1",
+  "kind": "FLAT_RATE",
+  "supplier_id": "SUP-1",
+  "agreement_id": "AGR-1",
+  "currency": "EUR",
+  "period_start": "2025-01-01",
+  "period_end": "2025-12-31",
+  "basis": "INVOICE",
+  "rate": "0.02",
+  "approved": true,
+  "evidence_refs": [
+    "agreement.pdf#page=2&clause=4"
+  ]
+}

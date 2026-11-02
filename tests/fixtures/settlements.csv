@@ -1,0 +1,2 @@
+external_id,supplier_id,date,currency,amount_net,kind,posted,agreement_id,period_start,period_end
+CREDIT-001,SUP-1,2026-01-15,EUR,1500.00,CREDIT,true,AGR-1,2025-01-01,2025-12-31

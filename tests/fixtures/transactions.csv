@@ -1,0 +1,3 @@
+external_id,supplier_id,date,currency,amount_net,kind,posted,basis
+INV-001,SUP-1,2025-05-10,EUR,210000.00,PURCHASE,true,INVOICE
+RET-001,SUP-1,2025-07-10,EUR,-10000.00,RETURN,true,INVOICE
