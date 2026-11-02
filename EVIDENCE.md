@@ -103,3 +103,12 @@ On Python **3.11 and 3.12**, **136 tests** passed per runner, including real Fri
 The new `inspect-source`/`normalize-source` CLI commands were added in a later commit and are subject to a subsequent full CI run and explicit CLI test. This evidence line does **not** claim those later commands were part of run 41532836887.
 
 **No real ERP-system or third-party SOC 2 verification**: DistroAgents' reference to ERP compatibility and SOC 2 Type II on their website does not transfer to LowHangingFruitMe. Only offline local importer adapters were tested, with synthetic records and reviewer assertions.
+
+### v0.7.0 final verification including public intake commands
+
+**Final code and documentation commit:** [cfe53ea53d75340726a2240914fe19c875e54c0d](https://github.com/tonnestate/LowHangingFruitMe/commit/cfe53ea53d75340726a2240914fe19c875e54c0d)  
+**GitHub Actions:** [41533241153](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41533241153) — completed / success on main.
+
+**140 tests passed on each of Python 3.11 and 3.12.** The expanded tests explicitly invoke `lhfm inspect-source` and `lhfm normalize-source` as subprocesses against synthetic German-format ERP exports, check source-hash-bound reviewed mapping and refusal to overwrite existing output. The workflows also passed existing MariaDB/Frictionless audit smoke, wheel/sdist build and fresh-wheel installation.
+
+No vendor-specific P21/Eclipse/NetSuite/SAP/Infor/Sage/Lexware/Odoo connector tests, real invoice XML parsing, external SOC 2 attestation, or production customer document imports were executed in this run.
