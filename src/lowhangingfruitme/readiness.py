@@ -12,6 +12,7 @@ import json
 from typing import Any
 
 from .rebate import BonusRule, Entry, _decimal
+from .approval import verify_approval
 
 CONTROL_KEYS = frozenset(("source_system", "supplier_id", "agreement_id", "period_start",
                           "period_end", "transactions", "settlements"))
@@ -44,6 +45,10 @@ def assess_readiness(
     settlement_rows: list[dict[str, Any]],
     completeness: dict[str, bool],
     controls: dict[str, Any] | None = None,
+    *, approval_receipt: dict[str, Any] | None = None,
+    approval_key: bytes | None = None,
+    approval_scope: dict[str, str] | None = None,
+    document_sha256: str | None = None,
 ) -> dict[str, Any]:
     """Assess one-supplier/one-agreement/one-period technical input readiness.
 
@@ -63,6 +68,23 @@ def assess_readiness(
     issues: list[dict[str, str]] = []
     summary: dict[str, dict[str, str | int | bool | None]] = {}
 
+    verified_approval: dict[str, str] | None = None
+    if approval_receipt is None:
+        issues.append(_issue("APPROVAL_RECEIPT_MISSING", "approval_receipt", "WARNING",
+                             "The rule approval flag is not cryptographic authorization"))
+    elif approval_key is None or approval_scope is None or document_sha256 is None:
+        issues.append(_issue("APPROVAL_VERIFICATION_UNAVAILABLE", "approval_receipt",
+                             "BLOCKER", "Trusted key, company scope and contract bytes are required"))
+    else:
+        try:
+            verified_approval = verify_approval(
+                approval_receipt, rule_raw, key=approval_key,
+                tenant_id=approval_scope["tenant_id"],
+                legal_entity_id=approval_scope["legal_entity_id"],
+                document_sha256=document_sha256,
+            )
+        except (ValueError, KeyError, TypeError) as exc:
+            issues.append(_issue("APPROVAL_INVALID", "approval_receipt", "BLOCKER", str(exc)))
     if not rule.approved:
         issues.append(_issue("RULE_NOT_APPROVED", "rule.approved", "BLOCKER",
                              "Contract rule must be approved before an audit"))
@@ -158,6 +180,9 @@ def assess_readiness(
         "controls": controls,
         "checks": summary,
         "completeness": completeness,
+        "approval_id": verified_approval["approval_id"] if verified_approval else None,
+        "approval_rule_sha256": verified_approval["rule_sha256"] if verified_approval else None,
+        "approval_document_sha256": verified_approval["document_sha256"] if verified_approval else None,
     }
     digest = sha256(json.dumps(evidence, sort_keys=True, separators=(",", ":"),
                                ensure_ascii=False).encode()).hexdigest()
@@ -165,6 +190,7 @@ def assess_readiness(
         "gate_version": "0.3.0",
         "status": status, "audit_admissible": status == "READY_FOR_AUDIT",
         "issues": issues, "reconciliation": summary, "gate_snapshot_sha256": digest,
+        "approval_verification": verified_approval,
         "control_origin": "customer_or_operator_supplied_unverified",
         "external_ledger_completeness_proven": False,
         "automated_percentage_score": None,
