@@ -1,0 +1,17 @@
+{
+  "source_system": "erp",
+  "supplier_id": "SUP-1",
+  "agreement_id": "AGR-1",
+  "period_start": "2025-01-01",
+  "period_end": "2025-12-31",
+  "transactions": {
+    "row_count": 2,
+    "net_total": "200000.00",
+    "source_reference": "synthetic-erp-supplier-ledger-2025:control-total"
+  },
+  "settlements": {
+    "row_count": 1,
+    "net_total": "1500.00",
+    "source_reference": "synthetic-erp-rebate-account-2025:control-total"
+  }
+}
