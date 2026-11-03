@@ -172,3 +172,15 @@ See [synthetic manual goldstandard](docs/PILOT_GOLDSTANDARD.md) and [four-week a
 - [GitHub Actions 41629294987](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41629294987) – completed/success on commit `3e83ef2ef17dd31166bc59983c2290ad0dc4214f`: **293 Python tests passed on both 3.11 and 3.12**, including source mapping, API, recovery, quality metrics and actual customer XLSX/JSON/PDF export. Wheel packaging and CLI smoke passed. The later R2 HTTP/portal changes require the final release CI check and are not certified by this earlier run.
 
 All figures are synthetic. No automatic real recovery, finance invoice issuance, live ERP connector, independent contract/legal signoff or SOC-2 attestation is established.
+
+### v0.13.0 tested complete code and report/portal path
+
+**Observed Python Actions run:** [41630067012](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41630067012) — completed / **success**, source revision [e061d908b028610c4eed48539cfd7d13e5940993](https://github.com/tonnestate/LowHangingFruitMe/commit/e061d908b028610c4eed48539cfd7d13e5940993).
+
+- Python 3.11: **299 tests passed** (source upload → authenticated signed-mapping/contract approval → audited calculation → recovery ledger → customer report), actual MariaDB and Frictionless; wheel/sdist build and installation smoke passed.
+- Python 3.12: **299 tests passed** with the same synthetic acceptance matrix.
+- Tests explicitly cover unconfirmed/mismatched R2 tier semantics, source-cited excess-only acceptance, mapping HMAC replay/tampering/revocation/cross-tenant boundaries, and data_coverage_pct, rule_clarity_pct, reconciliation_completeness_pct in customer exports. Missing controls or inconsistent totals continue to block final financial findings.
+- **Observed portal Actions run:** [41629682931](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41629682931), revision c22dbfda48b008ce1e2557c5d4b9cd15f220f2f1 — completed / success. This includes the existing portal workspace's audit quality and issue display with no design replacement.
+- The later AGENTS.md governance-only update and this evidence appendix each trigger their own workflow; their check outcomes are separate from the above code-commit results.
+
+**External/commercial acceptance still OPEN:** no authorized third-party ERP production dataset, external independent controller sign-off, licensed service contract + external RDG assessment, real customer Identity Provider, live malware-scanned/encrypted VPS storage and business-continuity verification, proven bank-realized recovery, invoice approval or Lexware/Odoo/SAP connector. None is implied by 299 synthetic passing tests.
