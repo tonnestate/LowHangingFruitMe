@@ -2,6 +2,15 @@ import {test,expect} from "@playwright/test";
 test("homepage contains honest business claim, complete sections and original banner",async({page},testInfo)=>{
  await page.goto("/");
  await expect(page.locator("h1")).toContainText("Lieferantenvereinbarungen");
+ const imageResponse=await page.request.get("/neon-banner.png");
+ console.log("PNG route HTTP status",imageResponse.status(),"content-type",imageResponse.headers()["content-type"]);
+ const imgInfo=await page.locator(".hero-media img").evaluate((img:HTMLImageElement)=>({
+   complete:img.complete,naturalWidth:img.naturalWidth,naturalHeight:img.naturalHeight,
+   width:img.getBoundingClientRect().width,height:img.getBoundingClientRect().height,
+   parentWidth:img.parentElement?.getBoundingClientRect().width
+ }));
+ console.log("Banner browser dimensions",JSON.stringify(imgInfo));
+ expect(imageResponse.ok()).toBeTruthy();
  await expect(page.getByAltText("Originales Neon-Low-Hanging-FruitMe-Markenbanner")).toBeVisible();
  await expect(page.getByText("Sieben mögliche Prüffelder. Ein klarer Start.")).toBeVisible();
  await expect(page.getByText("3 %", {exact:false}).first()).toBeVisible();
