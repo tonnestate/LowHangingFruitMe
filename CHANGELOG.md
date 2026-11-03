@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased – v0.14 rule-head supersession workstream
+
+- Added migration 008, a tenant/entity/agreement/rule-scoped authoritative current approval, persistent revision/event lineage and signed source-revision data on each new approval.
+- Approval registration atomically replaces the previous current approval (REVOKED with SUPERSEDED event) and blocks all new audits using the old receipt; a running audit holds the head lock until computation finishes.
+- Historical audit snapshots remain retrievable. Legacy records lacking lineage cannot pass the new guard without renewed authenticated approval. Ingested extracted rule proposals and full human-review state machine are **still open**; no general-availability or production claim until passing isolated MariaDB CI and real deployment review.
+
+
 ## 0.13.1 – prospective 5% fee proposal with persistent legacy case rate (2026-11-03)
 
 - New Recovery Cases persist 500 basis points (5%) while SQL 007 sets 300 bps (3%) for existing cases. Event replays never overwrite the original case rate.

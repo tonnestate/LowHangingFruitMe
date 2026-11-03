@@ -159,3 +159,7 @@ Beispiel mit Variablen, **nicht** als validierte Markterwartung: Bei 5 % Gebühr
 Eine berechtigte Firma kann ihren Prüfvertrag annehmen, vollständige Daten hochladen, eine belegte und manuell genehmigte Bonusregel prüfen lassen, ein revisionsfähiges Ergebnis herunterladen und danach eine echte realisierte Gutschrift einem Case zuordnen. Der Betreiber kann daraus ohne Doppelerfassung eine korrekte Honorarrechnung erstellen. **Das ist das erste verkaufbare Produkt.**
 
 Kein Kunde, kein echtes ERP-Login, keine validierte Forderungsrealisierung und keine Rechnungszahlung werden bereits durch diese Dokumentation behauptet.
+
+## v0.14 – verpflichtende Folgerichtigkeit bei Vertragsnachträgen
+
+Zuerst eine atomare, mandantengetrennte aktuelle Regelrevision im bestehenden signierten MariaDB-Auditpfad. Ein alter HMAC-Beleg darf nach Ersatz nicht als aktuelle Vertragslage gelten. Kein Überschreiben bereits abgeschlossener Audits. Anschließend eine echte EXTRACTED/NEEDS_CONFIRMATION-Queue mit vom authentifizierten Reviewer bestätigter Fundstelle und gültiger Dokument-/Nachtragskette. Diese Queue darf weder eigenständig Geldbeträge freigeben noch den aktuellen Head durch einen Modellvorschlag ersetzen. Reales fachliches Vertragsbenchmarking und der produktive Security-/IdP-/RDG-Gate bleiben außerhalb des synthetischen Codebelegs.

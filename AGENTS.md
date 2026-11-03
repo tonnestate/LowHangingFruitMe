@@ -78,3 +78,7 @@ A customer-facing report is downloadable **only** with active reviewer and tenan
 ## Pricing snapshot – 03.11.2026
 
 From version 0.13.1 onward, only newly opened Recovery Cases receive a stored 500 bps (5%) proposal. SQL migration 007 adds a 300 bps default to existing cases; replays must never change the case rate. The proposal is not a signed customer fee agreement or a legal invoice. Keep `fee_due_net` at zero until separate external legal, contracting and billing gates pass. Never silently reprice historical case exports.
+
+## Contract revision head – v0.14 development
+
+After controlled SQL migration `008_rule_revisions.sql`, the existing `ApprovalRegistry.register()` atomically advances a tenant/entity/agreement/rule-specific revision head. `guard()` takes a head row lock **before** the signed approval lock, so supersession cannot commit while an earlier audit runs. Explicit revocation remains effective, and old successful audit snapshots are retained. Approvals lacking migrated rule-lineage metadata are NOT silently grandfathered: require new verified approval. Do not interpret this as complete EXTRACTED/NEEDS_CONFIRMATION candidate lifecycle, a real document clause review, or customer contract authorization. Synthetic CI must pass before v0.14 acceptance.

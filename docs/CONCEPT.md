@@ -210,3 +210,9 @@ Die genaue Reihenfolge der Integrationen wird erst nach Datenzugriffstests und k
 Weitere normative Dokumente: [Donoren](DONORS.md), [API/Daten](API_AND_DATA.md), [Vertrag/Umsatz](LEGAL_AND_REVENUE.md), [Lieferplan](DELIVERY_PLAN.md).
 
 **Grundsatz:** Keine Implementierungsbehauptung ohne Commit, Tests und – bei externen Integrationen – echte API-/Partnernachweise.
+
+## Ergänzung v0.14 – maßgebliche Vertragsregelrevision (in Entwicklung)
+
+Die maßgebliche Bonushöhe darf nur aus der **aktuell verifizierten Vertragsregelrevision** berechnet werden. Pro Mandant/Gesellschaft/Vertrag/Regel-ID muss genau ein aktueller freigegebener Approval-Beleg existieren; eine neue HMAC-geprüfte und authentifiziert unterzeichnete Freigabe ersetzt die vorherige atomar. Die alte Regel erhält einen unveränderlichen SUPERSEDED-Nachweis und darf für **neue** Audits nicht wiederverwendet werden. Bereits abgeschlossene Audits bleiben unverändert mit ihrer Originalregel und Quellhash für die spätere Belegprüfung erhalten. Ein laufender Audit blockiert gleichzeitig eintreffende Supersession bis zum Abschluss seiner geschützten Berechnung. Revisionsidentität und Dokumenthash dürfen nicht aus KI-Ausgaben geraten werden. Beim Upgrade werden ältere Freigaben ohne Revisionsindex nicht stillschweigend als aktuell angenommen; erneute kontrollierte Bestätigung ist erforderlich.
+
+Die vollständige Statuskette EXTRACTED → NEEDS_CONFIRMATION → APPROVED → SUPERSEDED/REVOKED (inklusive tatsächlicher Docling-Extraktion, Nachtragsketten, aktiver Benutzerführung und formaler Bestätigungsübergänge) ist mit dem derzeitigen Revisionskopf **noch nicht vollständig implementiert** und bleibt ein separates Abnahmekriterium innerhalb v0.14. 5 % bei neuen Recovery-Fällen bleiben unverändert nur eine Gebührenhypothese ohne Rechnungsfreigabe.

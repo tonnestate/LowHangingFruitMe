@@ -124,3 +124,7 @@ Angedachtes Kundenangebot: eine einmalige Prüfung gegen **5 % von der nachweisl
 - [Release-Evidenz](EVIDENCE.md), [Changelog](CHANGELOG.md), [Sicherheit](SECURITY.md), [Agentenvorgaben](AGENTS.md), [Drittherstellerhinweise](THIRD_PARTY_NOTICES.md)
 
 Das öffentliche Repo enthält ausschließlich eigene Implementierung und synthetische Testdaten. Es wurden keine Fremd-ERP-Quelltexte kopiert. Für das Projekt wurde noch **keine Open-Source-Distributionslizenz festgelegt**; öffentlich lesbarer Code ist nicht automatisch frei zur Weiterverwendung.
+
+### Laufende Weiterentwicklung: sichere Vertragsregel-Revisionen (v0.14 in Arbeit)
+
+Der bestehende signierte MariaDB-Freigabepfad wurde um eine aktuelle Revision je Mandant, Gesellschaft, Vertragsnummer und Regel-ID erweitert. Eine neue fachlich signierte Freigabe sperrt die vorherige für **neue** Audits; historische, bereits abgeschlossene Auditberichte bleiben lesbar. Die Sperre wird durch eine Datenbanksperre auf den Revisionskopf gegen gleichzeitige Freigaben und Audit-Ausführung geschützt. Das Datenbank-Upgrade erfolgt ausschließlich kontrolliert mittels `sql/008_rule_revisions.sql`, nicht beim API-Start. Altbestände ohne Revisionszuordnung müssen sicher neu freigegeben werden. Vollständiger Vorschlags-Lifecycle (EXTRACTED/NEEDS_CONFIRMATION), reale Nachtragsannotation und Kundenpilot sind noch offen; der Produktrelease bleibt v0.13.1 bis zur Abnahme.

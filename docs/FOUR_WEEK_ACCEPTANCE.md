@@ -61,3 +61,16 @@ Ein bestandener synthetischer End-to-End-Test erfüllt **keines** der externen P
 ## Verbindliche Definition des nächsten Abnahmegates
 
 Ein kommerziell demonstrierbarer Pilot erfordert: (1) vollständiges und freigegebenes Vertrags-/Mandats-Setup, (2) rechtmäßig beschaffte, plausibilisierte ERP-Daten, (3) manuellen Goldstandard mit Belegprüfung, (4) durchlaufene Auth-/Upload-/Gates, (5) tatsächliche belegte Auszahlung/Verrechnung **oder deutlich als Simulation markierte Realisierung**, (6) saubere 5%-Honorarfreigabe ohne automatische Rechnungsstellung, (7) produktiv validierten Sicherheitsbetrieb. Kein Code-Commit kann externe reale Belege oder Zertifikate ersetzen.
+
+## Zusätzliche Abnahme: v0.14-Regelrevisionen (Entwicklungsstand, keine Produktionsfreigabe)
+
+| Prüfgate | Zustand |
+|---|---|
+| Neuer, HMAC-freigegebener Vertrags-/Regelstand ersetzt bisherigen unter tenant-/gesellschaftsspezifischem MariaDB-Revisionskopf | **Implementiert; CI-Abnahme separat in EVIDENCE.md nach Erfolg** |
+| Alte Vertragsregel kann nach Supersession nicht erneut in einem Audit verwendet werden | **Implementiert; realer End-to-End-/MariaDB-Nachweis offen bis CI** |
+| Laufende Prüfung und parallele Freigabe werden durch konsistente Head-/Approval-Lock-Reihenfolge serialisiert | **Implementiert; Negativ-/Konkurrenztests hinzugefügt, CI noch zu verifizieren** |
+| Alte abgeschlossene Audits bleiben als historische Quellenbelege erhalten | **Implementiert; API-Regressionstest hinzugefügt, CI noch zu verifizieren** |
+| EXTRACTED/NEEDS_CONFIRMATION mit eigenständig revisionsgebundener Docling-/Klauselprüfung und vollständigem Workflow | **OFFEN** |
+| Externe kaufmännische Vertragsabnahme, realer IdP, Datenhaltung und rechtliche Honorarfreigabe | **OFFEN** |
+
+Keine Annahme, dass ein automatischer Wechsel der technischen Regelrevision eine juristisch wirksame Vertragsänderung bestätigt.
