@@ -16,8 +16,33 @@ PDF=lambda label: (b"%PDF-1.7\n% synthetic finance proof label: " + label.encode
 
 
 class RecoveryPipelineTests(ReviewedPipelineTests):
+    def scope(self):
+        return {"tenant_id": self.tenant, "legal_entity_id": self.entity}
+
     def setUp(self):
         super().setUp()
+        # Each test has its own claim namespace, preserving the production
+        # unique-claim guard without weakening or deleting its DB constraint.
+        self.tenant="T-REC-"+uuid4().hex[:16]
+        self.entity="LE-SYN-1"
+        db=self.registry._connect()
+        try:
+            with db.cursor() as cur:
+                cur.execute(
+                    """INSERT INTO lhfm_reviewer_grants
+                       (tenant_id,legal_entity_id,reviewer_id,role,active)
+                       VALUES (%s,%s,%s,'contract_reviewer',1)""",
+                    (self.tenant,self.entity,"REVIEWER-SYN-1"),
+                )
+                cur.execute(
+                    """INSERT INTO lhfm_finance_grants
+                       (tenant_id,legal_entity_id,finance_actor_id,active)
+                       VALUES (%s,%s,%s,1)""",
+                    (self.tenant,self.entity,"FINANCE-SYN-1"),
+                )
+            db.commit()
+        finally:
+            db.close()
         self.recovery=RecoveryLedger(
             registry=self.registry,store=self.store,uploads=self.uploads,
         )
@@ -141,7 +166,7 @@ class RecoveryPipelineTests(ReviewedPipelineTests):
                 c.execute("""INSERT INTO lhfm_finance_grants
                     (tenant_id,legal_entity_id,finance_actor_id,active)
                     VALUES (%s,%s,%s,1)""",
-                    ("T-SYN-1","LE-SYN-1","REVIEWER-SYN-1"),
+                    (self.tenant,self.entity,"REVIEWER-SYN-1"),
                 )
             db.commit()
         finally:
