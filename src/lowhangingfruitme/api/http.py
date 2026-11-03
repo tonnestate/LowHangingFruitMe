@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from contextlib import nullcontext
 from typing import Annotated, Literal, Any
 from uuid import UUID, uuid4
 
@@ -480,19 +481,31 @@ def create_app(*, service: AuthenticatedApprovalService,
             )
         audit_id = reserved["audit_id"]
         try:
-            with store.snapshot(bundle) as files:
-                report = service.audit_csv(
-                    token,
-                    rule_path=files["rule"],
-                    transactions_path=files["transactions"],
-                    settlements_path=files["settlements"],
-                    contract_source_path=files["contract"],
-                    approval_receipt=bundle["approval_receipt"],
-                    source_system=bundle["source_system"],
-                    controls=bundle["controls"],
-                    completeness=bundle["completeness"],
-                    tenant_id=tenant, legal_entity_id=entity,
+            mapping_guard = nullcontext()
+            if bundle.get("provenance") is not None:
+                if promotion is None:
+                    raise PermissionError("signed mapping verifier not configured")
+                mapping_guard = promotion.mapping_registry.guard(
+                    receipts=bundle.get("mapping_approvals"),
+                    provenance=bundle["provenance"],
+                    bundle_id=bundle_id, tenant_id=tenant,
+                    legal_entity_id=entity, reviewer_id=actor,
+                    approval_id=bundle["approval_receipt"]["approval_id"],
                 )
+            with mapping_guard:
+                with store.snapshot(bundle) as files:
+                    report = service.audit_csv(
+                        token,
+                        rule_path=files["rule"],
+                        transactions_path=files["transactions"],
+                        settlements_path=files["settlements"],
+                        contract_source_path=files["contract"],
+                        approval_receipt=bundle["approval_receipt"],
+                        source_system=bundle["source_system"],
+                        controls=bundle["controls"],
+                        completeness=bundle["completeness"],
+                        tenant_id=tenant, legal_entity_id=entity,
+                    )
             if bundle.get("provenance") is not None:
                 report["input_provenance"] = bundle["provenance"]
             store.finish_run(audit_id=audit_id, report=report)
