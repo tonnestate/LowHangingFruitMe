@@ -66,10 +66,10 @@ Ein kommerziell demonstrierbarer Pilot erfordert: (1) vollständiges und freigeg
 
 | Prüfgate | Zustand |
 |---|---|
-| Neuer, HMAC-freigegebener Vertrags-/Regelstand ersetzt bisherigen unter tenant-/gesellschaftsspezifischem MariaDB-Revisionskopf | **Implementiert; CI-Abnahme separat in EVIDENCE.md nach Erfolg** |
-| Alte Vertragsregel kann nach Supersession nicht erneut in einem Audit verwendet werden | **Implementiert; realer End-to-End-/MariaDB-Nachweis offen bis CI** |
-| Laufende Prüfung und parallele Freigabe werden durch konsistente Head-/Approval-Lock-Reihenfolge serialisiert | **Implementiert; Negativ-/Konkurrenztests hinzugefügt, CI noch zu verifizieren** |
-| Alte abgeschlossene Audits bleiben als historische Quellenbelege erhalten | **Implementiert; API-Regressionstest hinzugefügt, CI noch zu verifizieren** |
+| Neuer, HMAC-freigegebener Vertrags-/Regelstand ersetzt bisherigen unter tenant-/gesellschaftsspezifischem MariaDB-Revisionskopf | **PASS – synthetischer CI-Test**: 310 Tests je Python-Version in Actions 41697334882; keine Produktionsabnahme |
+| Alte Vertragsregel kann nach Supersession nicht erneut in einem Audit verwendet werden | **PASS – isolierter MariaDB-/HTTP-Test**: alter Auditversuch wird NEEDS_REVIEW, kein Geldbefund |
+| Laufende Prüfung und parallele Freigabe werden durch konsistente Head-/Approval-Lock-Reihenfolge serialisiert | **PASS – synthetischer Konkurrenztest**: parallele Freigabe wartet auf aktiven Audit-Lock |
+| Alte abgeschlossene Audits bleiben als historische Quellenbelege erhalten | **PASS – synthetischer API-Test**: historisch COMPLETED bleibt lesbar |
 | EXTRACTED/NEEDS_CONFIRMATION mit eigenständig revisionsgebundener Docling-/Klauselprüfung und vollständigem Workflow | **OFFEN** |
 | Externe kaufmännische Vertragsabnahme, realer IdP, Datenhaltung und rechtliche Honorarfreigabe | **OFFEN** |
 
