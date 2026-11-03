@@ -201,6 +201,48 @@ class ReviewedPipelineTests(unittest.TestCase):
         self.assertEqual(amounts["input_provenance"]["transactions"]["mapping_sha256"],
                          result.json()["provenance"]["transactions"]["mapping_sha256"])
 
+    def test_new_rule_revision_blocks_old_bundle_but_preserves_completed_audit(self):
+        tx, se, co = self.inputs()
+        old_bundle = self.post(self.body(tx, se, co))
+        self.assertEqual(old_bundle.status_code, 201, old_bundle.text)
+        old_id = old_bundle.json()["bundle_id"]
+        original = self.client.post(
+            "/v1/audits", json={**self.scope(), "bundle_id": old_id},
+            headers={**self.headers(), "Idempotency-Key": str(uuid4())},
+        )
+        self.assertEqual(original.status_code, 201, original.text)
+        self.assertEqual(original.json()["status"], "COMPLETED")
+
+        newer_tx, newer_se, newer_co = self.inputs()
+        new_request = self.body(newer_tx, newer_se, newer_co)
+        new_request["rule"] = {**self.rule, "revision": "2"}
+        new_request["source_revision_id"] = "2025-SYN-REV-B"
+        new_bundle = self.post(new_request)
+        self.assertEqual(new_bundle.status_code, 201, new_bundle.text)
+        new_id = new_bundle.json()["bundle_id"]
+        self.assertNotEqual(old_id, new_id)
+
+        stale = self.client.post(
+            "/v1/audits", json={**self.scope(), "bundle_id": old_id},
+            headers={**self.headers(), "Idempotency-Key": str(uuid4())},
+        )
+        self.assertEqual(stale.status_code, 503, stale.text)
+        self.assertEqual(stale.json()["detail"]["code"], "AUDIT_EXECUTION_FAILED")
+        # Completed reports are immutable historical evidence, not live re-runs.
+        history = self.client.get(
+            "/v1/audits/" + original.json()["audit_id"],
+            params=self.scope(), headers=self.headers(),
+        )
+        self.assertEqual(history.status_code, 200, history.text)
+        self.assertEqual(history.json()["report"]["difference_net"], "2500.00")
+
+        current = self.client.post(
+            "/v1/audits", json={**self.scope(), "bundle_id": new_id},
+            headers={**self.headers(), "Idempotency-Key": str(uuid4())},
+        )
+        self.assertEqual(current.status_code, 201, current.text)
+        self.assertEqual(current.json()["status"], "COMPLETED")
+
     def test_mapping_receipts_are_persistently_signed(self):
         tx,se,co=self.inputs()
         created=self.post(self.body(tx,se,co))
