@@ -246,7 +246,7 @@ class UploadApiTests(unittest.TestCase):
             params=self.scope(),headers=self.auth(),
         )
         self.assertEqual(result.status_code,422)
-        self.assertNotIn("preview",result.text.lower())
+        self.assertNotIn("sha256:",result.text.lower())
 
     def test_multipart_and_unsupported_upload_types_fail(self):
         upload_id=self.intent().json()["upload_id"]
