@@ -15,7 +15,7 @@ if __name__ == "__main__":
         with c.cursor() as cursor:
             sql = "\n".join(
                 Path(path).read_text(encoding="utf-8")
-                for path in ("sql/001_approval_registry.sql", "sql/002_audit_api.sql", "sql/003_private_uploads.sql")
+                for path in ("sql/001_approval_registry.sql", "sql/002_audit_api.sql", "sql/003_private_uploads.sql", "sql/004_recovery_ledger.sql")
             )
             statements = "\n".join(
                 line for line in sql.splitlines()
@@ -29,6 +29,12 @@ if __name__ == "__main__":
                    (tenant_id, legal_entity_id, reviewer_id, role, active)
                    VALUES (%s,%s,%s,'contract_reviewer',1)""",
                 ("T-SYN-1", "LE-SYN-1", "REVIEWER-SYN-1"),
+            )
+            cursor.execute(
+                """INSERT INTO lhfm_finance_grants
+                   (tenant_id, legal_entity_id, finance_actor_id, active)
+                   VALUES (%s,%s,%s,1)""",
+                ("T-SYN-1", "LE-SYN-1", "FINANCE-SYN-1"),
             )
         c.commit()
     except Exception:

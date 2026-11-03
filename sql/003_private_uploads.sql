@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS lhfm_uploads (
   KEY idx_upload_scope (tenant_id, legal_entity_id, reviewer_id, created_at),
   CONSTRAINT chk_upload_state CHECK (state IN ('PENDING','RECEIVING','CLEAN','REJECTED')),
   CONSTRAINT chk_upload_kind CHECK (kind IN (
-    'ERP_CSV','ERP_XLSX','INVOICE_XML','CONTRACT_PDF','CONTRACT_DOCX'
+    'ERP_CSV','ERP_XLSX','INVOICE_XML','CONTRACT_PDF','CONTRACT_DOCX','RECOVERY_PDF'
   )),
   CONSTRAINT chk_upload_size CHECK (expected_size BETWEEN 1 AND 16777216)
 ) ENGINE=InnoDB;

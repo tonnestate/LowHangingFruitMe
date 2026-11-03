@@ -33,7 +33,7 @@ class UploadIntentRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     tenant_id: str = Field(min_length=1, max_length=128, pattern=r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
     legal_entity_id: str = Field(min_length=1, max_length=128, pattern=r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
-    kind: Literal["ERP_CSV", "ERP_XLSX", "INVOICE_XML", "CONTRACT_PDF", "CONTRACT_DOCX"]
+    kind: Literal["ERP_CSV", "ERP_XLSX", "INVOICE_XML", "CONTRACT_PDF", "CONTRACT_DOCX", "RECOVERY_PDF"]
     byte_size: int = Field(strict=True, ge=1, le=MAX_UPLOAD)
     sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
 

@@ -28,6 +28,7 @@ FORMATS: dict[str, tuple[str, str]] = {
     "INVOICE_XML": (".xml", "application/xml"),
     "CONTRACT_PDF": (".pdf", "application/pdf"),
     "CONTRACT_DOCX": (".docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
+    "RECOVERY_PDF": (".pdf", "application/pdf"),
 }
 MAX_UPLOAD = 16 * 1024 * 1024
 MIN_UPLOAD = 1
