@@ -44,7 +44,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install with real Frictionless validator
-        run: python -m pip install -e ".[import,registry,auth,universal]"
+        run: python -m pip install -e ".[import,registry,auth,universal,api]"
       - name: Create isolated registry tables and synthetic reviewer
         run: python tests/scripts/setup_approval_registry.py
       - name: Compile

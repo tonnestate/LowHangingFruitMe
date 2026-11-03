@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS lhfm_api_bundles (
   tenant_id VARCHAR(128) NOT NULL,
   legal_entity_id VARCHAR(128) NOT NULL,
   manifest_json LONGTEXT NOT NULL,
-  created_at DATETIME(6) NOT NULL DEFAULT UTC_TIMESTAMP(6),
+  created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   PRIMARY KEY (bundle_id),
   UNIQUE KEY uq_bundle_scope (bundle_id, tenant_id, legal_entity_id),
   CONSTRAINT chk_manifest_json CHECK (JSON_VALID(manifest_json))

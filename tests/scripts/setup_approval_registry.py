@@ -13,7 +13,10 @@ if __name__ == "__main__":
     c = ApprovalRegistry.from_environment()._connect()
     try:
         with c.cursor() as cursor:
-            sql = Path("sql/001_approval_registry.sql").read_text(encoding="utf-8")
+            sql = "\n".join(
+                Path(path).read_text(encoding="utf-8")
+                for path in ("sql/001_approval_registry.sql", "sql/002_audit_api.sql")
+            )
             statements = "\n".join(
                 line for line in sql.splitlines()
                 if line.strip() and not line.lstrip().startswith("--")
