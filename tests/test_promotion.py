@@ -307,6 +307,29 @@ class ReviewedPipelineTests(unittest.TestCase):
         self.assertEqual(self.post(body,scope="lhfm:upload:write").status_code,403)
         self.assertEqual(self.post(body,sub="FORGED-ACTOR").status_code,403)
 
+    def test_r2_unknown_application_blocks_before_signing_and_tells_customer_why(self):
+        tx,se,co=self.inputs()
+        body=self.body(tx,se,co)
+        body["rule"].pop("rate")
+        body["rule"]["kind"]="MARGINAL_PER_TIER"
+        body["rule"]["tiers"]=[{"threshold":"80000.00","rate":"0.02"}]
+        no_semantics=self.post(body)
+        self.assertEqual(no_semantics.status_code,422,no_semantics.text)
+        self.assertEqual(no_semantics.json()["detail"]["code"],"RULE_SEMANTICS_NEEDS_REVIEW")
+        self.assertFalse(list(self.store.root.iterdir()))
+        body["rule"]["tier_semantics"]={
+            "application":"FULL_BASE",
+            "evidence_ref":body["rule"]["evidence_refs"][0],
+            "reviewed":True,
+        }
+        contradictory=self.post(body)
+        self.assertEqual(contradictory.status_code,422,contradictory.text)
+        self.assertEqual(contradictory.json()["detail"]["code"],"RULE_SEMANTICS_NEEDS_REVIEW")
+        body["rule"]["tier_semantics"]["application"]="EXCESS_ONLY"
+        accepted=self.post(body)
+        self.assertEqual(accepted.status_code,201,accepted.text)
+        self.assertEqual(accepted.json()["mapping_approval_status"],"SIGNED_REGISTERED")
+
     def test_mappings_bound_to_exact_uploaded_bytes(self):
         tx,se,co=self.inputs()
         body=self.body(tx,se,co)
