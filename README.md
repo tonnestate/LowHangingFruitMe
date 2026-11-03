@@ -4,15 +4,15 @@
 
 **B2B Revenue Recovery for FruitStack.** Ein eigenständiger, beleggestützter Prüfdienst für nicht vollständig realisierte Lieferantenboni und vertraglich eindeutige Einkaufskonditionen.
 
-**Python-Version:** 0.9.0 (geschützter, gescannter Datei-Staging-Upload, Entwicklungsstand)  
+**Python-Version:** 0.12.0 (geschlossener synthetischer Prüfpfad, Recovery-Status und Kundenbericht – Entwicklungsstand)  
 **Marketing-Portal:** 0.1.0 (noch nicht deployed)  
-**Status:** Bonusengine, ERP-Export-Adapter, JWT-/MariaDB-geschützte Audit-API und eine **private, malware-scanpflichtige Upload-Staging-Schnittstelle** sowie separat getestete Next.js-Marketing-Website. **Weder API noch Website sind auf dem VPS deployed.** Kein produktiv freigegebener Kundendatei-Upload, kein Self-Service-Portal, keine Live-ERP-Anbindung und kein Recovery-Ledger.
+**Status:** Bonusengine, ERP-Import mit manueller Freigabe, JWT-/MariaDB-geschützte Audit-API, scannerpflichtige private Upload-Staging-Schnittstelle, synthetisch getesteter authentifizierter Next.js-Arbeitsbereich, persistentes Recovery-Ledger (3%-Honorarvorschlag) und Kundenberichte als JSON/PDF/XLSX. **Weder API noch Website sind auf dem VPS deployed.** Kein produktiv freigegebener Kundendatei-Upload, keine Live-ERP-Anbindung, kein externer Piloterfolg und keine automatische abrechenbare Honorarrechnung.
 
 ## Eigenständige Website
 
 Die deutsche Marketing-Website befindet sich unter [`portal/`](portal/README.md). Sie verwendet ausschließlich das vorhandene Originalbanner `docs/Neon-Low-Hanging-FruitMe-Banner.png`; beim Build werden aus den Originalpixeln die Markenfarb-Tokens und ein Messprotokoll erzeugt. Next.js (SSR/SSG) wird als isolierter Node-Dienst hinter einem **separaten Apache-VirtualHost** auf dem eigenen Server vorbereitet. WordPress und die Python-Finanzengine werden nicht verändert.
 
-**Nachgewiesen:** [Website-GitHub-Actions 41586331503](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41586331503): Next.js-Build, Typprüfung, 7 Unit-Tests sowie 12 Chromium-Browsertests bei 1440/768/390 Pixeln bestanden. Noch **kein** Produktiv-Deployment, kein sicheres Kundenupload-Portal und keine öffentlich freigegebene Anfrageannahme. Staging ist `noindex`/robots-disallowed.
+**Nachgewiesen:** [Website-GitHub-Actions 41607305839](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41607305839): Next.js-Build, Typprüfung, 7 Unit-Tests sowie 12 Chromium-Browsertests bei 1440/768/390 Pixeln bestanden. Noch **kein** Produktiv-Deployment und keine öffentlich freigegebene Annahme echter Kundendaten. Der authentifizierte Arbeitsbereich wird nur mit synthetischen Daten und isolierter Testinfrastruktur geprüft. Staging ist `noindex`/robots-disallowed.
 
 [Website-Status und Grenzen](docs/WEBSITE_STATUS.md) · [Portal und lokaler Build](portal/README.md) · [Apache-/systemd-Vorlagen](deploy/).
 
@@ -24,6 +24,8 @@ Die deutsche Marketing-Website befindet sich unter [`portal/`](portal/README.md)
 - **Freigabenachweis:** Vertragsregel und konkrete Dokumentdatei werden per SHA-256 mit einer HMAC-signierten Bestätigung verknüpft. Der CSV-Pfad verlangt Mandanten- und Gesellschaftsbindung; `approved: true` allein genügt nicht. Keine produktive Prüfer-Authentifizierung oder Widerrufsverwaltung.
 - **Verifizierte Access-Tokens:** RFC-9068-kompatible RS256-Signaturprüfung anhand einer vertrauenswürdig bereitgestellten öffentlichen JWKS, Prüfung von Aussteller, Audience, Client-ID, Gültigkeit und Berechtigungsumfang. Eine durch MariaDB berechtigte Person kann Regeln über `AuthenticatedApprovalService` freigeben, widerrufen und eingeschränkte Audits starten. **Noch keine Live-IdP-Anbindung; schmale HTTP-API für bereits sicher bereitgestellte Datenpakete vorhanden, kein öffentlicher Upload.**
 - **Private Dateiannahme v0.9:** `POST /v1/uploads` (15-Minuten-Absicht), `PUT /v1/uploads/{id}/content` (begrenzter Rohdatenstrom) und `GET /v1/uploads/{id}` (Status), mit JWT-/Mandantenprüfung, exakten Bytes und SHA-256, verpflichtendem ClamAV-Scanner-Verdikt und geprüfter Dateiklassifikation. **Erfolgreich gescannte Dateien sind noch keine freigegebenen Auditquellen. Kein echter ClamAV-Betrieb auf dem VPS.** [Dokumentation](docs/UPLOAD_INTAKE.md).
+- **Kundenberichte v0.12:** Nach über alle Gates erfolgreich ausgeführtem Audit: autorisierte PDF-/XLSX-/JSON-Ausgabe mit Quellen-Hash, Differenzbetrag und 3%-Honorarvorschlag, herunterladbar über den geschützten Next.js-Arbeitsbereich. Kein öffentlicher Link und keine Rechnung.
+- **Recovery-Ledger v0.11/v0.12:** MariaDB-Fälle, idempotente Realisierungs-/Stornoereignisse mit Beleg-Upload, unabhängige Finanzprüfung, Fallstatus NONE/CLAIMED/REALIZED_PARTIAL/REALIZED_FULL/DISPUTED/CLOSED, 3%-Honorarvorschlag. Rechnungsfreigabe und `fee_due_net` fehlen absichtlich.
 - **Authentifizierte Audit-API v0.8:** `POST /v1/audits` und `GET /v1/audits/{id}` für serverseitig registrierte, SHA-256-geprüfte private Quellen. JWT/Reviewer-Grants, MariaDB-Idempotenz, Quellen-Snapshots und Berichtsspeicherung sind gegen synthetische Daten getestet. **Keine öffentliche Kundendatenannahme und kein VPS-Deployment.**
 - **Persistierte Freigaben:** Genehmigungen werden in MariaDB registriert, mandantenbezogen freigegeben oder widerrufen und während der Berechnung durch `SELECT ... FOR UPDATE` vor konkurrierenden Änderungen geschützt. Ohne Registry läuft kein finaler CSV-Audit.
 - **Readiness-Gate:** separate ERP-Kontrollsummen für Anzahl und Nettobetrag, Scope-Kontrolle für Lieferant/Vertrag/Periode, Status `READY_FOR_AUDIT` / `LIMITED` / `NOT_READY`. Bei fehlenden oder widersprüchlichen Kontrollen entsteht kein abschließender Geldbefund.
@@ -36,7 +38,7 @@ Die deutsche Marketing-Website befindet sich unter [`portal/`](portal/README.md)
 Python >= 3.11; die reine Rechenengine benötigt keine externen Runtime-Abhängigkeiten.
 
 ~~~bash
-python -m pip install -e ".[import,registry,auth,universal]"
+python -m pip install -e ".[import,registry,auth,universal,api]"
 python -m unittest discover -s tests -v
 python -m lowhangingfruitme.cli tests/fixtures/flat_rebate.json
 ~~~
@@ -48,6 +50,8 @@ lhfm inspect-source --file tests/fixtures/transactions.csv --dataset transaction
 ~~~
 
 Beliebig benannte CSV-/Excel-Spalten können mit einer **zuvor geprüften und bestätigten Mapping-Datei** normalisiert werden. Der neue Befehl `lhfm normalize-source --file <export.csv> --dataset transactions --source-system erp --plan <mapping.json> --output <kanonisch.csv>` schreibt nur in eine neue Datei und überschreibt keine vorhandenen Daten. Siehe [Universal Import](docs/UNIVERSAL_IMPORT.md).
+
+Für einen **bereits signierten** Vertragsbeleg bietet `lhfm audit-sources` einen Aufruf von geprüftem CSV-/XLSX-Mapping über die bestehenden Freigabe- und Vollständigkeits-Gates bis zum JSON-Report. Er erzeugt **keine** eigene Vertragsfreigabe. [Vier-Wochen-Abnahmestand](docs/FOUR_WEEK_ACCEPTANCE.md) · [synthetischer Goldstandard](docs/PILOT_GOLDSTANDARD.md).
 
 CSV-End-to-End-Prüfung mit **synthetischen** Dateien:
 

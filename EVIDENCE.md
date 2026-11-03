@@ -142,3 +142,11 @@ The test registry `lhfm_test` and source files are synthetic; server-provisioned
 The upload tests cover JWT bearer and scoped grant, unauthorized cross-tenant/actor access, new intent, size and SHA256-bound byte stream, 0600 private file, status GET, no financial-audit bypass, single-writer claim under concurrent requests, expired reservation, tampered/oversized/repeated PUT, invalid content type, malicious invoice XML, malformed PDF, scanner infection/outage fail-closed and no residual file. A fake local clamd-compatible UNIX socket verifies the INSTREAM frame structure. Existing 158 API/kernel tests also pass.
 
 **Limitations:** These tests use a **test-only scanner double**, not a running real ClamAV service or detection efficacy benchmark. A fake UNIX socket protocol implementation also does not prove real daemon configuration, security operations or updated virus signatures. The marketing portal is not connected to a live upload API; no customer upload on the VPS, no encryption at rest and no scope-approved dataset promotion. No external SaaS, billing or ERP integration was exercised.
+
+## 0.12.0 workstream – 03.11.2026
+
+**Confirmed passing code before single-command addition:** [GitHub Actions 41607305907](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41607305907) (Python), [GitHub Actions 41607305839](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41607305839) (Portal), commit `8295b1c874709ef19459661e588c0f42a30aaf80`. Both completed successfully. This includes authenticated report download and finance-ledger status controls, and a real PostgreSQL-free MariaDB test service with synthetic sources.
+
+**Later commits** introduced the one-command `audit-sources` and explicit `calculated_variance_net`; their own final status must be read from GitHub Actions, not inferred from the earlier success. Original financial fixtures remain synthetic. Manual goldstandard is independently described in [docs/PILOT_GOLDSTANDARD.md](docs/PILOT_GOLDSTANDARD.md).
+
+No positive claim about actual bank-realized customer money, real customer portal login, live ClamAV on VPS, successful external ERP connection, DOCX/PDF model extraction quality or permission to bill. 

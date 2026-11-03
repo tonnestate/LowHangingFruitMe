@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.12.0 – closed synthetic pilot path, report downloads and status tracking (2026-11-03)
+
+- Added `lhfm audit-sources`: a single local command consuming separately signed contract receipts, source-hash-bound ERP CSV/XLSX mappings and independent control totals through the existing guarded calculation.
+- Added PDF/XLSX/JSON report renderers, same-tenant authenticated FastAPI downloads and Next.js BFF download routes; full detail references remain in the private hash-bound lineage snapshot.
+- Added explicit `calculated_variance_net` in engine/Readiness reporting, distinct from realized and billable sums.
+- Added persistent finance-authorized case-state annotations for DISPUTED/CLOSED/OPEN, derived NONE/CLAIMED/REALIZED_PARTIAL/REALIZED_FULL, with closure preventing new recovery events.
+- Added acceptance tests and documented synthetic manual goldstandard. No real ERP customer data, external banking evidence, independent security examination, production deployment or billing authorization.
+- **3 %** remains a manually attestable **fee proposal** based on confirmed realized amount, not an automatic invoice.
+- Continued explicitly: original neon banner from `docs/Neon-Low-Hanging-FruitMe-Banner.png` is the sole visual brand reference for the portal.
+
+
 ## 0.9.0 – scoped private staged upload intake (development; 2026-11-03)
 
 - Added `POST /v1/uploads`, `PUT /v1/uploads/{id}/content` and `GET /v1/uploads/{id}`, accepting only JWT-authorized reviewers of the matching tenant/legal entity.

@@ -92,7 +92,7 @@ def create_app(*, service: AuthenticatedApprovalService,
                recovery: RecoveryLedger | None = None) -> FastAPI:
     """Dependencies injected by a trusted bootstrap, never from HTTP input."""
     app = FastAPI(
-        title="LowHangingFruitMe Audit API", version="0.11.0",
+        title="LowHangingFruitMe Audit API", version="0.12.0",
         docs_url=None, redoc_url=None, openapi_url=None,
     )
 

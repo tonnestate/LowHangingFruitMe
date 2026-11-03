@@ -1,4 +1,4 @@
-# Implementation status – LowHangingFruitMe v0.9.0
+# Implementation status – LowHangingFruitMe v0.12.0
 
 **Stand:** 03.11.2026. Produktentwicklung, kein kommerzieller oder produktiver Betrieb. Der aktuelle Revisionsnachweis steht in [EVIDENCE.md](../EVIDENCE.md); keine behaupteten Live-Kunden- oder ERP-Erfolge.
 
@@ -28,6 +28,13 @@
 
 **Private Upload-Staging-API v0.9.0 (03.11.2026):** Authentifizierte `POST /v1/uploads`, `PUT /v1/uploads/{id}/content` und `GET /v1/uploads/{id}` mit `lhfm:upload:write`-Scope und aktiven MariaDB-Reviewer-Grants. Einmalige 15-Minuten-Uploadabsicht, Dateigrößenlimit 16 MiB, exakte Byteanzahl und SHA-256, exklusive private 0600-Staging-Datei, Scannerpflicht mit lokalen ClamAV-UNIX-Socket-Instream-Frames, danach Dateisignatur-/XML-/Office-Prüfung und eindeutige, nicht überschreibbare private Ablage. Mehrfache Uploadversuche, Parallelschreiben, falsche Mandanten, ungültige Bytes, schädliche XML-Strukturen und Scanner-Ausfall werden getestet abgewiesen. Das CI verwendet einen **synthetischen Scan-Entscheider** plus simulierten ClamAV-UNIX-Socket, keine echte ClamAV-Installation oder produktive Infrastruktur. `CLEAN` heißt nur transporttechnisch geprüft; `usable_for_audit=false`, weil der separate Freigabe-/Normalisierungs-/Kontrollschritt noch fehlt. Kein geschütztes Browserportal, kein realer IdP, keine Datenverschlüsselung oder automatische Löschung. [Upload-Spezifikation](UPLOAD_INTAKE.md).
 
+
+**Geprüfter Kundendownload und Recovery-Ledger v0.11–0.12 (03.11.2026):** Die FastAPI-Routen und das Next.js-BFF unterstützen nach geprüfter JWT-/Rollen-/Mandantenzugehörigkeit PDF-, XLSX- und JSON-Kundenberichte für tatsächlich `EVIDENCED` ausgeführte Audits. Die API trennt `calculated_variance_net`, bestätigte aber nur durch einen unabhängigen Finance-Actor **manuell attestierte** Realisierung, die daraus errechnete **3-%-Honorarprognose** und `fee_due_net` = 0 bis zu einer späteren ordnungsgemäßen Rechnungsfreigabe. Auf der Recovery-Seite existieren persistierte idempotente und beleggebundene REALIZATION-/REVERSAL-Events, eine zweite Finance-Freigabe und die Statuswerte NONE, CLAIMED, REALIZED_PARTIAL, REALIZED_FULL, DISPUTED, CLOSED. Für DISPUTED/CLOSED/OPEN gibt es append-only Finance-Statusereignisse und einen separaten HTTP-Operator-Endpunkt. **Weder Rechnungsfreigabe noch tatsächliche Bankzahlung werden softwareseitig unabhängig nachgewiesen.**
+
+**Ein-Befehl-Lauf v0.12.0:** `lhfm audit-sources` nimmt zwei bereits fachlich geprüfte Mapping-Pläne und eine zuvor separat signierte, in MariaDB registrierte Vertragsfreigabe entgegen; führt beide ERP-Listen auf den bestehenden unveränderten kanonischen Pfad und berechnet mit Readiness-/Registry-Prüfung einen Gesamtbericht. Kein eigenmächtiges Erteilen der Vertragsgenehmigung per CLI.
+
+**Portal:** Der vorhandene Next.js-Arbeitsbereich ist OIDC-geschützt, verfügt über einen serverseitigen BFF-Allowlist-Proxy für die tatsächlichen FastAPI-Routen und bietet Upload, Mapping, Regelbestätigung, Audit, Recovery und Bericht-Download. *Nur synthetisch im isolierten CI-/Entwicklungsstand getestet*, keine echte externe Kundenanmeldung oder Browser-zu-VPS-Kundenabnahme.
+
 ## Ungeprüfte Aspekte und klare Grenzen
 
 - GitHub Actions ist der tatsächliche Testnachweis; nicht jede neu geschriebene Testdatei wurde lokal ausgeführt. Ergebnisse mit Run-ID in EVIDENCE.md festhalten.
@@ -35,10 +42,10 @@
 - XLSX und flexibel benannte CSV lassen sich mit **manuell bestätigtem** Mapping in kanonische CSV normalisieren. XML-Rechnungen werden bislang nur erkannt/klassifiziert, nicht fachlich positionsweise übernommen. Kein produktiver Upload, keine vollständigen kundenspezifischen ERP-Formatprofile.
 - Kein unabhängiger Nachweis für Vollständigkeit der Einkaufsperiode und der Vertragsnachträge. Die drei Pflichtflags und ERP-Kontrollsummen sind externe Angaben und niemals ein algorithmischer Nachweis. Der neue Gate-Status `READY_FOR_AUDIT` bestätigt ausschließlich Konsistenz mit übergebenen Kontrollen.
 - **Verifizierte JWT-Subjektidentität ist implementiert, aber noch keine produktive IdP-Anmeldung.** DB-Grants und Widerruf sind vorhanden; externe Benutzeranlage/-sperrung, administratives Provisioning, JWKS-Rotation und Keyrotation fehlen. Der direkte lokale CLI-Testweg ist weiterhin ausdrücklich kein authentifizierter Kundendienst. Die HMAC-Signatur belegt nur, dass die Daten mit dem verwendeten Secret signiert wurden; kein gesetzlicher oder externer Identitätsnachweis. Die lokale CLI nimmt Tenant-/Gesellschaftskennung als Parameter und ist kein sicheres Kundentor.
-- Kein Tenant-Login, **kein funktionales Kundenportal** (Marketingportal ist nur für öffentliche Informationen gebaut), öffentlich zugänglicher/deployter API-Service, Vertragsannahme, gesicherter Kunden-Upload, Kundenspeicherung oder autorisierter Report-Download aus der Website. Die API arbeitet derzeit nur auf intern vorregistrierten Datenpaketen.
+- Ein **funktionaler OIDC-geschützter Browser-Arbeitsbereich mit Portal-BFF** ist im Repository vorhanden und synthetisch getestet; aber **kein** produktiv konfigurierter Identity Provider, echter Kundenvertrag, vom VPS erreichbarer Produktivservice, echter ClamAV-Betrieb oder freigegebener öffentlicher Multi-Tenant-Upload. Browser-Pilot mit realen Kunden ist nicht abgenommen.
 - Keine Live-Lexware-/weclapp-/Odoo-/Frappe-/Dolibarr-Schnittstellen, keine Marktplatzfreigabe.
-- Keine Regelinterpretations-/Freigabeoberfläche, keine automatische rechtliche Bewertung, keine juristische Forderungsdurchsetzung.
-- Kein RecoveryLedger / Erfolgshonorar-Fee-Allocation / automatische Rechnungsstellung; billable_recovery_net und fee_due_net bleiben absichtlich 0.00.
+- Manuelle Vertragsregel-Freigabe über das Arbeitsbereich-Formular ist vorhanden; **keine** durchgehend versionierte EXTRACTED/NEEDS_CONFIRMATION/APPROVED/SUPERSEDED-Regelzustandsmaschine, keine eigenständige registrierte HMAC-Mapping-Freigabe, keine automatische rechtliche Bewertung, keine juristische Forderungsdurchsetzung.
+- RecoveryLedger mit MariaDB, Belegmeldungen, unabhängiger manueller Finanzverifikation und 3%-Honorar**vorschlag** ist vorhanden. **Noch keine** verbindliche Fee-Allocation, steuerliche Prüfung, Rechnungsgenehmigung oder automatische Rechnungsstellung; billable_recovery_net und fee_due_net bleiben bis zu dieser Freigabe absichtlich 0.00.
 - Keine abgesicherte Ausführung untrusted PDF, keine produktive DSGVO-/RDG-/Lizenzprüfung oder Kundenabnahme.
 - Die endgültige Veröffentlichungs-/Distributionslizenz ist eine noch offene Eigentümerentscheidung.
 
@@ -47,7 +54,7 @@
 Python >=3.11:
 
 ~~~bash
-python -m pip install -e ".[import]"
+python -m pip install -e ".[import,registry,auth,universal,api]"
 python -m unittest discover -s tests -v
 python -m compileall -q src tests
 python -m lowhangingfruitme.cli tests/fixtures/flat_rebate.json
@@ -73,3 +80,5 @@ Für PDF: optional `python -m pip install -e ".[docs]"`, dann `lhfm extract-pdf 
 ## Nächster produktbezogener Schritt
 
 Reale synthetisch nachgebildete Exportvarianten je ERP und XRechnung/ZUGFeRD fachlich gegen das kanonische Modell benchmarken; CI und sichere Dateiverarbeitung ausbauen. Echte anonymisierte und rechtmäßig bereitgestellte Testdokumente mit manuellem Goldstandard gegen Docling und den Rechenkern prüfen; Spaltenmapping und fehlende Buchungsdaten definieren. Danach eine sichere, mandantenfähige API mit Kundenportal und bestätigten Vertragsbedingungen. Keine ungestützten Release- oder Return-on-Investment-Aussagen.
+
+**Abnahme gegen den verbindlichen Vier-Wochen-Plan:** [FOUR_WEEK_ACCEPTANCE.md](FOUR_WEEK_ACCEPTANCE.md). **Reproduzierbarer synthetischer Goldstandard:** [PILOT_GOLDSTANDARD.md](PILOT_GOLDSTANDARD.md).
