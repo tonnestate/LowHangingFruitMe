@@ -16,6 +16,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
 
 from ..approval_service import AuthenticatedApprovalService
+from ..invoices import extract_invoice_preview
 from .store import BundleNotFound, PrivateAuditStore, RunConflict
 from .promotion import ReviewedBundleService, ReviewRequired
 from .recovery import RecoveryLedger, CaseConflict
@@ -220,6 +221,32 @@ def create_app(*, service: AuthenticatedApprovalService,
         except BundleNotFound as exc:
             raise HTTPException(status_code=404, detail={"code":"UPLOAD_NOT_FOUND"}) from exc
         return {**record, "usable_for_audit": False}
+
+    @app.get("/v1/uploads/{upload_id}/invoice-preview")
+    def get_verified_xml_invoice_preview(
+        upload_id: UUID,
+        tenant_id: Annotated[str, Query(min_length=1,max_length=128,
+            pattern=r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")],
+        legal_entity_id: Annotated[str, Query(min_length=1,max_length=128,
+            pattern=r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")],
+        token: str = Depends(access_token),
+    ):
+        actor=authorized_actor(
+            token,tenant=tenant_id,entity=legal_entity_id,
+            required_scope="lhfm:upload:write",
+        )
+        service_uploads=configured_uploads()
+        try:
+            with service_uploads.snapshot_clean(
+                upload_id=str(upload_id),tenant_id=tenant_id,
+                legal_entity_id=legal_entity_id,reviewer_id=actor,
+                accepted_kinds=("INVOICE_XML",),
+            ) as (source,_):
+                return extract_invoice_preview(source)
+        except BundleNotFound as exc:
+            raise HTTPException(status_code=404,detail={"code":"UPLOAD_NOT_FOUND"}) from exc
+        except (UploadRejected,ValueError) as exc:
+            raise HTTPException(status_code=422,detail={"code":"INVOICE_PREVIEW_REQUIRES_REVIEW"}) from exc
 
     @app.get("/v1/uploads/{upload_id}/inspect")
     def inspect_upload_for_mapping(

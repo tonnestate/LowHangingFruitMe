@@ -13,6 +13,7 @@ import re
 from typing import Any
 
 from defusedxml import ElementTree as ET
+from defusedxml.common import DefusedXmlException
 
 UBL_INVOICE="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2"
 UBL_CREDIT="urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2"
@@ -173,7 +174,7 @@ def extract_invoice_preview(path: str | Path) -> dict[str, Any]:
     digest=sha256(data).hexdigest()
     try:
         root=ET.fromstring(data)
-    except ET.ParseError as exc:
+    except (ET.ParseError, DefusedXmlException) as exc:
         raise ValueError("invalid XML document") from exc
     if sum(1 for _ in root.iter())>MAX_ELEMENTS:
         raise ValueError("invoice XML exceeds element budget")
@@ -194,6 +195,6 @@ def extract_invoice_preview(path: str | Path) -> dict[str, Any]:
         "review_required":True,
         "accounting_posted":False,
         "schema_validated":False,
-        "ercp_completeness_proven":False,
+        "erp_completeness_proven":False,
         "usable_for_audit":False,
     }

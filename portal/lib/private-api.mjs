@@ -5,6 +5,7 @@ const routes = {
     /^me$/,
     new RegExp("^uploads/"+uuid+"$"),
     new RegExp("^uploads/"+uuid+"/inspect$"),
+    new RegExp("^uploads/"+uuid+"/invoice-preview$"),
     new RegExp("^audits/"+uuid+"$"),
     new RegExp("^audits/"+uuid+"/fee-ledger$"),
   ],
