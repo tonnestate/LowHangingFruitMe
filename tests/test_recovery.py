@@ -106,6 +106,61 @@ class RecoveryPipelineTests(ReviewedPipelineTests):
             headers=self.headers(scope=scope or "lhfm:recovery:read"),
         )
 
+    def test_explicit_case_lifecycle_none_claimed_partial_full(self):
+        audit=self.audit_id()
+        self.assertEqual(self.ledger(audit).json()["case_status"],"NONE")
+        r,_=self.add_event(audit,"1000.00")
+        self.assertEqual(r.status_code,201,r.text)
+        self.assertEqual(self.ledger(audit).json()["case_status"],"CLAIMED")
+        self.assertEqual(self.review(r.json()["event_id"]).status_code,200)
+        self.assertEqual(self.ledger(audit).json()["case_status"],"REALIZED_PARTIAL")
+        full,_=self.add_event(audit,"1500.00")
+        self.assertEqual(full.status_code,201,full.text)
+        self.assertEqual(self.review(full.json()["event_id"]).status_code,200)
+        self.assertEqual(self.ledger(audit).json()["case_status"],"REALIZED_FULL")
+        self.assertEqual(self.ledger(audit).json()["calculated_variance_net"],"2500.00")
+        self.assertEqual(self.ledger(audit).json()["billable_recovery_net"],"0.00")
+
+    def test_finance_can_dispute_close_and_reopen_with_event_history(self):
+        audit=self.audit_id()
+        received,_=self.add_event(audit,"1000.00")
+        self.assertEqual(received.status_code,201,received.text)
+        endpoint=f"/v1/audits/{audit}/case-status"
+        body={**self.scope(),"directive":"DISPUTED",
+              "reason":"Synthetic supplier disputes settlement"}
+        self.assertEqual(self.client.post(endpoint,json=body,
+                         headers=self.finance_headers()).status_code,201)
+        self.assertEqual(self.ledger(audit).json()["case_status"],"DISPUTED")
+        body["directive"]="CLOSED"
+        invalid=self.client.post(endpoint,json=body,headers=self.finance_headers())
+        self.assertEqual(invalid.status_code,409,invalid.text)
+        self.assertEqual(self.review(received.json()["event_id"]).status_code,200)
+        allowed=self.client.post(endpoint,json=body,headers=self.finance_headers())
+        self.assertEqual(allowed.status_code,201,allowed.text)
+        self.assertEqual(self.ledger(audit).json()["case_status"],"CLOSED")
+        closed,_=self.add_event(audit,"100.00")
+        self.assertEqual(closed.status_code,409,closed.text)
+        body["directive"]="OPEN"
+        self.assertEqual(self.client.post(endpoint,json=body,
+                         headers=self.finance_headers()).status_code,201)
+        self.assertEqual(self.ledger(audit).json()["case_status"],"REALIZED_PARTIAL")
+
+    def test_case_transition_requires_distinct_finance_grant_and_scope(self):
+        audit=self.audit_id()
+        r,_=self.add_event(audit,"100.00")
+        self.assertEqual(r.status_code,201,r.text)
+        endpoint=f"/v1/audits/{audit}/case-status"
+        payload={**self.scope(),"directive":"DISPUTED","reason":"Pilot disagreement"}
+        self.assertEqual(self.client.post(endpoint,json=payload,
+                         headers=self.headers()).status_code,403)
+        self.assertEqual(self.client.post(endpoint,json=payload,
+                         headers=self.finance_headers(sub="REVIEWER-SYN-1")).status_code,403)
+        payload["tenant_id"]="OTHER"
+        result=self.client.post(endpoint,json=payload,
+                                headers=self.finance_headers())
+        self.assertIn(result.status_code,(403,404))
+        self.assertEqual(self.ledger(audit).json()["case_status"],"CLAIMED")
+
     def test_fee_from_separately_confirmed_economic_receipt_not_audit_difference(self):
         audit=self.audit_id()
         initial=self.ledger(audit)
