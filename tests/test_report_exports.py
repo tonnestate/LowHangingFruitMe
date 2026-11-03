@@ -37,6 +37,10 @@ class CustomerReportTests(RecoveryPipelineTests):
         self.assertEqual(case["recovery"]["fee_due_net"],"0.00")
         self.assertEqual(case["recovery"]["fee_rate"],"0.03")
         self.assertEqual(case["audit_id"],audit)
+        self.assertEqual(case["audit_quality"]["data_coverage_pct"],"100.00")
+        self.assertEqual(case["audit_quality"]["rule_clarity_pct"],"100.00")
+        self.assertEqual(case["audit_quality"]["reconciliation_completeness_pct"],"100.00")
+        self.assertFalse(case["audit_quality"]["source_ledger_completeness_proven"])
         self.assertEqual(len(case["source_provenance"]["transactions"]["original_sha256"]),64)
         self.assertEqual(len(case["source_provenance"]["settlements"]["original_sha256"]),64)
         self.assertEqual(len(case["lineage_sha256"]),64)
@@ -77,6 +81,8 @@ class CustomerReportTests(RecoveryPipelineTests):
             values={row[0]:row[1] for row in book["Differenzfall"].iter_rows(values_only=True)}
             self.assertEqual(values["Rechnerische Differenz EUR"],"2500.00")
             self.assertEqual(values["Honorarvorschlag 3 Prozent EUR"],"0.00")
+            self.assertEqual(values["Datenabdeckung gegen gelieferte Zeilenkontrollen Prozent"],"100.00")
+            self.assertEqual(values["Reconciliation-Kontrollen Prozent"],"100.00")
             self.assertEqual(values["Faelliges Honorar EUR"],"0.00")
             self.assertEqual(book["Quellen"].max_row,4)
         finally:
