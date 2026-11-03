@@ -16,6 +16,28 @@ Read actual GitHub main HEAD and these files before editing: docs/CONCEPT.md, do
 9. External actions require authority and idempotency. No automated supplier communication, Inkasso or invoice creation based merely on an LLM proposal.
 10. Document actual commands, result evidence and gaps; no fabricated CI/production claims.
 
+## Continuous concept and acceptance maintenance (v0.13)
+
+Every substantive change to bonus rules, ERP import/mapping, Readiness gates,
+RecoveryLedger, fee attribution or customer-facing audit reporting MUST update
+`docs/CONCEPT.md` and `docs/FOUR_WEEK_ACCEPTANCE.md` in the same release cycle.
+Synchronize actual implementation and test limits into
+`docs/IMPLEMENTATION_STATUS.md` and link the exact successful GitHub Actions
+run/commit in `EVIDENCE.md`. These documents must distinguish **implemented**,
+**synthetically tested**, **externally verified** and **still open**.
+
+R2 tier semantics must be explicitly defined as FULL_BASE, EXCESS_ONLY, BANDS
+or FIXED_REWARD and cited to a reviewed contract clause. Absence or mismatch is
+a hard stop, not a model guess. Percentage quality indicators cannot override
+verified approval, tenant/entity or reconciliation gates.
+
+Lexware P1 remains a narrowly scoped read-only R1 invoice/credit-note adapter,
+not a duplicate ERP inventory system. Real pilot requires the documented
+200,000 EUR internal test minimum, complete source-period audit and an independent
+buying/controlling specialist's review; independent RDG and success-fee counsel
+must approve the service before the first paying customer. Green CI does not
+turn synthetic records into a commercial launch.
+
 ## Verification commands
 
     python -m pip install -e ".[import]"
