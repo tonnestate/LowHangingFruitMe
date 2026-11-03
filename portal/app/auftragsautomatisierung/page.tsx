@@ -1,0 +1,9 @@
+import type {Metadata} from "next";
+import Link from "next/link";
+import {PageIntro} from "../../components/PageIntro";
+import {ConversionCTA} from "../../components/ConversionCTA";
+export const metadata:Metadata={title:"Auftragsautomatisierung – Entwicklungsfeld",description:"Geplante Auftragsprozesse von Eingang bis Zahlung. Aktuell keine produktive autonome Bestellbearbeitung."};
+const phases=[["Anfrage","Format und Kundendaten erkennen"],["Auftrag","Artikel und Konditionen überprüfen"],["Lieferung","Abweichungen dokumentieren"],["Rechnung","Rechnungsreferenzen zuordnen"],["Zahlung","Buchungen nachweisen"],["Ausnahme","Menschen zur Freigabe hinzuziehen"]];
+export default function Order(){return <><PageIntro eyebrow="Order-to-Cash · Konzept" title="Weniger Reibung zwischen Auftrag und Zahlung." description="Ein perspektivischer Automatisierungsbereich für Bestelleingänge, Preisprüfungen und Freigabeausnahmen. Die hierfür erforderlichen Agenten und ERP-Aktionen sind noch nicht entwickelt." development/>
+<section className="section divided-section"><div className="section-heading"><h2>Geplante Prozesskette.</h2><p>Eine mögliche künftige Struktur, keine angeblich produktiv automatisierten Bestellungen.</p></div><div className="agent-grid">{phases.map(([t,d],i)=><article className="feature-card" key={t}><span className="eyebrow">Schritt {i+1}</span><h3>{t}</h3><p>{d}</p></article>)}</div></section>
+<section className="section divided-section"><div className="section-heading"><h2>Warum wir mit Finanzprüfungen beginnen.</h2><p>Ein read-only Audit lässt sich isolierter und nachvollziehbarer starten als automatisches Schreiben in operative Bestell- oder Rechnungsprozesse. Die ersten Ausbauschritte konzentrieren sich deshalb auf Lieferantenboni.</p><Link className="button-secondary" href="/lieferantenboni-pruefen">Lieferantenboni ansehen</Link></div></section><ConversionCTA/></>}
