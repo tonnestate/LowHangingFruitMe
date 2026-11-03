@@ -18,6 +18,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from ..approval_service import AuthenticatedApprovalService
 from .store import BundleNotFound, PrivateAuditStore, RunConflict
 from .promotion import ReviewedBundleService, ReviewRequired
+from .recovery import RecoveryLedger, CaseConflict
 from .uploads import (ClamAVScanner, MAX_UPLOAD, ScannerUnavailable,
                       UploadRejected, UploadService)
 
@@ -56,13 +57,32 @@ class ReviewedBundleRequest(BaseModel):
     confirm_mapping_review: Literal[True]
 
 
+class RecoveryEventRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    tenant_id: str = Field(min_length=1,max_length=128,pattern=r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
+    legal_entity_id: str = Field(min_length=1,max_length=128,pattern=r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
+    kind: Literal["REALIZATION", "REVERSAL"]
+    amount_net: str = Field(pattern=r"^(?:0|[1-9][0-9]{0,10})\.[0-9]{2}$")
+    evidence_upload_id: UUID
+    reverses_event_id: UUID | None = None
+
+
+class FinanceReviewRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    tenant_id: str = Field(min_length=1,max_length=128,pattern=r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
+    legal_entity_id: str = Field(min_length=1,max_length=128,pattern=r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
+    decision: Literal["CONFIRM", "REJECT"]
+    confirm_evidence_review: Literal[True]
+
+
 def create_app(*, service: AuthenticatedApprovalService,
                store: PrivateAuditStore,
                uploads: UploadService | None = None,
-               promotion: ReviewedBundleService | None = None) -> FastAPI:
+               promotion: ReviewedBundleService | None = None,
+               recovery: RecoveryLedger | None = None) -> FastAPI:
     """Dependencies injected by a trusted bootstrap, never from HTTP input."""
     app = FastAPI(
-        title="LowHangingFruitMe Audit API", version="0.10.0",
+        title="LowHangingFruitMe Audit API", version="0.11.0",
         docs_url=None, redoc_url=None, openapi_url=None,
     )
 
@@ -243,6 +263,103 @@ def create_app(*, service: AuthenticatedApprovalService,
         except PermissionError as exc:
             raise HTTPException(status_code=403, detail={"code":"NOT_AUTHORIZED"}) from exc
 
+    @app.post("/v1/audits/{audit_id}/recovery-events",status_code=201)
+    def record_recovery(
+        audit_id: UUID, body: RecoveryEventRequest,
+        token: str = Depends(access_token),
+        idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key")] = None,
+    ):
+        actor = authorized_actor(
+            token,tenant=body.tenant_id,entity=body.legal_entity_id,
+            required_scope="lhfm:recovery:record",
+        )
+        if recovery is None:
+            raise HTTPException(status_code=503,detail={"code":"RECOVERY_UNAVAILABLE"})
+        if not idempotency_key:
+            raise HTTPException(status_code=400,detail={"code":"IDEMPOTENCY_KEY_REQUIRED"})
+        try:
+            key=str(UUID(idempotency_key))
+            if key!=idempotency_key.lower():
+                raise ValueError("noncanonical idempotency key")
+        except (ValueError,TypeError) as exc:
+            raise HTTPException(status_code=400,detail={"code":"INVALID_IDEMPOTENCY_KEY"}) from exc
+        try:
+            return recovery.record(
+                audit_id=str(audit_id),tenant_id=body.tenant_id,
+                legal_entity_id=body.legal_entity_id,reviewer_id=actor,
+                kind=body.kind,amount_net=body.amount_net,
+                evidence_upload_id=str(body.evidence_upload_id),
+                idempotency_key=key,
+                reverses_event_id=str(body.reverses_event_id)
+                    if body.reverses_event_id else None,
+            )
+        except BundleNotFound as exc:
+            raise HTTPException(status_code=404,detail={"code":"RECOVERY_SOURCE_NOT_FOUND"}) from exc
+        except CaseConflict as exc:
+            raise HTTPException(status_code=409,detail={"code":"RECOVERY_CONFLICT"}) from exc
+        except (ValueError,UploadRejected) as exc:
+            raise HTTPException(status_code=422,detail={"code":"RECOVERY_EVIDENCE_INVALID"}) from exc
+
+    @app.get("/v1/audits/{audit_id}/fee-ledger")
+    def read_fee_ledger(
+        audit_id: UUID,
+        tenant_id: Annotated[str, Query(min_length=1,max_length=128,
+            pattern=r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")],
+        legal_entity_id: Annotated[str, Query(min_length=1,max_length=128,
+            pattern=r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")],
+        token: str = Depends(access_token),
+    ):
+        actor=authorized_actor(
+            token,tenant=tenant_id,entity=legal_entity_id,
+            required_scope="lhfm:recovery:read",
+        )
+        if recovery is None:
+            raise HTTPException(status_code=503,detail={"code":"RECOVERY_UNAVAILABLE"})
+        try:
+            return recovery.ledger(
+                audit_id=str(audit_id),tenant_id=tenant_id,
+                legal_entity_id=legal_entity_id,reviewer_id=actor,
+            )
+        except BundleNotFound as exc:
+            raise HTTPException(status_code=404,detail={"code":"AUDIT_NOT_FOUND"}) from exc
+        except CaseConflict as exc:
+            raise HTTPException(status_code=409,detail={"code":"LEDGER_REVIEW_REQUIRED"}) from exc
+
+    @app.post("/v1/recovery-events/{event_id}/review")
+    def verify_recovery(
+        event_id: UUID, body: FinanceReviewRequest,
+        token: str = Depends(access_token),
+    ):
+        if recovery is None:
+            raise HTTPException(status_code=503,detail={"code":"RECOVERY_UNAVAILABLE"})
+        try:
+            principal=service.verifier.verify(token)
+        except (PermissionError,ValueError) as exc:
+            raise HTTPException(status_code=401,detail={"code":"INVALID_ACCESS_TOKEN"}) from exc
+        try:
+            principal.require_scope("lhfm:recovery:verify")
+            recovery.require_finance_grant(
+                tenant_id=body.tenant_id,legal_entity_id=body.legal_entity_id,
+                finance_actor_id=principal.subject,
+            )
+        except PermissionError as exc:
+            raise HTTPException(status_code=403,detail={"code":"FINANCE_NOT_AUTHORIZED"}) from exc
+        try:
+            return recovery.resolve(
+                event_id=str(event_id),tenant_id=body.tenant_id,
+                legal_entity_id=body.legal_entity_id,
+                finance_actor_id=principal.subject,
+                confirmed=body.decision=="CONFIRM",
+            )
+        except BundleNotFound as exc:
+            raise HTTPException(status_code=404,detail={"code":"RECOVERY_EVENT_NOT_FOUND"}) from exc
+        except PermissionError as exc:
+            raise HTTPException(status_code=403,detail={"code":"FINANCE_NOT_AUTHORIZED"}) from exc
+        except CaseConflict as exc:
+            raise HTTPException(status_code=409,detail={"code":"RECOVERY_CONFLICT"}) from exc
+        except (ValueError,UploadRejected) as exc:
+            raise HTTPException(status_code=422,detail={"code":"RECOVERY_EVIDENCE_INVALID"}) from exc
+
     @app.post("/v1/audits", status_code=201)
     def submit(
         body: AuditRequest, request: Request,
@@ -357,5 +474,10 @@ def create_app_from_environment() -> FastAPI:
         ReviewedBundleService(service=service, uploads=upload_service, store=store)
         if upload_service is not None else None
     )
+    recovery_service = (
+        RecoveryLedger(registry=service.registry,store=store,uploads=upload_service)
+        if upload_service is not None else None
+    )
     return create_app(service=service, store=store,
-                      uploads=upload_service, promotion=promotion_service)
+                      uploads=upload_service,promotion=promotion_service,
+                      recovery=recovery_service)
