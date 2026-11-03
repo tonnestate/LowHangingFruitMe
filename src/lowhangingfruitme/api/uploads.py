@@ -7,13 +7,15 @@ separate immutable source manifest before any calculation.
 from __future__ import annotations
 
 import asyncio
+from contextlib import contextmanager
 from hashlib import sha256
 import os
 from pathlib import Path
 import socket
 import stat
+import tempfile
 import struct
-from typing import Any, Protocol
+from typing import Any, Protocol, Iterator
 from uuid import uuid4
 
 from .store import BundleNotFound
@@ -208,6 +210,45 @@ class UploadService:
             raise
         finally:
             db.close()
+
+    @contextmanager
+    def snapshot_clean(
+        self, *, upload_id: str, tenant_id: str,
+        legal_entity_id: str, reviewer_id: str,
+        accepted_kinds: tuple[str, ...],
+    ) -> Iterator[tuple[Path, dict[str, Any]]]:
+        """Only the authenticated owner may read a clean immutable copy.
+
+        Path is derived exclusively from the DB-scoped UUID and validated
+        server-side kind. Original uploads never enter the audit source root.
+        """
+        record = self.get_upload(
+            upload_id=upload_id, tenant_id=tenant_id,
+            legal_entity_id=legal_entity_id, reviewer_id=reviewer_id,
+        )
+        if record["state"] != "CLEAN" or record["kind"] not in accepted_kinds:
+            raise UploadRejected("upload not clean or wrong dataset/document class")
+        suffix = FORMATS[record["kind"]][0]
+        target = self.root / (upload_id + suffix)
+        if target.is_symlink() or not target.is_file():
+            raise UploadRejected("clean source is missing or unsafe")
+        if stat.S_IMODE(target.stat().st_mode) & 0o077:
+            raise UploadRejected("source permissions are not private")
+        with tempfile.TemporaryDirectory(prefix="lhfm-source-snapshot-") as tmp:
+            copied = Path(tmp) / ("source" + suffix)
+            count = 0
+            digest = sha256()
+            with target.open("rb") as inp, copied.open("xb") as out:
+                while chunk := inp.read(65536):
+                    count += len(chunk)
+                    if count > MAX_UPLOAD or count > record["expected_size"]:
+                        raise UploadRejected("source changed since upload")
+                    digest.update(chunk)
+                    out.write(chunk)
+            if (count != record["expected_size"] or
+                    digest.hexdigest() != record["expected_sha256"]):
+                raise UploadRejected("source changed since scan")
+            yield copied, record
 
     async def receive(
         self, *, upload_id: str, tenant_id: str,
