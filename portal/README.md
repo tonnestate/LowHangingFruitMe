@@ -9,7 +9,7 @@
 - Add a *new* Apache VirtualHost for an **owner-selected domain**. Do not edit existing TonnEstate/WordPress vhosts or reuse their DocumentRoot.
 - Expose only Apache HTTPS; do not publicly expose port 3107.
 - No customer finance document upload, user login or 3%-billing API is served by the marketing site.
-- Until real legal operator details, privacy information, domain TLS and a security review are completed: \`PUBLIC_LAUNCH_APPROVED=false\`. This generates \`noindex\` and a full robots disallow.
+- Until real legal operator details, privacy information, domain TLS and a security review and full operator-provided legal texts are completed: \`PUBLIC_LAUNCH_APPROVED=false\`. This generates \`noindex\` and a full robots disallow.
 - Missing contact email means the request page **shows a transparent disabled staging message**, not a success screen or an unhandled form.
 
 ## Versions, build and locally reproducible tests
@@ -47,7 +47,7 @@ The file \`portal/public/brand-measurement.json\` records sampled original pixel
 6. Validate accessibility, CSP/content security (including future external integrations), security headers, backup and logging.
 7. Obtain and publish correct \`Impressum\`, full \`Datenschutzerklärung\`, incident contact, and verify 3% commercial terms independently before public indexation.
 
-\`PUBLIC_LAUNCH_APPROVED=true\` is deliberately blocked unless an HTTPS site URL, operator/contact details, legal review and security approval flags are supplied. **This flag check is not an independent legal opinion.** The staging privacy text is explicitly incomplete and must be replaced with reviewed text before public release.
+\`PUBLIC_LAUNCH_APPROVED=true\` is deliberately blocked unless an HTTPS site URL, operator/contact details, legal review and security approval flags are supplied. **This flag check is not an independent legal opinion.** The staging privacy text is explicitly incomplete; public builds are blocked without at least 500 characters of operator-provided reviewed privacy text and additional imprint disclosure. Passing environment flags is not legal advice.
 
 ## Follow-on application boundary
 
