@@ -39,6 +39,11 @@ class RebateEngineTests(unittest.TestCase):
                 payload["rule"].pop("rate")
                 payload["rule"]["kind"] = kind
                 payload["rule"]["tiers"] = [{"threshold":"80000.00", "rate":"0.02"}]
+                payload["rule"]["tier_semantics"] = {
+                    "application": "FULL_BASE" if kind == "RETROACTIVE_FULL_BASE" else "EXCESS_ONLY",
+                    "evidence_ref": payload["rule"]["evidence_refs"][0],
+                    "reviewed": True,
+                }
                 self.assertEqual(audit(payload)["expected_bonus_net"], expected)
 
     def test_fixed_reward(self):
@@ -46,6 +51,11 @@ class RebateEngineTests(unittest.TestCase):
         payload["rule"].pop("rate")
         payload["rule"]["kind"] = "FIXED_THRESHOLD_REWARD"
         payload["rule"]["tiers"] = [{"threshold":"150000", "reward":"500"}]
+        payload["rule"]["tier_semantics"] = {
+            "application": "FIXED_REWARD",
+            "evidence_ref": payload["rule"]["evidence_refs"][0],
+            "reviewed": True,
+        }
         self.assertEqual(audit(payload)["expected_bonus_net"], "500.00")
 
     def test_missing_threshold_semantics_is_rejected(self):
@@ -53,6 +63,57 @@ class RebateEngineTests(unittest.TestCase):
         payload["rule"]["kind"] = "MARGINAL_PER_TIER"
         with self.assertRaises(ValueError):
             audit(payload)
+
+    def test_r2_unconfirmed_threshold_semanics_are_rejected(self):
+        payload = deepcopy(BASE)
+        payload["rule"].pop("rate")
+        payload["rule"]["kind"] = "MARGINAL_PER_TIER"
+        payload["rule"]["tiers"] = [{"threshold":"80000","rate":"0.02"}]
+        with self.assertRaisesRegex(ValueError, "complete explicit human review"):
+            audit(payload)
+        payload["rule"]["tier_semantics"] = {
+            "application":"EXCESS_ONLY",
+            "evidence_ref":payload["rule"]["evidence_refs"][0],
+            "reviewed":False,
+        }
+        with self.assertRaisesRegex(ValueError, "complete explicit human review"):
+            audit(payload)
+
+    def test_r2_wrong_application_and_unsupported_clauses_rejected(self):
+        payload = deepcopy(BASE)
+        payload["rule"].pop("rate")
+        payload["rule"]["kind"] = "RETROACTIVE_FULL_BASE"
+        payload["rule"]["tiers"] = [{"threshold":"80000","rate":"0.02"}]
+        payload["rule"]["tier_semantics"] = {
+            "application":"BANDS",
+            "evidence_ref":payload["rule"]["evidence_refs"][0],
+            "reviewed":True,
+        }
+        with self.assertRaisesRegex(ValueError, "contradicts"):
+            audit(payload)
+        payload["rule"]["tier_semantics"]["application"] = "FULL_BASE"
+        payload["rule"]["tier_semantics"]["evidence_ref"] = "fabricated-clause"
+        with self.assertRaisesRegex(ValueError, "cited contract"):
+            audit(payload)
+
+    def test_r2_band_and_excess_forms_are_not_conflated(self):
+        payload = deepcopy(BASE)
+        payload["rule"].pop("rate")
+        payload["rule"]["kind"] = "MARGINAL_PER_TIER"
+        payload["rule"]["tiers"] = [
+            {"threshold":"0","rate":"0.01"},
+            {"threshold":"100000","rate":"0.03"},
+        ]
+        payload["rule"]["tier_semantics"] = {
+            "application":"EXCESS_ONLY",
+            "evidence_ref":payload["rule"]["evidence_refs"][0],
+            "reviewed":True,
+        }
+        with self.assertRaisesRegex(ValueError, "exactly one"):
+            audit(payload)
+        payload["rule"]["tier_semantics"]["application"] = "BANDS"
+        result = audit(payload)
+        self.assertEqual(result["expected_bonus_net"], "4000.00")
 
     def test_f05_duplicate_input_is_idempotent(self):
         payload = deepcopy(BASE)
