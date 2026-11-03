@@ -296,6 +296,8 @@ def create_app(*, service: AuthenticatedApprovalService,
                     completeness=bundle["completeness"],
                     tenant_id=tenant, legal_entity_id=entity,
                 )
+            if bundle.get("provenance") is not None:
+                report["input_provenance"] = bundle["provenance"]
             store.finish_run(audit_id=audit_id, report=report)
         except Exception as exc:
             store.fail_run(audit_id=audit_id)
