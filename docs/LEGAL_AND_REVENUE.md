@@ -32,7 +32,7 @@ Marketingaussagen wie „1–3 % des Umsatzes“ sind nur nach eigener belastbar
 
 ## 4. Erfolgshonorar – Bemessung und Zurechnung
 
-**Modell zur anwaltlichen Prüfung:** 10 % × der **nachgewiesenen, zusätzlich, kausal aufgrund unserer dokumentierten Findings realisierten und nicht anderweitig bereits vergüteten Netto-Lieferantenvergütung**. Unser Honorar kann seinerseits umsatzsteuerpflichtig sein.
+**Verbindliche Produkt-Preisentscheidung (vertraglich noch zu prüfen):** 3 % × der **nachgewiesenen, zusätzlich, kausal aufgrund unserer dokumentierten Findings realisierten und nicht anderweitig bereits vergüteten Netto-Lieferantenvergütung**. Unser Honorar kann seinerseits umsatzsteuerpflichtig sein.
 
 Abrechenbar nur, wenn:
 1. Ein dokumentierter Case innerhalb des angenommenen Leistungsscheins existiert.
@@ -42,7 +42,7 @@ Abrechenbar nur, wenn:
 5. Derselbe Vorgang nicht doppelt gezählt wird – etwa Gutschrift und anschließender Zahlungseingang als zwei getrennte Boni.
 6. Rückbuchungen/Korrekturen rückwirkend den realisierten Nettobetrag und ggf. unsere Gebühr mindern.
 
-**Beispiel, keine Prognose:** ermittelte Differenz 36.700 EUR; Zusatzgutschriften werden für 12.000 EUR anerkannt; davon sind 8.000 EUR zugeflossen und 4.000 EUR wirksam verrechnet. Ergebnis bei vollständig geprüfter Zuordnung: 12.000 EUR Realisierung, 1.200 EUR netto Honorar vor USt. Auf nicht realisierte 24.700 EUR wird nichts berechnet.
+**Beispiel, keine Prognose:** ermittelte Differenz 36.700 EUR; Zusatzgutschriften werden für 12.000 EUR anerkannt; davon sind 8.000 EUR zugeflossen und 4.000 EUR wirksam verrechnet. Ergebnis bei vollständig geprüfter Zuordnung: 12.000 EUR Realisierung, 360 EUR netto Honorar vor USt. Auf nicht realisierte 24.700 EUR wird nichts berechnet.
 
 **Definition von Realisierung** vor Unterschrift: Zahlung, endgültig wirksame Verrechnung oder unter klar bestimmten Voraussetzungen endgültig nutzbare und belegte Gutschrift. Eine bloße Lieferantenzusage oder von uns berechneter Anspruch genügt nicht.
 

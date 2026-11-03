@@ -85,7 +85,7 @@ Es wird **kein** eigenständiges ERP oder FruitStack-Orchestrierungssystem dupli
 
 ## Geschäft und Grenzen
 
-Angedachtes Kundenangebot: eine einmalige Prüfung gegen **10 % von der nachweislich, zurechenbar und wirtschaftlich tatsächlich realisierten zusätzlichen Nettovergütung**. Erfolgshonorar, RDG-Abgrenzung, Datenschutz und Vertragstexte sind vor kommerziellem Start extern rechtlich zu prüfen. Das Produkt betreibt im ersten Umfang weder Inkasso noch autonomes Forderungsmanagement.
+Angedachtes Kundenangebot: eine einmalige Prüfung gegen **3 % von der nachweislich, zurechenbar und wirtschaftlich tatsächlich realisierten zusätzlichen Nettovergütung**. Erfolgshonorar, RDG-Abgrenzung, Datenschutz und Vertragstexte sind vor kommerziellem Start extern rechtlich zu prüfen. Das Produkt betreibt im ersten Umfang weder Inkasso noch autonomes Forderungsmanagement.
 
 ## Dokumentation
 
