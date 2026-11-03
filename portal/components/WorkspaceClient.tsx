@@ -6,7 +6,7 @@ type Preview={headers:string[];rows:number;source_sha256:string;
   proposed_mapping:Record<string,string[]>;options:Record<string,string>};
 type Uploaded={upload_id:string;kind:string;sha256:string;state:string};
 type Audit={audit_id:string;status:string;audit_executed:boolean};
-type Ledger={confirmed_realization_net:string;fee_proposal_net:string;
+type Ledger={confirmed_realization_net:string;fee_proposal_net:string;fee_rate:string;
   fee_due_net:string;events:Array<{event_id:string;state:string;amount_net:string;kind:string}>};
 const TX=["external_id","supplier_id","date","currency","amount_net","kind","posted","basis"];
 const ST=["external_id","supplier_id","date","currency","amount_net","kind",
@@ -356,11 +356,11 @@ export function WorkspaceClient(){
    </div>}
   </fieldset>
   <fieldset disabled={busy||!audit||audit.status!=="COMPLETED"}>
-   <legend>6 · Recovery und 3 %</legend>
+   <legend>6 · Recovery und Honorar</legend>
    <button className="button-secondary" type="button" onClick={readLedger}>Ledger aktualisieren</button>
    {ledger&&<div className="info-block">
     <p>Bestätigt realisiert: <strong>{ledger.confirmed_realization_net} EUR</strong></p>
-    <p>3-%-Honorarvorschlag: <strong>{ledger.fee_proposal_net} EUR</strong></p>
+    <p>Honorarvorschlag ({(Number(ledger.fee_rate)*100).toLocaleString("de-DE")} %): <strong>{ledger.fee_proposal_net} EUR</strong></p>
     <p>Fällig / fakturiert: <strong>{ledger.fee_due_net} EUR</strong></p>
     {ledger.events.map(e=><p key={e.event_id}>{e.kind} · {e.amount_net} EUR ·
      {e.state} · <code>{e.event_id}</code></p>)}

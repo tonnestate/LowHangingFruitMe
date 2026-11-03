@@ -14,7 +14,7 @@ const industries=["Elektrogroßhandel","SHK & Gebäudetechnik","Industriebedarf 
 const faqs=[
  ["Muss unser ERP ausgetauscht werden?","Nein. Der technische Import kann bereits bestimmte CSV- und Excel-Exporte nach geprüftem Mapping verarbeiten. Native ERP-Connectoren und ein öffentlicher Upload sind noch in Entwicklung."],
  ["Welche Daten braucht die Bonusprüfung?","Die konkrete Vertragsfassung, die vollständigen relevanten Einkaufsdaten der Abrechnungsperiode, vorhandene Bonusgutschriften, Retouren und getrennte ERP-Kontrollsummen."],
- ["Worauf beziehen sich die 3 %?","Das geplante Honorar bezieht sich ausschließlich auf nachgewiesene, zusätzlich zurechenbare und tatsächlich realisierte Nettobeträge. Eine bloß errechnete Differenz reicht nicht."],
+ ["Worauf beziehen sich die 5 %?","Das geplante Honorar bezieht sich ausschließlich auf nachgewiesene, zusätzlich zurechenbare und tatsächlich realisierte Nettobeträge. Eine bloß errechnete Differenz reicht nicht."],
  ["Übernimmt LowHangingFruitMe den Einzug?","Nein. Wir bieten keine eigenständige Rechtsvertretung oder Inkassoleistung. Der Kunde entscheidet über die weitere kaufmännische Klärung."],
  ["Was passiert mit vertraulichen Finanzdaten?","Aktuell gibt es auf dieser öffentlichen Website keinen Dokumentenupload. Ein geschützter Upload wird erst nach Sicherheits- und Datenschutzabnahme freigeschaltet."],
  ["Sind weitere Finanzmodule schon verfügbar?","Noch nicht. Nur der technische Rechenkern für bestimmte Lieferantenboni ist umgesetzt; die anderen Bereiche sind Entwicklungsziele."]
@@ -25,7 +25,7 @@ export default function Home(){
   <div><span className="eyebrow">Financial Recovery · Pilotvorbereitung</span>
    <h1>Mehr aus Ihren Lieferantenvereinbarungen herausholen.</h1>
    <p className="hero-lead">Lieferantenboni, Einkaufsumsätze und erhaltene Gutschriften nachvollziehbar abgleichen. Damit mögliche Differenzen nicht zwischen Verträgen und Buchhaltung untergehen.</p>
-   <div className="hero-actions"><Link className="button-primary" href="/lieferantenboni-pruefen">Lieferantenboni prüfen</Link><Link className="button-secondary" href="/preis-und-ablauf">3-%-Modell verstehen</Link></div>
+   <div className="hero-actions"><Link className="button-primary" href="/lieferantenboni-pruefen">Lieferantenboni prüfen</Link><Link className="button-secondary" href="/preis-und-ablauf">5-%-Modell verstehen</Link></div>
    <div className="trust-line"><span>ERP-unabhängiger Datenexport</span><span>Nachvollziehbare Rechenregeln</span><span>Keine ERP-Schreibzugriffe</span></div>
   </div>
   <div className="hero-media"><img src="/neon-banner.png" alt="Originales Neon-Low-Hanging-FruitMe-Markenbanner" loading="eager"/><div className="image-caption">Eigenständige Finanzanalyse – kein ERP-Ersatz. Produkt derzeit in Pilotvorbereitung.</div></div>

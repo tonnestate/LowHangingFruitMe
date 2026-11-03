@@ -17,7 +17,7 @@ export const nav = [
   {href:"/auftragsautomatisierung",title:"Auftragsprozesse"},
   {href:"/serviceumsatz",title:"Service"},
   {href:"/wissen",title:"Wissen"},
-  {href:"/preis-und-ablauf",title:"3 % Erfolgsmodell"}
+  {href:"/preis-und-ablauf",title:"5 % Erfolgsmodell"}
 ];
 export type Article = {slug:string,title:string,description:string,category:string,sections:{heading:string,paragraphs:string[]}[]};
 export const articles: Article[]=[

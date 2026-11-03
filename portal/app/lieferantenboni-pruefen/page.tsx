@@ -2,7 +2,7 @@ import type {Metadata} from "next";
 import Link from "next/link";
 import {PageIntro} from "../../components/PageIntro";
 import {ConversionCTA} from "../../components/ConversionCTA";
-export const metadata:Metadata={title:"Lieferantenboni prüfen lassen",description:"Jahresboni, Staffelvereinbarungen und gebuchte Gutschriften systematisch abgleichen. Quellengebundene Berechnung, 3 % geplante Erfolgsprovision."};
+export const metadata:Metadata={title:"Lieferantenboni prüfen lassen",description:"Jahresboni, Staffelvereinbarungen und gebuchte Gutschriften systematisch abgleichen. Quellengebundene Berechnung, 5 % geplante Erfolgsprovision."};
 const reasons=[
  ["Vertragsstaffeln","Eine rückwirkend geltende Staffel kann zu einer anderen Vergütung führen als eine nur für die überschrittene Umsatzscheibe geltende Staffel."],
  ["Nicht zugeordnete Gutschriften","Gutschriften müssen nach Lieferant, Vertrag und Periode korrekt einer Bonusregel zugewiesen sein."],
