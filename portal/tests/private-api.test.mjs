@@ -10,6 +10,8 @@ test("BFF exposes only financial service allowlist",()=>{
               "/v1/audits/"+id+"/recovery-events");
  assert.equal(verifiedApiPath("GET",["audits",id,"fee-ledger"]),
               "/v1/audits/"+id+"/fee-ledger");
+ assert.equal(verifiedApiPath("POST",["audits",id,"case-status"]),
+              "/v1/audits/"+id+"/case-status");
  for(const fmt of ["pdf","xlsx","json"]){
    assert.equal(verifiedApiPath("GET",["audits",id,"report."+fmt]),
                 "/v1/audits/"+id+"/report."+fmt);

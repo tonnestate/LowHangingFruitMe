@@ -13,6 +13,7 @@ const routes = {
   POST: [
     /^uploads$/, /^bundles$/, /^audits$/,
     new RegExp("^audits/"+uuid+"/recovery-events$"),
+    new RegExp("^audits/"+uuid+"/case-status$"),
     new RegExp("^recovery-events/"+uuid+"/review$"),
   ],
   PUT: [new RegExp("^uploads/"+uuid+"/content$")],

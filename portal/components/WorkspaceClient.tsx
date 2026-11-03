@@ -89,6 +89,8 @@ export function WorkspaceClient(){
  const [recoveryKind,setRecoveryKind]=useState<"REALIZATION"|"REVERSAL">("REALIZATION");
  const [reversalId,setReversalId]=useState("");
  const [financeEvent,setFinanceEvent]=useState("");
+ const [caseDirective,setCaseDirective]=useState<"DISPUTED"|"CLOSED"|"OPEN">("DISPUTED");
+ const [caseReason,setCaseReason]=useState("");
  const [financeDecision,setFinanceDecision]=useState<"CONFIRM"|"REJECT">("CONFIRM");
  const [busy,setBusy]=useState(false),[message,setMessage]=useState("");
  const scope={tenant_id:tenant.trim(),legal_entity_id:entity.trim()};
@@ -217,6 +219,14 @@ export function WorkspaceClient(){
   });
   setFinanceEvent(result.event_id);
   return "Zur getrennten Prüfung gemeldet: "+result.event_id;
+ });
+ const markCaseStatus=()=>run(async()=>{
+  if(!audit||!caseReason.trim())throw new Error("FALLSTATUS_UND_BEGRUENDUNG_ERFORDERLICH");
+  const result=await call<{directive:string}>(
+   "audits/"+audit.audit_id+"/case-status",
+   jsonBody({...scope,directive:caseDirective,reason:caseReason.trim()})
+  );
+  return "Finanzstatus dokumentiert: "+result.directive;
  });
  const financeReview=()=>run(async()=>{
   if(!financeEvent)throw new Error("EREIGNIS_ID_FEHLT");
@@ -358,6 +368,20 @@ export function WorkspaceClient(){
    </button>
    <p className="note">Gemeldete Zahlungen zählen erst nach einer getrennten
     Finanzfreigabe. Es wird niemals automatisch eine Rechnung erstellt.</p>
+  </fieldset>
+  <fieldset disabled={busy||!audit||audit.status!=="COMPLETED"}>
+   <legend>Fallstatus durch berechtigten Finanzprüfer</legend>
+   <label>Status<select value={caseDirective}
+    onChange={e=>setCaseDirective(e.target.value as "DISPUTED"|"CLOSED"|"OPEN")}>
+    <option value="DISPUTED">Umstritten</option>
+    <option value="CLOSED">Abgeschlossen</option>
+    <option value="OPEN">Wiedereröffnen</option>
+   </select></label>
+   <label>Begründung<input value={caseReason}
+    onChange={e=>setCaseReason(e.target.value)}/></label>
+   <button type="button" className="button-secondary" onClick={markCaseStatus}>
+    Fallstatus nachvollziehbar protokollieren
+   </button>
   </fieldset>
   <fieldset disabled={busy}><legend>Separate Finanzfreigabe</legend>
    <p className="note">Nur mit eigenem Finance-Verifier-Zugriff,
