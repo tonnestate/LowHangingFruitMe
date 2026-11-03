@@ -8,6 +8,7 @@ const routes = {
     new RegExp("^uploads/"+uuid+"/invoice-preview$"),
     new RegExp("^audits/"+uuid+"$"),
     new RegExp("^audits/"+uuid+"/fee-ledger$"),
+    new RegExp("^audits/"+uuid+"/report\\.(?:pdf|json|xlsx)$"),
   ],
   POST: [
     /^uploads$/, /^bundles$/, /^audits$/,

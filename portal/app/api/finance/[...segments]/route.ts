@@ -86,6 +86,24 @@ async function forward(request:NextRequest,ctx:Context){
       cache:"no-store",signal:AbortSignal.timeout(45000),
       redirect:"error",
     });
+
+    if(/\/report\.(pdf|xlsx|json)$/.test(apiPath) && upstream.ok){
+      const size=Number(upstream.headers.get("content-length")||"0");
+      if(size>4*1024*1024)return json(502,"REPORT_TOO_LARGE");
+      const bytes=await upstream.arrayBuffer();
+      if(bytes.byteLength>4*1024*1024)return json(502,"REPORT_TOO_LARGE");
+      const fmt=apiPath.split(".").at(-1);
+      const kind=fmt==="pdf"?"application/pdf":
+       fmt==="xlsx"?"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
+       "application/json; charset=utf-8";
+      const match=/\/audits\/([0-9a-f-]{36})\/report\./.exec(apiPath);
+      if(!match)return json(502,"INVALID_REPORT_RESPONSE");
+      return new Response(bytes,{status:upstream.status,headers:{
+        "Content-Type":kind,"Cache-Control":"no-store",
+        "X-Content-Type-Options":"nosniff",
+        "Content-Disposition":'attachment; filename="lhfm-'+match[1]+"."+fmt+'"',
+      }});
+    }
     const result=await upstream.text();
     if(result.length>4*1024*1024)return json(502,"UPSTREAM_RESPONSE_TOO_LARGE");
     return new Response(result,{

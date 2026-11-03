@@ -187,6 +187,20 @@ export function WorkspaceClient(){
   return result.audit_executed?"Audit durchgeführt – noch keine wirtschaftliche Realisierung.":
    "Audit erfordert weitere Daten oder Freigaben.";
  });
+ const downloadReport=(fmt:"pdf"|"xlsx"|"json")=>run(async()=>{
+  if(!audit||audit.status!=="COMPLETED")throw new Error("FREIGEGEBENER_AUDIT_FEHLT");
+  const response=await fetch("/api/finance/audits/"+audit.audit_id+
+   "/report."+fmt+"?"+qs,{cache:"no-store"});
+  if(!response.ok)throw new Error("BERICHT_NICHT_VERFUEGBAR_"+response.status);
+  const blob=await response.blob();
+  const url=URL.createObjectURL(blob);
+  try{
+   const link=document.createElement("a");
+   link.href=url;link.download="lhfm-"+audit.audit_id+"."+fmt;
+   document.body.appendChild(link);link.click();link.remove();
+  }finally{URL.revokeObjectURL(url);}
+  return "Geprüfter Bericht als "+fmt.toUpperCase()+" bereitgestellt.";
+ });
  const readLedger=()=>run(async()=>{
   if(!audit)throw new Error("AUDIT_FEHLT");
   setLedger(await call<Ledger>("audits/"+audit.audit_id+"/fee-ledger?"+qs));
@@ -296,6 +310,17 @@ export function WorkspaceClient(){
   </fieldset>
   <fieldset disabled={busy||!bundle}><legend>5 · Bonusprüfung ausführen</legend>
    <button className="button-primary" type="button" onClick={calculate}>Audit berechnen</button>
+   {audit&&audit.status==="COMPLETED"&&<div className="workspace-grid">
+    <button type="button" className="button-secondary" onClick={()=>downloadReport("pdf")}>
+     Kundenbericht PDF
+    </button>
+    <button type="button" className="button-secondary" onClick={()=>downloadReport("xlsx")}>
+     Prüfbericht Excel
+    </button>
+    <button type="button" className="button-secondary" onClick={()=>downloadReport("json")}>
+     Nachweise JSON
+    </button>
+   </div>}
    {audit&&<div className="info-block"><h3>Auditstatus: {audit.status}</h3>
     <p>Audit-ID: <code>{audit.audit_id}</code></p>
     {report&&<p>Erwartet: {String(report.expected_bonus_net??"—")} EUR.
