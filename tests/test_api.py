@@ -234,7 +234,7 @@ class AuditApiIntegrationTests(unittest.TestCase):
 
     def test_missing_controls_keeps_readiness_gate(self):
         manifest=deepcopy(self.manifest)
-        manifest["controls"]={}
+        manifest["controls"]=None
         new_bundle=str(uuid4())
         self.store.provision_bundle(bundle_id=new_bundle,tenant_id=TENANT,
                                     legal_entity_id=LEGAL,manifest=manifest)

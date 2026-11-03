@@ -105,7 +105,7 @@ class PrivateAuditStore:
                 raise ValueError("invalid source descriptor")
         if not isinstance(manifest["source_system"], str) or not IDENTIFIER.fullmatch(manifest["source_system"]):
             raise ValueError("invalid source system")
-        if not isinstance(manifest["controls"], dict) or not isinstance(manifest["approval_receipt"], dict):
+        if (manifest["controls"] is not None and not isinstance(manifest["controls"], dict)) or not isinstance(manifest["approval_receipt"], dict):
             raise ValueError("controls and signed receipt must be objects")
         if (type(manifest["completeness"]) is not dict
                 or set(manifest["completeness"]) != {
