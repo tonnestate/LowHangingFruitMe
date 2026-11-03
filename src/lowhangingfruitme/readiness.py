@@ -6,7 +6,7 @@ No LLM use, no monetary claim, no billing.
 """
 from __future__ import annotations
 
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 from hashlib import sha256
 import json
 from typing import Any
@@ -170,6 +170,53 @@ def assess_readiness(
     statuses = {issue["severity"] for issue in issues}
     status = ("NOT_READY" if "BLOCKER" in statuses else
               "LIMITED" if "WARNING" in statuses else "READY_FOR_AUDIT")
+    # Audit-level indicators are source-control comparators, not an ERP
+    # completeness attestation, a model confidence score or an override
+    # of the monetary permission/readiness gates.
+    supplied_counts = [summary[name]["expected_rows"] for name in ("transactions","settlements")]
+    if all(type(n) is int for n in supplied_counts):
+        denominator = sum(supplied_counts)
+        covered = sum(
+            min(summary[name]["actual_rows"], summary[name]["expected_rows"])
+            for name in ("transactions","settlements")
+        )
+        coverage_pct = (
+            str((Decimal(covered) * Decimal("100") / Decimal(denominator)).quantize(
+                Decimal("0.01"), rounding=ROUND_HALF_UP
+            ))
+            if denominator else None
+        )
+        matched_pairs = sum(
+            1 for name in ("transactions","settlements") if summary[name]["matched"]
+        )
+        reconciliation_pct = f"{matched_pairs * 50:.2f}"
+    else:
+        denominator = None
+        covered = None
+        coverage_pct = None
+        reconciliation_pct = None
+
+    clarity_pct = "100.00" if verified_approval and rule.approved and rule.evidence_refs else None
+    quality_metrics: dict[str, Any] = {
+        "data_coverage_pct": coverage_pct,
+        "data_coverage_units": "imported_row_count_against_customer_supplied_controls",
+        "data_coverage_numerator": covered,
+        "data_coverage_denominator": denominator,
+        "rule_clarity_pct": clarity_pct,
+        "rule_clarity_scope": "single_rule_signature_and_declared_semantics_only",
+        "rule_clarity_contract_interpretation_independently_proven": False,
+        "reconciliation_completeness_pct": reconciliation_pct,
+        "reconciliation_matched_pairs": matched_pairs if denominator is not None else None,
+        "reconciliation_required_pairs": 2 if denominator is not None else None,
+        "source_ledger_completeness_proven": False,
+        "readiness_status": status,
+        "blocker_codes": [issue["code"] for issue in issues if issue["severity"] == "BLOCKER"],
+        "warning_codes": [issue["code"] for issue in issues if issue["severity"] == "WARNING"],
+        "value_weighted_source_coverage_pct": None,
+        "missing_value_weighted_source_coverage_reason":
+            "not derivable reliably from net totals containing returns/credits",
+    }
+
     evidence = {
         "rule_revision": rule.revision,
         "rule_id": rule.rule_id,
@@ -194,4 +241,5 @@ def assess_readiness(
         "control_origin": "customer_or_operator_supplied_unverified",
         "external_ledger_completeness_proven": False,
         "automated_percentage_score": None,
+        "quality_metrics": quality_metrics,
     }
