@@ -2,6 +2,20 @@
 
 **Stand:** 03.11.2026 | **Ist:** ausführbarer Python-Kern v0.9, importfähige Datenadapter, abgesicherte Audit-API und private, scannerpflichtige Upload-Staging-API sowie Marketing-Website 0.1.0; **keine realen Kunden- oder Produktionsabnahmetests**. Dieser Plan setzt Prioritäten, aber behauptet keine feste Laufzeit, produktive Anbindung oder Marktvalidierung.
 
+## Ergänzende verbindliche Prüfgates (03.11.2026)
+
+**R2 vor Berechnung:** Parser muss unklare rückwirkende, Überschuss- oder scheibenbezogene Staffelsemantik sofort als `NEEDS_REVIEW` kennzeichnen. Aus unklaren Vorschlägen entstehen weder genehmigungsfähige Regeln noch Geldbefunde; die übermittelte eindeutige Staffelklasse muss mit belegter Vertragsfundstelle und Reviewer-Freigabe verknüpft werden.
+
+**Audit-Level-Datenqualität:** `data_coverage_pct`, `rule_clarity_pct`, `reconciliation_completeness_pct` nach `CONCEPT.md` definieren, pro Audit begründen und mit fehlenden Nennern korrekt als `null` ausgeben. Zusätzlich maschinenlesbare blocker/warning- und `NEEDS_DATA`-/`NEEDS_REVIEW`-Gründe. **Qualitätskennzahlen nicht als Vollständigkeitsattest missverstehen.**
+
+**Lexware P1:** Read-only R1-Rechnungs- und Gutschriftenbelege sowie benötigte Header/Positionsfelder. Kein vollständiger Warenwirtschaftsnachbau; fehlende historische/positionsbezogene Einkaufsdaten per Export und explizitem Data-Readiness-Gate nachfordern. Echte Testkonto-Abnahme vor „integriert“.
+
+**Realer R1-Pilot:** volle zwölf Monate, mindestens **200.000 EUR** kontrolliertes bonusfähiges Nettovolumen (gewählte Pilot-Schwelle, nicht Marktstandard), importbezogene Mindestabdeckung **95 % wertgewichtet**, ungelöste fachliche Positionen höchstens **10 %**, und vor **finalem** Finding vollständiger Reconciliation-Abgleich. Namentlich unabhängiger externer Einkäufer/Controller erstellt manuelle Goldstandard-Rechnung und zeichnet Quellenbefund sowie Nullfall oder echte, belegte Realisierung ab.
+
+**Kommerzieller Go/No-Go:** Externe fachjuristische schriftliche RDG-/Erfolgshonorar-Abgrenzung, insbesondere keine eigenständige Anspruchsdurchsetzung. Offene Rechts- und Datenschutzprüfungen sind harte Launch-Blocker, nicht nachträgliche TODOs.
+
+**Pflicht-Dokumentationszyklus:** Bei jedem fachlichen Release `CONCEPT.md`, `FOUR_WEEK_ACCEPTANCE.md`, `IMPLEMENTATION_STATUS.md` und `EVIDENCE.md` synchron mit Nachweisen aktualisieren. Keine Pilot-/Release-Abnahme allein wegen grünem synthetischem CI.
+
 ## 1. Entwicklungsprinzip und Schutz gegen Scope-Drift
 
 Ein vertikaler, voll belegbarer Pfad ist wichtiger als zehn unfertige Connectoren. Die fachliche Definition von **„Geld gefunden“** ist verschieden von **„Geld beim Kunden realisiert“** und **„unsere Rechnung bezahlt“**. Jede dieser Stufen bekommt eigene Messwerte und Abnahmetests.

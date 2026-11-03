@@ -1,5 +1,16 @@
 # Data Readiness – gate v0.3.0
 
+## Measurable audit-level visibility (specified 03.11.2026)
+
+The commercial UX must distinguish a gate verdict from measurement. Planned explicit fields:
+
+- **data_coverage_pct**: bounded count of imported purchase/credit rows against independently supplied ERP *report* denominators, **null** if no valid denominator; not proof of completeness of the original ERP
+- **rule_clarity_pct**: number of source-cited and independently human-approved applicable calculation semantics divided by known expected rule count; **null** if the rule universe is unknown; never an LLM confidence score
+- **reconciliation_completeness_pct**: percentage of required purchase/settlement control pairs that match by **both row count and net sum**; **null** when no usable controls are supplied
+- **blocking reasons**: exact `issues[].code`, affected dataset, requested action; no numeric percentage can bypass existing financial gates
+
+Pilot target: at least **95% value-weighted** purchase coverage and at most **10% relevant rows** remaining in NEEDS_DATA/NEEDS_REVIEW. These are preliminary *pilot intake* thresholds only. An `EVIDENCED` financial finding still requires no relevant unresolved exclusions, explicit verified approval, and exact reconciliation to supplied control reports. External ERP report completeness continues to be **unverified** until separate source-level attestation/validation.
+
 ## Purpose and boundaries
 
 The data-readiness check is the first technical prerequisite for generating a canonical CSV supplier-bonus audit. It is **not** a legal assessment of entitlement, accounting certification, fraud detector, financial advice, proof that the customer delivered all supplier data, or a numerical readiness score.

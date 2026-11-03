@@ -44,6 +44,20 @@ Status: **PASS** = durch CI mit synthetischen Daten nachgewiesen, **TEILWEISE** 
 | Realisierungsmeldung und 3%-Gebührenvorschlag | **PASS – Vorschlag**: unabhängige manuelle Finanzverifikation. Für **rechtsverbindlichen `billable_recovery_net` / `fee_due_net`** fehlt die gesonderte vertragliche und buchhalterische Gebührenfreigabe. |
 | Kundenbetrieb, echte Isolation/Retention, Rechtsprüfung, Auth-Konfiguration | **OFFEN**: keine reale Kundenabnahme, kein externes IdP-Provisioning, kein produktiver VPS-Deploy, keine SOC-2-Type-II-Prüfung, keine vollständig geprüften Verträge/AVV/TOMs. |
 
+## Zusätzliche Abnahmegates – 03.11.2026
+
+| Gate | Ziel / aktueller Nachweis |
+|---|---|
+| R2: Eindeutige Staffel-Semantik vor Parserfreigabe | **TEILWEISE**: drei unterschiedliche Regeltypen sind im Rechenkern kodiert; ein durchgehender, originalklauselgebundener Parser-/Reviewer-Semantiknachweis fehlt. Unklare Staffelvorschläge dürfen keine Geldberechnung auslösen. |
+| Sichtbare Audit-Level-Qualitätsindikatoren | **OFFEN**: Prozentdefinitionen und Nennergrenzen sind verbindlich im Konzept spezifiziert; reale API-/Portal-Implementierung und Tests noch gesondert nachzuweisen. |
+| Lexware P1 ausschließlich read-only R1-Belege und Gutschriften | **OFFEN**: kein reales Lexware-Testkonto/API-Connector; API-Lücken müssen zum Export statt künstlicher Vollständigkeit führen. |
+| Pilotminimum / offene Positionen | **OFFEN**: 12 Monate, mindestens 200.000 EUR anrechenbare Nettobasis, ≥95 % wertgewichtete Erfassungsabdeckung, ≤10 % fachlich ungeklärte Positionen; bei finaler Rechnung 100 % Abgleich mit vorliegenden Kontrollsummen. Die Schwellwerte sind interne Abnahmeentscheidungen, keine externe Marktstatistik. |
+| Unabhängiger Goldstandard | **OFFEN**: ein namentlich benannter unabhängiger Einkäufer/Controller muss Original, Berechnung, Belege und gegebenenfalls begründeten Nullfall prüfen. |
+| Externer RDG-/Success-Fee-Review | **OFFEN**: dokumentierte juristische Prüfung vor erster kommerzieller Beauftragung, insbesondere Abgrenzung Differenzakte/Anspruchsdurchsetzung. |
+| Vollständig HMAC-signierte und im Register prüfbare Mapping-Approvals | **IN ARBEIT**: v0.13 Mapping-Freigaberecords und Audit-Dispatch-Sperren implementiert; CI und Regressionsergebnis noch zu finalisieren. |
+
+Ein bestandener synthetischer End-to-End-Test erfüllt **keines** der externen Pilot-/Rechtsabnahmekriterien.
+
 ## Verbindliche Definition des nächsten Abnahmegates
 
 Ein kommerziell demonstrierbarer Pilot erfordert: (1) vollständiges und freigegebenes Vertrags-/Mandats-Setup, (2) rechtmäßig beschaffte, plausibilisierte ERP-Daten, (3) manuellen Goldstandard mit Belegprüfung, (4) durchlaufene Auth-/Upload-/Gates, (5) tatsächliche belegte Auszahlung/Verrechnung **oder deutlich als Simulation markierte Realisierung**, (6) saubere 3%-Honorarfreigabe ohne automatische Rechnungsstellung, (7) produktiv validierten Sicherheitsbetrieb. Kein Code-Commit kann externe reale Belege oder Zertifikate ersetzen.

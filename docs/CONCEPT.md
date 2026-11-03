@@ -1,6 +1,56 @@
-# LowHangingFruitMe – verbindliches fachliches und technisches Konzept v0.1
+# LowHangingFruitMe – verbindliches fachliches und technisches Konzept (laufend konsolidiert)
 
-**Stand:** 02.11.2026 | **Status:** Zielarchitektur / Research-Baseline, keine Implementierung | **Produktverantwortung:** eigenständiges FruitStack-Schwesterprodukt
+**Stand:** 03.11.2026 | **Status:** v0.12 Staging-Implementierung; v0.13 Mapping-Freigabe in CI, kein produktiver Kundenbetrieb | **Produktverantwortung:** eigenständiges FruitStack-Schwesterprodukt
+
+## Verbindliche Ergänzungen zur fachlichen Abnahme – 03.11.2026
+
+Diese Ergänzungen gehören zum fachlichen Querschnitt des Produkts und sind bei jeder Implementierung, jedem Test sowie der vierwöchigen Pilotabnahme zu berücksichtigen. Die vollständige Umsetzung wird **nicht** allein durch diese Konzeptänderung behauptet.
+
+### 1. R1 priorisieren, R2 früh hart sperren
+
+R1 (einfacher Jahresbonus) bleibt der erste echte Umsatzfall. Bei R2 müssen **vor** einer finanziellen Berechnung die Semantik der Schwelle, die Bezugsbasis, der Zeitraum, der Staffelbeginn und alle Grenzwerte fachlich eindeutig dokumentiert sein. Die Ausprägungen sind **nicht austauschbar**:
+
+- `RETROACTIVE_FULL_BASE`: erreichte Staffel gilt rückwirkend auf die gesamte anrechenbare Basis.
+- `MARGINAL_PER_TIER`: Betrag wird getrennt je Umsatzscheibe beziehungsweise Band berechnet.
+- `FIXED_THRESHOLD_REWARD`: feste, vertraglich vereinbarte Prämie ab der Schwelle.
+- Nur oberhalb einer Schwelle geltende Einzel-Mehrbeträge dürfen nicht unter einer der beiden vorgenannten Prozentvarianten **angenommen** werden: falls die Vertragssemantik nicht exakt zu einem implementierten Regeltyp passt, **NEEDS_REVIEW / NOT_CALCULABLE** und **keine Geldzahl**.
+
+Die explizite interne Typangabe ist nur technische Struktur; die zugrunde liegende Klausel muss vom berechtigten Vertragsprüfer **mit Originalfundstelle** bestätigt werden. Parser, Vorschlagsmodell und Testfälle dürfen eine fehlende Festlegung weder aus einem Prozentsatz noch aus einem negativen/positiven Betrag ableiten. Ein unbekannter `kind`, fehlende Staffelgrenzen, widersprüchliche Belege oder ein nicht bestätigter Wechsel der Staffel-Semantik verhindern die Freigabe. **Keine implizite Fallback-Staffel.**
+
+### 2. Audit-Level-Qualität sichtbar und berechenbar
+
+Kundenberichte zeigen neben den Finding-Details drei eigenständige, nachvollziehbar berechnete Kennzahlen mit Zähler, Nenner, Prüfstand und Fehlgründen:
+
+| Kennzahl | Fachliche Definition | Nicht verwechselt mit |
+|---|---|---|
+| `data_coverage_pct` | Anzahl belegbar importierter Einkaufs-/Gutschriftenzeilen relativ zu den **separat gelieferten** ERP-Kontrollzeilen; `null`, wenn kein geeigneter Nenner vorliegt. Überdeckung wird separat als Widerspruch ausgewiesen, nicht als >100 % Leistung. | Echtem Beweis, dass das ERP alle historischen Buchungen enthält |
+| `rule_clarity_pct` | Anteil der im Auftrag erwarteten Bonusregeln mit fachlich eindeutig zugeordneter, quellbelegter und aktiv freigegebener Berechnungssemantik; bei fehlendem Regelregister `null`, nicht pauschal 100 %. | KI-Confidence oder juristischer Anspruchssicherheit |
+| `reconciliation_completeness_pct` | Anteil der erforderlichen, separat erhaltenen Kontrollpaare (Einkauf und Gutschrift), bei denen **Zeilenzahl und Nettobetrag** exakt übereinstimmen; `null`, wenn keine verwertbaren Kontrollen verfügbar sind. | Unabhängiger Buchhaltungsprüfung |
+
+Für die jetzige Ein-Lieferant-/Ein-Vertrag-Engine können technische Werte aus dem vorhandenen Readiness-Resultat abgeleitet werden; bei fehlenden, mehrdeutigen oder nicht überprüfbaren Nennern **nicht raten**. Zusätzlich werden `readiness_status`, `issue_code`, `blocking_dataset` und konkrete Maßnahmen wie „ERP-Auszug für die komplette Vertragsperiode erneut exportieren“ angezeigt. `NEEDS_DATA` bezeichnet fehlende oder unzureichende Eingaben, `NEEDS_REVIEW` fachlich unklare Zuordnungen; `NOT_CALCULABLE` bedeutet eine die Berechnung ausschließende Unstimmigkeit. Eine Qualitätsquote kann **nie** einen BLOCKER oder fehlende HMAC-/Reviewer-Freigabe überstimmen.
+
+### 3. Lexware Office P1: bewusst eng
+
+Die erste Lexware-Integration ist ein **lesender Beleg- und Gutschriftenadapter für R1**: Lieferantenidentität, Belegkopf, vorhandene Rechnungs-/Gutschriftenpositionen, Nettobeträge, Datum, Buchungsstatus und nachweisbare Verknüpfungen. Zugriffsrechte, Edition/Tarif, API-Feldabdeckung und Pagination sind mit einem real autorisierten Testkonto zu belegen. **Keine** automatische Garantie artikelgenauer Warenwirtschaftspositionen, vollständiger Einkaufsstatistiken, Bankbestätigung oder unbeschränkter Historie. Wo die API Positionen nicht in der für R1 notwendigen Detailtiefe liefert, wird ein autorisierter CSV-/XLSX-Export eingefordert und der Datenstatus explizit eingeschränkt. Kein ERP-Writeback und kein paralleles Warenwirtschaftssystem.
+
+### 4. Pilot-Abnahme: fest definierte Prüfschwelle
+
+**Interne Pilot-Akzeptanzhypothese**, vor echter Kundenabnahme fachlich zu bestätigen:
+
+- Ein kompletter zwölfmonatiger Vertragszeitraum; **mindestens 200.000 EUR dokumentiertes bonusfähiges Nettobezugsvolumen**, bezogen auf einen Lieferanten/eine rechtliche Einheit und eine nachweislich anwendbare R1-Vereinbarung. 200.000 EUR ist eine **gewählte Abnahmeschwelle**, keine statistisch hergeleitete Mindestgröße des Marktes.
+- Auf der durch Datenimport kontrollierbaren Ebene mindestens **95 % wertgewichtete Abdeckung** der laut Kontrollbericht erwarteten anrechenbaren Einkaufsbasis und höchstens **10 % der relevanten Quellpositionen** mit `NEEDS_DATA` oder `NEEDS_REVIEW`. Für einen **finalen Differenzbetrag** müssen allerdings sämtliche die Bonusbasis beeinflussenden Lücken geklärt und **100 % Zeilenzahl-/Nettobetrag-Reconciliation** mit den vorliegenden Kontrollberichten erreicht sein. Ein nicht-finaler Teilreport ist kein erfolgreicher Geldbefund.
+- Unabhängiger fachlicher Goldstandard durch **eine namentlich dokumentierte qualifizierte Einkaufs-/Controlling-Person, die nicht die Regel im System freigegeben und nicht die Programmierung durchgeführt hat**. Sie prüft Originalklausel, Periodenbasis, Retoure, Gutschrift, Endbetrag und Evidenzkette. Die Rollen-/Unabhängigkeitsgrenze wird protokolliert.
+- Abnahme bei korrektem, unabhängig überprüftem Differenzbetrag **oder** plausibel belegtem Null-Ergebnis; **keine** künstliche Recovery erforderlich. Eine tatsächliche Realisierung darf nur mit echten Nachweisen beansprucht werden; eine Simulation ist dauerhaft als solche zu kennzeichnen.
+
+Diese Schwellwerte sind produktinterne Pilot-Entscheidungen und keine behaupteten Leistungsdaten. Sie ersetzen weder eine Wirtschaftlichkeitsanalyse noch die Möglichkeit, einen kleineren Fall als **Testfall, nicht als erfüllte Pilot-Abnahme** zu prüfen.
+
+### 5. RDG-/Erfolgshonorar-Prüfung als kommerzielles Startgate
+
+**Vor dem ersten zahlenden Kunden** ist eine dokumentierte externe Prüfung durch einen in Rechtsdienstleistungs- und Vertragsrecht entsprechend spezialisierten Rechtsanwalt beziehungsweise eine qualifizierte externe Stelle erforderlich. Schriftlich klären: technische/kaufmännische Differenzakte versus rechtliche Anspruchsprüfung, kundeninterne Mitwirkung versus unsere Kommunikation mit Lieferanten, Zulässigkeit der konkreten 3-%-Erfolgsvergütung, erforderliche Vertrags-/AVV-/TOM-Bestandteile und Grenzen von Nachlauf/Provisionszuordnung. Ohne dokumentierte Freigabe: kein autonomes Forderungsschreiben, keine Lieferantenverhandlung, kein Inkasso und **keine kommerzielle Live-Freigabe**.
+
+### Konzeptpflege als fester Release-Schritt
+
+Jede fachliche Änderung an R1/R2, Readiness, Fee-Attribution oder ERP-Import benötigt im **gleichen PR/Commit-Zyklus** eine aktualisierte Entscheidung in `docs/CONCEPT.md`, passende Abnahmekriterien in `docs/FOUR_WEEK_ACCEPTANCE.md`, einen tatsächlichen CI-Nachweis in `EVIDENCE.md` und die Abgrenzung von **Implementiert / Getestet / Offen** in `docs/IMPLEMENTATION_STATUS.md`. Fehlende echte Pilotdaten und externe Rechtsprüfung bleiben als OFFEN stehen, bis extern bestätigt.
 
 ## 0. Auftrag, Ergebnis und harte Grenzen
 

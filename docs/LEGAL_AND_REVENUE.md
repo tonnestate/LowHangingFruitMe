@@ -128,3 +128,15 @@ Kunden müssen Rechte zum Upload und Datenanschluss nachweisen; Finanzdaten sind
 - https://docs.frappe.io/cloud/marketplace/publishing-an-app-to-marketplace
 
 Diese Datei ist **kein unterschriftsreifer Vertrag und keine rechtsverbindliche Einzelfallberatung**.
+
+## Zusätzliche externe Abnahme vor erstem zahlenden B2B-Kunden (03.11.2026)
+
+Eine auf RDG und B2B-Vertragsgestaltung spezialisierte **externe** Rechtsprüfung ist zwingender kommerzieller Freigabeschritt. Der Gutachter prüft schriftlich:
+
+1. Welche rein technische bzw. kaufmännische Datenauswertung ohne Rechtsdienstleistung erbracht werden kann und ab wann individuelle Anspruchsprüfung beginnt.
+2. Ob und unter welchen Bedingungen die **3%-Erfolgsvergütung** für die konkrete Leistung wirksam vereinbart werden kann, insbesondere Zurechenbarkeit, nachgelagerte Teil-/Storno-Realisierungen und Rechnungsfreigabe.
+3. Ob zulässige Supportleistungen, Vertragserläuterungen, Lieferantenkontakte und Kundenhilfen bereits regulierte Rechtsdienstleistung bzw. Inkasso wären. Bis zur Abnahme bleibt LowHangingFruitMe strikt auf Datenprüfung und vom Kunden selbst gesteuerte Klärung begrenzt.
+4. Rechtmäßige Bereitstellung geschäfts- und personenbezogener Einkaufsdaten, AVV/TOMs, Aufbewahrung, Löschung und Schutz von Lieferantengeheimnissen.
+5. Dokumentation der unterzeichneten schriftlichen Rechts- und Datenschutz-Freigabe, versioniert zum konkreten Pilotvertrag.
+
+Die externe Prüfung **liegt noch nicht vor**. Ein Code-Test kann weder eine Rechtsfreigabe noch echte Forderungsrealisierung nachweisen.
