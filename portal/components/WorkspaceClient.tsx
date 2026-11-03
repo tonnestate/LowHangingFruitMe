@@ -235,6 +235,13 @@ export function WorkspaceClient(){
   return "Finanzentscheidung: "+result.status+". Keine Rechnung erstellt.";
  });
 
+ const readiness=report?.readiness && typeof report.readiness==="object"
+  ? report.readiness as {status?:string;
+     issues?:Array<{code:string;field:string;explanation:string;severity:string}>;
+     quality_metrics?:{data_coverage_pct:string|null;rule_clarity_pct:string|null;
+       reconciliation_completeness_pct:string|null;source_ledger_completeness_proven:boolean}}
+  : null;
+ const quality=readiness?.quality_metrics;
  return <div className="workspace-content">
   <p className="note">Finanzdaten bleiben im geschützten Pilotprozess. Das Sprachmodell
   erteilt keine Vertragsfreigabe. Jede Buchung muss auf prüfbare Quellen zurückgehen.</p>
@@ -336,6 +343,14 @@ export function WorkspaceClient(){
     {report&&<p>Erwartet: {String(report.expected_bonus_net??"—")} EUR.
      Verbucht: {String(report.recorded_bonus_net??"—")} EUR.
      <strong> Differenz: {String(report.difference_net??"nicht berechenbar")} EUR.</strong></p>}
+    {readiness&&<p>Prüfstatus: <strong>{readiness.status||"Unbekannt"}</strong>.
+     Datenabdeckung (Zeilen): {quality?.data_coverage_pct??"nicht bestimmbar"} %.
+     Regelklarheit (signierte Semantik): {quality?.rule_clarity_pct??"nicht bestimmbar"} %.
+     Kontrollsummen-Abgleich: {quality?.reconciliation_completeness_pct??"nicht bestimmbar"} %.</p>}
+    {readiness?.issues?.map((issue,index)=><p key={issue.code+"-"+issue.field+"-"+index}
+      className="note">{issue.severity}: {issue.code} ({issue.field}) – {issue.explanation}</p>)}
+    {readiness&&<p className="note">Diese Quoten belegen keine Vollständigkeit der ERP-Quelldaten.
+     Fehlende Kontrollwerte und fachliche Unklarheiten bleiben prüfpflichtig.</p>}
     <p className="note">Ein berechneter Betrag ist weder ein rechtlich
      festgestellter Anspruch noch eine tatsächlich zurückgewonnene Summe.</p>
    </div>}
