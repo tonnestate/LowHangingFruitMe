@@ -15,7 +15,7 @@ if __name__ == "__main__":
         with c.cursor() as cursor:
             sql = "\n".join(
                 Path(path).read_text(encoding="utf-8")
-                for path in ("sql/001_approval_registry.sql", "sql/002_audit_api.sql", "sql/003_private_uploads.sql", "sql/004_recovery_ledger.sql")
+                for path in ("sql/001_approval_registry.sql", "sql/002_audit_api.sql", "sql/003_private_uploads.sql", "sql/004_recovery_ledger.sql", "sql/005_recovery_case_status.sql")
             )
             statements = "\n".join(
                 line for line in sql.splitlines()

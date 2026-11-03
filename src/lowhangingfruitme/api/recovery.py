@@ -150,6 +150,14 @@ class RecoveryLedger:
                 if not row or row["difference_cents"] != difference:
                     raise CaseConflict("contract period already has a different recovery case")
                 case_id=row["case_id"]
+                cur.execute(
+                    """SELECT directive FROM lhfm_recovery_case_status_events
+                       WHERE case_id=%s ORDER BY event_id DESC LIMIT 1""",
+                    (case_id,),
+                )
+                directive=cur.fetchone()
+                if directive and directive["directive"]=="CLOSED":
+                    raise CaseConflict("closed recovery case requires explicit reopening")
                 if kind == "REVERSAL":
                     cur.execute(
                         """SELECT kind,state FROM lhfm_recovery_events
@@ -302,6 +310,68 @@ class RecoveryLedger:
         finally:
             db.close()
 
+    def annotate_status(
+        self, *, audit_id: str, tenant_id: str,
+        legal_entity_id: str, finance_actor_id: str,
+        directive: str, reason: str,
+    ) -> dict[str, Any]:
+        """Append a finance-attested dispute/closure/reopen event; never mutate money."""
+        if directive not in ("DISPUTED", "CLOSED", "OPEN"):
+            raise ValueError("unknown recovery status directive")
+        if not isinstance(reason, str) or not reason.strip() or len(reason) > 200:
+            raise ValueError("a concise documented reason is required")
+        self.require_finance_grant(
+            tenant_id=tenant_id, legal_entity_id=legal_entity_id,
+            finance_actor_id=finance_actor_id,
+        )
+        db=self._connect()
+        try:
+            with db.cursor() as cur:
+                cur.execute(
+                    """SELECT case_id FROM lhfm_recovery_cases
+                       WHERE audit_id=%s AND tenant_id=%s AND legal_entity_id=%s
+                       FOR UPDATE""",
+                    (audit_id,tenant_id,legal_entity_id),
+                )
+                found=cur.fetchone()
+                if found is None:
+                    raise BundleNotFound("no recovery case exists in this scope")
+                case_id=found["case_id"]
+                if directive=="CLOSED":
+                    cur.execute(
+                        """SELECT COUNT(*) AS pending FROM lhfm_recovery_events
+                           WHERE case_id=%s AND state='REPORTED'""",
+                        (case_id,),
+                    )
+                    if int(cur.fetchone()["pending"])>0:
+                        raise CaseConflict("cannot close with unreviewed recovery evidence")
+                cur.execute(
+                    """SELECT active FROM lhfm_finance_grants
+                       WHERE tenant_id=%s AND legal_entity_id=%s
+                         AND finance_actor_id=%s FOR UPDATE""",
+                    (tenant_id,legal_entity_id,finance_actor_id),
+                )
+                grant=cur.fetchone()
+                if not grant or not grant["active"]:
+                    raise PermissionError("finance permission revoked during transition")
+                cur.execute(
+                    """INSERT INTO lhfm_recovery_case_status_events
+                       (case_id,tenant_id,legal_entity_id,finance_actor_id,
+                        directive,reason)
+                       VALUES (%s,%s,%s,%s,%s,%s)""",
+                    (case_id,tenant_id,legal_entity_id,
+                     finance_actor_id,directive,reason.strip()),
+                )
+            db.commit()
+            return {"audit_id":audit_id,"case_id":case_id,
+                    "directive":directive,"status_event_recorded":True,
+                    "invoice_created":False}
+        except Exception:
+            db.rollback()
+            raise
+        finally:
+            db.close()
+
     def ledger(
         self, *, audit_id: str, tenant_id: str,
         legal_entity_id: str, reviewer_id: str,
@@ -321,7 +391,15 @@ class RecoveryLedger:
                 )
                 case=cur.fetchone()
                 rows=[]
+                annotation=None
                 if case:
+                    cur.execute(
+                        """SELECT directive,reason,finance_actor_id,recorded_at
+                           FROM lhfm_recovery_case_status_events
+                           WHERE case_id=%s ORDER BY event_id DESC LIMIT 1""",
+                        (case["case_id"],),
+                    )
+                    annotation=cur.fetchone()
                     cur.execute(
                         """SELECT event_id,kind,amount_cents,evidence_upload_id,
                                   reverses_event_id,state,verified_by
@@ -337,10 +415,20 @@ class RecoveryLedger:
         reversals=sum(int(e["amount_cents"]) for e in rows
                       if e["state"]=="CONFIRMED" and e["kind"]=="REVERSAL")
         net=realized-reversals
+        status=("NONE" if case is None else
+                "REALIZED_FULL" if net==difference else
+                "REALIZED_PARTIAL" if net>0 else "CLAIMED")
+        if annotation and annotation["directive"] in ("DISPUTED","CLOSED"):
+            status=annotation["directive"]
         if net<0 or net>difference:
             raise CaseConflict("ledger invariants violated, manual reconciliation required")
         return {
             "audit_id":audit_id,"case_id":case["case_id"] if case else None,
+            "case_status":status,
+            "case_status_reviewed_by":annotation["finance_actor_id"] if annotation else None,
+            "case_status_reason":annotation["reason"] if annotation else None,
+            "calculated_variance_net":_eur(difference),
+            "billable_recovery_net":"0.00",
             "audited_difference_net":_eur(difference),
             "confirmed_realization_net":_eur(net),
             "fee_rate":"0.03",
