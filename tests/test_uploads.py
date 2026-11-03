@@ -212,6 +212,42 @@ class UploadApiTests(unittest.TestCase):
         self.assertEqual(r.status_code,422,r.text)
         self.assertFalse(list(self.stage.iterdir()))
 
+    def test_authenticated_xml_invoice_preview_never_becomes_posted_ledger(self):
+        from test_invoices import UBL
+        created=self.intent(UBL,kind="INVOICE_XML")
+        self.assertEqual(created.status_code,201,created.text)
+        upload_id=created.json()["upload_id"]
+        transferred=self.put(upload_id,raw=UBL)
+        self.assertEqual(transferred.status_code,200,transferred.text)
+        preview=self.client.get(
+            "/v1/uploads/"+upload_id+"/invoice-preview",
+            params=self.scope(),headers=self.auth(),
+        )
+        self.assertEqual(preview.status_code,200,preview.text)
+        result=preview.json()
+        self.assertEqual(result["document_id"],"INVOICE-SYN-100")
+        self.assertEqual(result["line_count"],1)
+        self.assertEqual(result["lines"][0]["quantity"],"2")
+        self.assertIn(sha256(UBL).hexdigest(),result["lines"][0]["source_ref"])
+        self.assertFalse(result["accounting_posted"])
+        self.assertFalse(result["usable_for_audit"])
+        self.assertFalse(result["schema_validated"])
+        other_tenant=self.client.get(
+            "/v1/uploads/"+upload_id+"/invoice-preview",
+            params=self.scope(tenant="OTHER-TENANT"),headers=self.auth(),
+        )
+        self.assertEqual(other_tenant.status_code,403)
+
+    def test_xml_preview_denied_for_non_invoice_upload(self):
+        upload_id=self.intent().json()["upload_id"]
+        self.assertEqual(self.put(upload_id).status_code,200)
+        result=self.client.get(
+            "/v1/uploads/"+upload_id+"/invoice-preview",
+            params=self.scope(),headers=self.auth(),
+        )
+        self.assertEqual(result.status_code,422)
+        self.assertNotIn("preview",result.text.lower())
+
     def test_multipart_and_unsupported_upload_types_fail(self):
         upload_id=self.intent().json()["upload_id"]
         self.assertEqual(
