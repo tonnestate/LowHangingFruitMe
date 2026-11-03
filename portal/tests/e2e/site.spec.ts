@@ -32,8 +32,8 @@ test("fee preview is exact and not disguised as real audit",async({page})=>{
  await page.goto("/preis-und-ablauf");
  const amount=page.getByLabel("Zusätzlich realisierter Nettobetrag in €");
  await amount.fill("10000");
- await expect(page.locator(".calc-results")).toContainText("300,00 €");
- await expect(page.locator(".calc-results")).toContainText("9.700,00 €");
+ await expect(page.locator(".calc-results")).toContainText("500,00 €");
+ await expect(page.locator(".calc-results")).toContainText("9.500,00 €");
  await expect(page.getByText("Das ist keine Prognose")).toBeVisible();
 });
 test("nonexistent pages return real 404, staging remains noindex",async({page,request})=>{

@@ -389,7 +389,7 @@ class RecoveryLedger:
         try:
             with db.cursor() as cur:
                 cur.execute(
-                    ""SELECT case_id,fee_rate_bps FROM lhfm_recovery_cases
+                    """SELECT case_id,fee_rate_bps FROM lhfm_recovery_cases
                        WHERE audit_id=%s AND tenant_id=%s AND legal_entity_id=%s
                          AND reviewer_id=%s""",
                     (audit_id,tenant_id,legal_entity_id,reviewer_id),
