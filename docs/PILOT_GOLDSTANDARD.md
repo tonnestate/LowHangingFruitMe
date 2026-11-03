@@ -13,7 +13,7 @@
 | `Gutschriften.csv`: `CREDIT-001` | −1.500,00 | Bereits gebuchte Jahresbonusgutschrift |
 | **Rechnerische Differenz** | **2.500,00** | 4.000,00 − 1.500,00 |
 | Gemeldete, unabhängige **manuell attestierte** Realisierung | +1.000,00 | Nur synthetischer gebundener Nachweis |
-| **3%-Honorarvorschlag** | **30,00** | 1.000,00 × 0,03; keine Rechnung |
+| **5%-Honorarvorschlag** | **50,00** | 1.000,00 × 0,05; keine Rechnung |
 | **Fällig nach Produktabnahmestand** | **0,00** | Keine separate Fakturierungsfreigabe |
 
 Die getrennten Tests `tests/test_promotion.py`, `tests/test_universal_import.py`, `tests/test_recovery.py` und `tests/test_report_exports.py` prüfen diesen Pfad gegen dieselben Sollbeträge. Die Datentypen und Vertragssummen sind synthetisch, auch wenn die Importspalten einem deutschen ERP-Export entsprechen.
@@ -26,8 +26,8 @@ Die getrennten Tests `tests/test_promotion.py`, `tests/test_universal_import.py`
 - Das getrennte ERP-Kontrollsummen-Protokoll bestätigt nur Übereinstimmung mit seinen angegebenen Werten, nicht die externe Vollständigkeit des ERP.
 - Ohne aktive Registry-/Reviewer-Freigabe gibt es keine abschließend evidenzierte Rechnung.
 - Ein zweiter Finance-Actor bestätigt die spätere Realisierung. Dies ist eine protokollierte menschliche Prüfung des vorliegenden PDF, **kein unabhängiger Bankabgleich**.
-- Ein zurückgenommener Teilbetrag von 500,00 EUR reduziert den Vorschlag von 30,00 EUR auf 15,00 EUR, sofern zuvor nur 1.000,00 EUR bestätigt waren.
-- Der Kundendownload muss Rechnungsbetrag, berechnete Differenz, belegte Realisierungen und 3-%-Gebührenvorschlag sichtbar trennen.
+- Ein zurückgenommener Teilbetrag von 500,00 EUR reduziert den Vorschlag von 50,00 EUR auf 25,00 EUR, sofern zuvor nur 1.000,00 EUR bestätigt waren.
+- Der Kundendownload muss Rechnungsbetrag, berechnete Differenz, belegte Realisierungen und 5-%-Gebührenvorschlag sichtbar trennen.
 
 ## Befund / nicht erfüllte Realitätskriterien
 

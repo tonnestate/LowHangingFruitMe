@@ -48,7 +48,7 @@ Diese Schwellwerte sind produktinterne Pilot-Entscheidungen und keine behauptete
 
 ### 5. RDG-/Erfolgshonorar-Prüfung als kommerzielles Startgate
 
-**Vor dem ersten zahlenden Kunden** ist eine dokumentierte externe Prüfung durch einen in Rechtsdienstleistungs- und Vertragsrecht entsprechend spezialisierten Rechtsanwalt beziehungsweise eine qualifizierte externe Stelle erforderlich. Schriftlich klären: technische/kaufmännische Differenzakte versus rechtliche Anspruchsprüfung, kundeninterne Mitwirkung versus unsere Kommunikation mit Lieferanten, Zulässigkeit der konkreten 3-%-Erfolgsvergütung, erforderliche Vertrags-/AVV-/TOM-Bestandteile und Grenzen von Nachlauf/Provisionszuordnung. Ohne dokumentierte Freigabe: kein autonomes Forderungsschreiben, keine Lieferantenverhandlung, kein Inkasso und **keine kommerzielle Live-Freigabe**.
+**Vor dem ersten zahlenden Kunden** ist eine dokumentierte externe Prüfung durch einen in Rechtsdienstleistungs- und Vertragsrecht entsprechend spezialisierten Rechtsanwalt beziehungsweise eine qualifizierte externe Stelle erforderlich. Schriftlich klären: technische/kaufmännische Differenzakte versus rechtliche Anspruchsprüfung, kundeninterne Mitwirkung versus unsere Kommunikation mit Lieferanten, Zulässigkeit der konkreten 5-%-Erfolgsvergütung, erforderliche Vertrags-/AVV-/TOM-Bestandteile und Grenzen von Nachlauf/Provisionszuordnung. Ohne dokumentierte Freigabe: kein autonomes Forderungsschreiben, keine Lieferantenverhandlung, kein Inkasso und **keine kommerzielle Live-Freigabe**.
 
 ### Konzeptpflege als fester Release-Schritt
 
@@ -60,7 +60,7 @@ LowHangingFruitMe findet aus Kundendaten bereits wirtschaftlich entstandene, abe
 
 **Nicht im v0.1-Scope:** autonomes Inkasso, eigenständige Verhandlungen mit Lieferanten, Forderungskauf, Auszahlung/Entgegennahme von Lieferantengeldern, automatisches Verbuchen von Gutschriften, vollautomatische juristische Vertragsauslegung, allgemeine Rechnungsaudit- oder ERP-Plattform, ein weiteres zentrales FruitStack-Memory oder ein weiterer Agenten-Orchestrator.
 
-**Wettbewerbshypothese:** Erfolgshonorar-Audits sind nicht neu; insbesondere revotail kommuniziert bereits Rebate-Recovery-Leistungen. Differenzierung kann deshalb nicht allein „keine Grundgebühr, 3 % Erfolg“ sein, sondern wäre ein überprüfbares, eingebettetes, selbst bedienbares Produkt mit revisionsfähiger Nachweiskette, wiederverwendbarer API und ERP-Distribution. Noch **nicht** durch zahlende Kunden belegt.
+**Wettbewerbshypothese:** Erfolgshonorar-Audits sind nicht neu; insbesondere revotail kommuniziert bereits Rebate-Recovery-Leistungen. Differenzierung kann deshalb nicht allein „keine Grundgebühr, 5 % Erfolg“ sein, sondern wäre ein überprüfbares, eingebettetes, selbst bedienbares Produkt mit revisionsfähiger Nachweiskette, wiederverwendbarer API und ERP-Distribution. Noch **nicht** durch zahlende Kunden belegt.
 
 ## 1. Geschäftlicher Anwendungsfall
 
@@ -159,7 +159,7 @@ Ein allgemeiner CRM-Markt ist **kein** ausreichender Grund für einen Connector.
 
 Vor Audit: Kunde bestätigt Leistungsumfang, eindeutig benannte Gesellschaft, Bonusperiode, bekannte/streitige Altansprüche, Berechtigung zum Datenzugriff und Nachweispflichten. Der Auftrag definiert die Vergütungsbasis und die Zuschreibung zu einzelnen Case-IDs.
 
-Modellannahme: **3 % von der nachweislich zusätzlich und kausal aufgrund des Reports realisierten Nettovergütung**, ohne Umsatzsteuer, ohne bereits bekannte/abgerechnete Positionen, ohne Mehrfachzählung bei Zahlung und Gutschrift. Eine Gutschrift zählt nur, wenn sie den wirtschaftlichen Vorteil tatsächlich bewirkt (Zahlung/Verrechnung nach vereinbarter Definition). Teilrealisation proportional; Storno/Abweisung als Korrekturereignis. Automatisch nur Rechnungsvorschlag; finale Rechnungsfreigabe durch berechtigten Betreiber.
+Modellannahme: **5 % von der nachweislich zusätzlich und kausal aufgrund des Reports realisierten Nettovergütung**, ohne Umsatzsteuer, ohne bereits bekannte/abgerechnete Positionen, ohne Mehrfachzählung bei Zahlung und Gutschrift. Eine Gutschrift zählt nur, wenn sie den wirtschaftlichen Vorteil tatsächlich bewirkt (Zahlung/Verrechnung nach vereinbarter Definition). Teilrealisation proportional; Storno/Abweisung als Korrekturereignis. Automatisch nur Rechnungsvorschlag; finale Rechnungsfreigabe durch berechtigten Betreiber.
 
 **Beispiel, keine Prognose:** Eindeutig nachgewiesene zusätzliche Gutschrift/Verrechnung von 24.000 EUR -> 2.400 EUR netto Erfolgshonorar; Rechnung und USt nach anzuwendenden gesetzlichen Vorschriften. Noch nicht realisierte rechnerische Differenz von 36.700 EUR -> 0 EUR abrechenbarer Erfolg.
 

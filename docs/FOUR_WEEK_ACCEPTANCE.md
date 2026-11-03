@@ -41,7 +41,7 @@ Status: **PASS** = durch CI mit synthetischen Daten nachgewiesen, **TEILWEISE** 
 | Authentifizierter Browser-Operator-Pfad | **PASS – synthetisch/staging**: OIDC Next.js-BFF, FastAPI-Rollenscopes, Mail-/ERP-freie lokale Testtokens. |
 | Upload mit MIME/Grenzen/Scanner-Prüfung | **PASS – Testadapter**: Scanner-Mock in CI und fail-closed ClamAV-Socket-Anbindung; **kein** produktiver laufender Scanner auf VPS. |
 | Bericht-Download nach Mandant-/Rollenzugriff | **PASS – CI**: BFF-Allowlist, zusätzlicher Ledger-Lesescope, PDF/XLSX/JSON. |
-| Realisierungsmeldung und 3%-Gebührenvorschlag | **PASS – Vorschlag**: unabhängige manuelle Finanzverifikation. Für **rechtsverbindlichen `billable_recovery_net` / `fee_due_net`** fehlt die gesonderte vertragliche und buchhalterische Gebührenfreigabe. |
+| Realisierungsmeldung und 5%-Gebührenvorschlag | **PASS – Vorschlag**: unabhängige manuelle Finanzverifikation. Für **rechtsverbindlichen `billable_recovery_net` / `fee_due_net`** fehlt die gesonderte vertragliche und buchhalterische Gebührenfreigabe. |
 | Kundenbetrieb, echte Isolation/Retention, Rechtsprüfung, Auth-Konfiguration | **OFFEN**: keine reale Kundenabnahme, kein externes IdP-Provisioning, kein produktiver VPS-Deploy, keine SOC-2-Type-II-Prüfung, keine vollständig geprüften Verträge/AVV/TOMs. |
 
 ## Zusätzliche Abnahmegates – 03.11.2026
@@ -60,4 +60,4 @@ Ein bestandener synthetischer End-to-End-Test erfüllt **keines** der externen P
 
 ## Verbindliche Definition des nächsten Abnahmegates
 
-Ein kommerziell demonstrierbarer Pilot erfordert: (1) vollständiges und freigegebenes Vertrags-/Mandats-Setup, (2) rechtmäßig beschaffte, plausibilisierte ERP-Daten, (3) manuellen Goldstandard mit Belegprüfung, (4) durchlaufene Auth-/Upload-/Gates, (5) tatsächliche belegte Auszahlung/Verrechnung **oder deutlich als Simulation markierte Realisierung**, (6) saubere 3%-Honorarfreigabe ohne automatische Rechnungsstellung, (7) produktiv validierten Sicherheitsbetrieb. Kein Code-Commit kann externe reale Belege oder Zertifikate ersetzen.
+Ein kommerziell demonstrierbarer Pilot erfordert: (1) vollständiges und freigegebenes Vertrags-/Mandats-Setup, (2) rechtmäßig beschaffte, plausibilisierte ERP-Daten, (3) manuellen Goldstandard mit Belegprüfung, (4) durchlaufene Auth-/Upload-/Gates, (5) tatsächliche belegte Auszahlung/Verrechnung **oder deutlich als Simulation markierte Realisierung**, (6) saubere 5%-Honorarfreigabe ohne automatische Rechnungsstellung, (7) produktiv validierten Sicherheitsbetrieb. Kein Code-Commit kann externe reale Belege oder Zertifikate ersetzen.

@@ -4,9 +4,9 @@
 
 **B2B Revenue Recovery for FruitStack.** Ein eigenständiger, beleggestützter Prüfdienst für nicht vollständig realisierte Lieferantenboni und vertraglich eindeutige Einkaufskonditionen.
 
-**Python-Version:** 0.13.0 (signierte Mappingfreigabe, harte R2-Semantik, messbare Audit-Datenqualität – Entwicklungsstand)  
+**Python-Version:** 0.13.1 (signierte Mappingfreigabe, harte R2-Semantik, messbare Audit-Datenqualität – Entwicklungsstand)  
 **Marketing-Portal:** 0.1.0 (noch nicht deployed)  
-**Status:** Bonusengine, ERP-Import mit HMAC-signierter, persistierter und widerrufbarer Mappingfreigabe, JWT-/MariaDB-geschützte Audit-API, scannerpflichtige private Upload-Staging-Schnittstelle, synthetisch getesteter authentifizierter Next.js-Arbeitsbereich, persistentes Recovery-Ledger (3%-Honorarvorschlag) und Kundenberichte als JSON/PDF/XLSX. **Weder API noch Website sind auf dem VPS deployed.** Kein produktiv freigegebener Kundendatei-Upload, keine Live-ERP-Anbindung, kein externer Piloterfolg und keine automatische abrechenbare Honorarrechnung.
+**Status:** Bonusengine, ERP-Import mit HMAC-signierter, persistierter und widerrufbarer Mappingfreigabe, JWT-/MariaDB-geschützte Audit-API, scannerpflichtige private Upload-Staging-Schnittstelle, synthetisch getesteter authentifizierter Next.js-Arbeitsbereich, persistentes Recovery-Ledger (5%-Honorarvorschlag) und Kundenberichte als JSON/PDF/XLSX. **Weder API noch Website sind auf dem VPS deployed.** Kein produktiv freigegebener Kundendatei-Upload, keine Live-ERP-Anbindung, kein externer Piloterfolg und keine automatische abrechenbare Honorarrechnung.
 
 ## Eigenständige Website
 
@@ -18,6 +18,8 @@ Die deutsche Marketing-Website befindet sich unter [`portal/`](portal/README.md)
 
 Die Audit-Ergebnisse weisen nun drei erklärbare Datenqualitäts-Indikatoren aus: Abdeckung gegenüber bereitgestellten Kontrollzeilen, signierte Regelklarheit und Abgleich der Kontrollsummen. Fehlende Nachweise werden nicht als perfekte 100-%-Abdeckung dargestellt; die vollständige ERP-Quellenlage ist weiterhin **nicht** unabhängig bestätigt. R2-Schwellenvarianten werden nur mit explizit belegter und signierter Anwendungssemantik berechnet.
 
+Die neue Preisentscheidung von 5 % gilt nur für neue Fälle ab v0.13.1. Bestehende Recovery-Fälle behalten ihren gespeicherten Satz von 3 %; diese Änderungen sind weder eine Kundenvertragsannahme noch eine Rechnungsfreigabe. SQL-Migration `sql/007_recovery_fee_policy.sql` muss vor Nutzung des aktualisierten Recovery-Ledgers eingespielt werden.
+
 ## Was funktioniert
 
 - Deterministische Berechnung von Jahresboni, rückwirkenden und marginalen Staffeln sowie festen Schwellenprämien; Dezimalarithmetik, Retouren, Gutschriften, Stornierungen und eindeutige Vertragsperioden.
@@ -26,8 +28,8 @@ Die Audit-Ergebnisse weisen nun drei erklärbare Datenqualitäts-Indikatoren aus
 - **Freigabenachweis:** Vertragsregel und konkrete Dokumentdatei werden per SHA-256 mit einer HMAC-signierten Bestätigung verknüpft. Der CSV-Pfad verlangt Mandanten- und Gesellschaftsbindung; `approved: true` allein genügt nicht. Keine produktive Prüfer-Authentifizierung oder Widerrufsverwaltung.
 - **Verifizierte Access-Tokens:** RFC-9068-kompatible RS256-Signaturprüfung anhand einer vertrauenswürdig bereitgestellten öffentlichen JWKS, Prüfung von Aussteller, Audience, Client-ID, Gültigkeit und Berechtigungsumfang. Eine durch MariaDB berechtigte Person kann Regeln über `AuthenticatedApprovalService` freigeben, widerrufen und eingeschränkte Audits starten. **Noch keine Live-IdP-Anbindung; schmale HTTP-API für bereits sicher bereitgestellte Datenpakete vorhanden, kein öffentlicher Upload.**
 - **Private Dateiannahme v0.9:** `POST /v1/uploads` (15-Minuten-Absicht), `PUT /v1/uploads/{id}/content` (begrenzter Rohdatenstrom) und `GET /v1/uploads/{id}` (Status), mit JWT-/Mandantenprüfung, exakten Bytes und SHA-256, verpflichtendem ClamAV-Scanner-Verdikt und geprüfter Dateiklassifikation. **Erfolgreich gescannte Dateien sind noch keine freigegebenen Auditquellen. Kein echter ClamAV-Betrieb auf dem VPS.** [Dokumentation](docs/UPLOAD_INTAKE.md).
-- **Kundenberichte v0.12:** Nach über alle Gates erfolgreich ausgeführtem Audit: autorisierte PDF-/XLSX-/JSON-Ausgabe mit Quellen-Hash, Differenzbetrag und 3%-Honorarvorschlag, herunterladbar über den geschützten Next.js-Arbeitsbereich. Kein öffentlicher Link und keine Rechnung.
-- **Recovery-Ledger v0.11/v0.12:** MariaDB-Fälle, idempotente Realisierungs-/Stornoereignisse mit Beleg-Upload, unabhängige Finanzprüfung, Fallstatus NONE/CLAIMED/REALIZED_PARTIAL/REALIZED_FULL/DISPUTED/CLOSED, 3%-Honorarvorschlag. Rechnungsfreigabe und `fee_due_net` fehlen absichtlich.
+- **Kundenberichte v0.12:** Nach über alle Gates erfolgreich ausgeführtem Audit: autorisierte PDF-/XLSX-/JSON-Ausgabe mit Quellen-Hash, Differenzbetrag und 5%-Honorarvorschlag, herunterladbar über den geschützten Next.js-Arbeitsbereich. Kein öffentlicher Link und keine Rechnung.
+- **Recovery-Ledger v0.11/v0.12:** MariaDB-Fälle, idempotente Realisierungs-/Stornoereignisse mit Beleg-Upload, unabhängige Finanzprüfung, Fallstatus NONE/CLAIMED/REALIZED_PARTIAL/REALIZED_FULL/DISPUTED/CLOSED, 5%-Honorarvorschlag. Rechnungsfreigabe und `fee_due_net` fehlen absichtlich.
 - **Authentifizierte Audit-API v0.8:** `POST /v1/audits` und `GET /v1/audits/{id}` für serverseitig registrierte, SHA-256-geprüfte private Quellen. JWT/Reviewer-Grants, MariaDB-Idempotenz, Quellen-Snapshots und Berichtsspeicherung sind gegen synthetische Daten getestet. **Keine öffentliche Kundendatenannahme und kein VPS-Deployment.**
 - **Persistierte Freigaben:** Genehmigungen werden in MariaDB registriert, mandantenbezogen freigegeben oder widerrufen und während der Berechnung durch `SELECT ... FOR UPDATE` vor konkurrierenden Änderungen geschützt. Ohne Registry läuft kein finaler CSV-Audit.
 - **Readiness-Gate:** separate ERP-Kontrollsummen für Anzahl und Nettobetrag, Scope-Kontrolle für Lieferant/Vertrag/Periode, Status `READY_FOR_AUDIT` / `LIMITED` / `NOT_READY`. Bei fehlenden oder widersprüchlichen Kontrollen entsteht kein abschließender Geldbefund.
@@ -102,7 +104,7 @@ Es wird **kein** eigenständiges ERP oder FruitStack-Orchestrierungssystem dupli
 
 ## Geschäft und Grenzen
 
-Angedachtes Kundenangebot: eine einmalige Prüfung gegen **3 % von der nachweislich, zurechenbar und wirtschaftlich tatsächlich realisierten zusätzlichen Nettovergütung**. Erfolgshonorar, RDG-Abgrenzung, Datenschutz und Vertragstexte sind vor kommerziellem Start extern rechtlich zu prüfen. Das Produkt betreibt im ersten Umfang weder Inkasso noch autonomes Forderungsmanagement.
+Angedachtes Kundenangebot: eine einmalige Prüfung gegen **5 % von der nachweislich, zurechenbar und wirtschaftlich tatsächlich realisierten zusätzlichen Nettovergütung**. Erfolgshonorar, RDG-Abgrenzung, Datenschutz und Vertragstexte sind vor kommerziellem Start extern rechtlich zu prüfen. Das Produkt betreibt im ersten Umfang weder Inkasso noch autonomes Forderungsmanagement.
 
 ## Dokumentation
 

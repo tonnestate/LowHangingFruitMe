@@ -1,6 +1,10 @@
-# Implementation status – LowHangingFruitMe v0.13.0
+# Implementation status – LowHangingFruitMe v0.13.1
 
 **Stand:** 03.11.2026. Produktentwicklung, kein kommerzieller oder produktiver Betrieb. Der aktuelle Revisionsnachweis steht in [EVIDENCE.md](../EVIDENCE.md); keine behaupteten Live-Kunden- oder ERP-Erfolge.
+
+## Preisstand 0.13.1 (03.11.2026)
+
+Neue Recovery-Faelle speichern 500 Basispunkte (5 %) dauerhaft bei Anlage; der SQL-Nachtrag `007_recovery_fee_policy.sql` vergibt 300 Basispunkte an bereits vorhandene historische Faelle. Kundenbericht und Portal zeigen den pro Fall gespeicherten Satz; alte Berichte/Faelle werden nicht rueckwirkend neu bepreist. Die untenstehenden v0.11/v0.12-Beschreibungen mit 3 % sind historische Funktionsbeschreibungen. Dies ist weiterhin **nur ein unverbindlicher Honorarvorschlag**; `fee_due_net=0.00` ohne dokumentierten Vertrag/Rechnungsfreigabe. Noch keine produktive Migration, kein echter Kunde, keine externe Rechtspruefung.
 
 ## Implementiert
 

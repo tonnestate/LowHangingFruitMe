@@ -16,7 +16,7 @@ Zusätzlich zur untenstehenden **teilweise erst geplanten** API-Gesamtspezifikat
 - `POST /v1/audits/{id}/recovery-events`, `GET /v1/audits/{id}/fee-ledger`, `POST /v1/recovery-events/{event_id}/review` – nachweisgebundene manuelle Realisierungen mit unabhängigem Finanzprüfer;
 - `POST /v1/audits/{id}/case-status` – finanzprüferautorisierte Dispute-/Closure-/Reopen-Protokolle.
 
-**Wichtig:** Keine der Routen bewirkt automatische ERP-Buchung, Lieferantenforderung, Bankzahlung, Rechnungsstellung oder tatsächliche 3%-Gebührenfälligkeit. Originaldokumente bleiben im privaten Staging und werden nicht über diese Download-Routen ausgespielt.
+**Wichtig:** Keine der Routen bewirkt automatische ERP-Buchung, Lieferantenforderung, Bankzahlung, Rechnungsstellung oder tatsächliche 5%-Gebührenfälligkeit. Originaldokumente bleiben im privaten Staging und werden nicht über diese Download-Routen ausgespielt.
 
 ## 1. API-Grundregeln
 
@@ -143,7 +143,7 @@ Eine Änderung an Daten, Klausel oder Berechnung erzeugt einen **neuen AuditRun*
 
 **F02:** 100.000,00 EUR Umsatz, 2 % ab Schwelle 80.000,00 EUR: ohne Staffelsemantik -> NOT_CALCULABLE. Mit RETROACTIVE_FULL_BASE -> 2.000,00 EUR; mit MARGINAL_PER_TIER -> 400,00 EUR, sofern alle anderen Vertragsannahmen gleich sind.
 
-**F03:** Korrektur/Storno von 500,00 EUR zur ursprünglich realisierten 2.000,00-EUR-Gutschrift -> Netto-Realisierung 1.500,00 EUR; Fee-Allocation muss genau einmal um 15,00 EUR (3 % von 500,00 EUR) korrigiert werden.
+**F03:** Korrektur/Storno von 500,00 EUR zur ursprünglich realisierten 2.000,00-EUR-Gutschrift -> Netto-Realisierung 1.500,00 EUR; Fee-Allocation muss genau einmal um 25,00 EUR (5 % von 500,00 EUR) korrigiert werden.
 
 **F04:** Zwei gleichlautende Lieferanten-Firmennamen mit unterschiedlichen verifizierten Kennungen dürfen selbst bei hoher Ähnlichkeit niemals verschmolzen werden.
 

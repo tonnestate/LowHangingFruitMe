@@ -54,9 +54,9 @@ Für Architekturänderungen: reale bestehende FruitStack-Ports prüfen, Minimala
 **Lieferobjekte:** unveränderliche Case-IDs, supplier accepted/declined, manual/uploaded recovery proof, read-only Settlement-Matching, Teilrealisierung, Storno, Gebührenzuordnung, Rechnungsvorschlagsfreigabe und Zahlungseingangsstatus.
 
 **Akzeptanz:** 
-- 2.500,00 EUR berechnete Differenz, davon 1.000,00 EUR realisiert -> 30,00 EUR netto Honorarvorschlag bei 3 %, nicht 75,00 EUR.
+- 2.500,00 EUR berechnete Differenz, davon 1.000,00 EUR realisiert -> 50,00 EUR netto Honorarvorschlag bei 5 %, nicht 125,00 EUR.
 - Ein doppelter Payment-/Credit-Event erzeugt keinen zweiten Anspruch.
-- Storno 300,00 EUR reduziert die abrechenbare Basis um 300,00 EUR und berichtigt das Honorar um 30,00 EUR. 
+- Storno 300,00 EUR reduziert die realisierte Basis um 300,00 EUR und senkt den Honorarvorschlag um 15,00 EUR; keine automatisch abrechenbare Gebuehr. 
 - Bei unklarer Zuordnung: DISPUTED; keine automatisch freigegebene Rechnung.
 - Keine Lieferantenzahlung geht über unsere Konten.
 
@@ -141,7 +141,7 @@ Der Kunde zahlt nur nach belegtem wirtschaftlichem Erfolg. Damit trägt LowHangi
 - contribution_margin = received_fee_net minus variable Kosten, zeitlich periodengerecht zuordnen;
 - net_recouped_per_case, days_to_realization, unpaid_customer_invoices, reversals.
 
-Beispiel mit Variablen, **nicht** als validierte Markterwartung: Bei 3 % Gebühr und 150 EUR gesamten variablen Kosten ist der rein variable Break-even pro Audit bei mindestens 5.000 EUR belegter Realisierung, sofern keine weiteren Gebühren oder Rückstellungen anfallen. Bei Nullrecovery entstehen trotz 0 EUR Honorar weiterhin Kosten. Deshalb Pilotkundenselektion und begrenzte Audit-Ressourcen statt massenhafter ungesteuerter Gratisprüfungen.
+Beispiel mit Variablen, **nicht** als validierte Markterwartung: Bei 5 % Gebühr und 150 EUR gesamten variablen Kosten ist der rein variable Break-even pro Audit bei mindestens 3.000 EUR belegter Realisierung, sofern keine weiteren Gebühren oder Rückstellungen anfallen. Bei Nullrecovery entstehen trotz 0 EUR Honorar weiterhin Kosten. Deshalb Pilotkundenselektion und begrenzte Audit-Ressourcen statt massenhafter ungesteuerter Gratisprüfungen.
 
 **Kundenvalidierung:** mit eindeutig belegten Daten unterscheiden, wie viele Audits tatsächliche Berechnung, akzeptierte Differenzen, Geldzufluss und Zahlungen an uns erzeugen. Keine pauschalen 1–3-%-Ansprüche aus US-Marketing übernehmen.
 

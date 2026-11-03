@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.13.1 – prospective 5% fee proposal with persistent legacy case rate (2026-11-03)
+
+- New Recovery Cases persist 500 basis points (5%) while SQL 007 sets 300 bps (3%) for existing cases. Event replays never overwrite the original case rate.
+- API ledger, authorized customer PDF/XLSX/JSON exports and public illustration display the applicable fee proposal; synthetic tests cover cents, reversals and historical rate retention.
+- Unchanged: no signed customer fee agreement, independent bank settlement verification, invoice approval or legally billable amount; `fee_due_net=0`. Actual CI results must be recorded in EVIDENCE.md.
+
+
 ## 0.13.0 – signed mapping, strict tier semantics and visible quality (2026-11-03)
 
 - Added separately HMAC-signed and MariaDB-registered transaction/settlement mapping receipts, with precise tenant/legal-entity/actor/source/plan/contract-approval binding and explicit revocation events.

@@ -32,7 +32,7 @@ Marketingaussagen wie „1–3 % des Umsatzes“ sind nur nach eigener belastbar
 
 ## 4. Erfolgshonorar – Bemessung und Zurechnung
 
-**Verbindliche Produkt-Preisentscheidung (vertraglich noch zu prüfen):** 3 % × der **nachgewiesenen, zusätzlich, kausal aufgrund unserer dokumentierten Findings realisierten und nicht anderweitig bereits vergüteten Netto-Lieferantenvergütung**. Unser Honorar kann seinerseits umsatzsteuerpflichtig sein.
+**Verbindliche Produkt-Preisentscheidung (vertraglich noch zu prüfen):** 5 % × der **nachgewiesenen, zusätzlich, kausal aufgrund unserer dokumentierten Findings realisierten und nicht anderweitig bereits vergüteten Netto-Lieferantenvergütung**. Unser Honorar kann seinerseits umsatzsteuerpflichtig sein.
 
 Abrechenbar nur, wenn:
 1. Ein dokumentierter Case innerhalb des angenommenen Leistungsscheins existiert.
@@ -42,7 +42,7 @@ Abrechenbar nur, wenn:
 5. Derselbe Vorgang nicht doppelt gezählt wird – etwa Gutschrift und anschließender Zahlungseingang als zwei getrennte Boni.
 6. Rückbuchungen/Korrekturen rückwirkend den realisierten Nettobetrag und ggf. unsere Gebühr mindern.
 
-**Beispiel, keine Prognose:** ermittelte Differenz 36.700 EUR; Zusatzgutschriften werden für 12.000 EUR anerkannt; davon sind 8.000 EUR zugeflossen und 4.000 EUR wirksam verrechnet. Ergebnis bei vollständig geprüfter Zuordnung: 12.000 EUR Realisierung, 360 EUR netto Honorar vor USt. Auf nicht realisierte 24.700 EUR wird nichts berechnet.
+**Beispiel, keine Prognose:** ermittelte Differenz 36.700 EUR; Zusatzgutschriften werden für 12.000 EUR anerkannt; davon sind 8.000 EUR zugeflossen und 4.000 EUR wirksam verrechnet. Ergebnis bei vollständig geprüfter Zuordnung: 12.000 EUR Realisierung, 600 EUR netto Honorar vor USt. Auf nicht realisierte 24.700 EUR wird nichts berechnet.
 
 **Definition von Realisierung** vor Unterschrift: Zahlung, endgültig wirksame Verrechnung oder unter klar bestimmten Voraussetzungen endgültig nutzbare und belegte Gutschrift. Eine bloße Lieferantenzusage oder von uns berechneter Anspruch genügt nicht.
 
@@ -134,7 +134,7 @@ Diese Datei ist **kein unterschriftsreifer Vertrag und keine rechtsverbindliche 
 Eine auf RDG und B2B-Vertragsgestaltung spezialisierte **externe** Rechtsprüfung ist zwingender kommerzieller Freigabeschritt. Der Gutachter prüft schriftlich:
 
 1. Welche rein technische bzw. kaufmännische Datenauswertung ohne Rechtsdienstleistung erbracht werden kann und ab wann individuelle Anspruchsprüfung beginnt.
-2. Ob und unter welchen Bedingungen die **3%-Erfolgsvergütung** für die konkrete Leistung wirksam vereinbart werden kann, insbesondere Zurechenbarkeit, nachgelagerte Teil-/Storno-Realisierungen und Rechnungsfreigabe.
+2. Ob und unter welchen Bedingungen die **5%-Erfolgsvergütung** für die konkrete Leistung wirksam vereinbart werden kann, insbesondere Zurechenbarkeit, nachgelagerte Teil-/Storno-Realisierungen und Rechnungsfreigabe.
 3. Ob zulässige Supportleistungen, Vertragserläuterungen, Lieferantenkontakte und Kundenhilfen bereits regulierte Rechtsdienstleistung bzw. Inkasso wären. Bis zur Abnahme bleibt LowHangingFruitMe strikt auf Datenprüfung und vom Kunden selbst gesteuerte Klärung begrenzt.
 4. Rechtmäßige Bereitstellung geschäfts- und personenbezogener Einkaufsdaten, AVV/TOMs, Aufbewahrung, Löschung und Schutz von Lieferantengeheimnissen.
 5. Dokumentation der unterzeichneten schriftlichen Rechts- und Datenschutz-Freigabe, versioniert zum konkreten Pilotvertrag.

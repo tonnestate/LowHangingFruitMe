@@ -73,4 +73,8 @@ The HTTP API under `src/lowhangingfruitme/api/` allows only `POST /v1/audits` an
 
 ## End-to-end pilot 0.12 safety boundary
 
-A customer-facing report is downloadable **only** with active reviewer and tenant/legal entity permissions, both audit/ledger scopes, an actually completed EVIDENCED audit, reconciled ledger amounts and original source hashes. Always keep a calculated variance separate from manually attested realization and legally billable fees. The 3%-fee is a proposal only; `fee_due_net` remains zero until an explicit contractual fee allocation and invoicing approval exists. Never treat a signed mapping, a synthetic PDF or a finance actor assertion as independently proven bank settlement. Maintain fail-closed read-only exports and never leak auth tokens or private source paths.
+A customer-facing report is downloadable **only** with active reviewer and tenant/legal entity permissions, both audit/ledger scopes, an actually completed EVIDENCED audit, reconciled ledger amounts and original source hashes. Always keep a calculated variance separate from manually attested realization and legally billable fees. The 5%-fee is a proposal only; `fee_due_net` remains zero until an explicit contractual fee allocation and invoicing approval exists. Never treat a signed mapping, a synthetic PDF or a finance actor assertion as independently proven bank settlement. Maintain fail-closed read-only exports and never leak auth tokens or private source paths.
+
+## Pricing snapshot – 03.11.2026
+
+From version 0.13.1 onward, only newly opened Recovery Cases receive a stored 500 bps (5%) proposal. SQL migration 007 adds a 300 bps default to existing cases; replays must never change the case rate. The proposal is not a signed customer fee agreement or a legal invoice. Keep `fee_due_net` at zero until separate external legal, contracting and billing gates pass. Never silently reprice historical case exports.
