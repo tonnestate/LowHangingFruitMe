@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Annotated, Literal
+from typing import Annotated, Literal, Any
 from uuid import UUID, uuid4
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
@@ -17,6 +17,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from ..approval_service import AuthenticatedApprovalService
 from .store import BundleNotFound, PrivateAuditStore, RunConflict
+from .promotion import ReviewedBundleService, ReviewRequired
 from .uploads import (ClamAVScanner, MAX_UPLOAD, ScannerUnavailable,
                       UploadRejected, UploadService)
 
@@ -37,12 +38,31 @@ class UploadIntentRequest(BaseModel):
     sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
 
 
+class ReviewedBundleRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    tenant_id: str = Field(min_length=1, max_length=128, pattern=r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
+    legal_entity_id: str = Field(min_length=1, max_length=128, pattern=r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
+    transactions_upload_id: UUID
+    settlements_upload_id: UUID
+    contract_upload_id: UUID
+    source_system: str = Field(min_length=1, max_length=128, pattern=r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
+    source_revision_id: str = Field(min_length=1, max_length=128)
+    rule: dict[str, Any]
+    transaction_plan: dict[str, Any]
+    settlement_plan: dict[str, Any]
+    controls: dict[str, Any] | None
+    completeness: dict[str, bool]
+    confirm_contract_review: Literal[True]
+    confirm_mapping_review: Literal[True]
+
+
 def create_app(*, service: AuthenticatedApprovalService,
                store: PrivateAuditStore,
-               uploads: UploadService | None = None) -> FastAPI:
+               uploads: UploadService | None = None,
+               promotion: ReviewedBundleService | None = None) -> FastAPI:
     """Dependencies injected by a trusted bootstrap, never from HTTP input."""
     app = FastAPI(
-        title="LowHangingFruitMe Audit API", version="0.9.0",
+        title="LowHangingFruitMe Audit API", version="0.10.0",
         docs_url=None, redoc_url=None, openapi_url=None,
     )
 
@@ -164,6 +184,65 @@ def create_app(*, service: AuthenticatedApprovalService,
             raise HTTPException(status_code=404, detail={"code":"UPLOAD_NOT_FOUND"}) from exc
         return {**record, "usable_for_audit": False}
 
+    @app.get("/v1/uploads/{upload_id}/inspect")
+    def inspect_upload_for_mapping(
+        upload_id: UUID,
+        tenant_id: Annotated[str, Query(min_length=1, max_length=128,
+                pattern=r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")],
+        legal_entity_id: Annotated[str, Query(min_length=1, max_length=128,
+                pattern=r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")],
+        dataset: Literal["transactions", "settlements"],
+        sheet_name: str | None = None,
+        token: str = Depends(access_token),
+    ):
+        actor = authorized_actor(
+            token, tenant=tenant_id, entity=legal_entity_id,
+            required_scope="lhfm:upload:write",
+        )
+        if promotion is None:
+            raise HTTPException(status_code=503, detail={"code":"BUNDLE_REVIEW_UNAVAILABLE"})
+        try:
+            return promotion.inspect(
+                token, tenant_id=tenant_id, legal_entity_id=legal_entity_id,
+                upload_id=str(upload_id), dataset=dataset, sheet_name=sheet_name,
+            )
+        except BundleNotFound as exc:
+            raise HTTPException(status_code=404, detail={"code":"UPLOAD_NOT_FOUND"}) from exc
+        except (UploadRejected, ValueError) as exc:
+            raise HTTPException(status_code=422, detail={"code":"SOURCE_INSPECTION_FAILED"}) from exc
+
+    @app.post("/v1/bundles", status_code=201)
+    def approve_and_prepare_bundle(
+        body: ReviewedBundleRequest, token: str = Depends(access_token),
+    ):
+        authorized_actor(
+            token, tenant=body.tenant_id, entity=body.legal_entity_id,
+            required_scope="lhfm:approval:write",
+        )
+        if promotion is None:
+            raise HTTPException(status_code=503, detail={"code":"BUNDLE_REVIEW_UNAVAILABLE"})
+        try:
+            return promotion.prepare(
+                token, tenant_id=body.tenant_id,
+                legal_entity_id=body.legal_entity_id,
+                transaction_upload_id=str(body.transactions_upload_id),
+                settlement_upload_id=str(body.settlements_upload_id),
+                contract_upload_id=str(body.contract_upload_id),
+                transaction_plan=body.transaction_plan,
+                settlement_plan=body.settlement_plan,
+                rule=body.rule, source_system=body.source_system,
+                source_revision_id=body.source_revision_id,
+                controls=body.controls, completeness=body.completeness,
+                confirm_contract_review=body.confirm_contract_review,
+                confirm_mapping_review=body.confirm_mapping_review,
+            )
+        except BundleNotFound as exc:
+            raise HTTPException(status_code=404, detail={"code":"UPLOAD_NOT_FOUND"}) from exc
+        except (ReviewRequired, UploadRejected, ValueError) as exc:
+            raise HTTPException(status_code=422, detail={"code":"BUNDLE_REVIEW_FAILED"}) from exc
+        except PermissionError as exc:
+            raise HTTPException(status_code=403, detail={"code":"NOT_AUTHORIZED"}) from exc
+
     @app.post("/v1/audits", status_code=201)
     def submit(
         body: AuditRequest, request: Request,
@@ -272,4 +351,9 @@ def create_app_from_environment() -> FastAPI:
             registry=service.registry, root=private_upload_root,
             scanner=ClamAVScanner(scanner_socket),
         )
-    return create_app(service=service, store=store, uploads=upload_service)
+    promotion_service = (
+        ReviewedBundleService(service=service, uploads=upload_service, store=store)
+        if upload_service is not None else None
+    )
+    return create_app(service=service, store=store,
+                      uploads=upload_service, promotion=promotion_service)
