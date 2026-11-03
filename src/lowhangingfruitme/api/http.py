@@ -12,7 +12,7 @@ from typing import Annotated, Literal, Any
 from uuid import UUID, uuid4
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel, ConfigDict, Field
 
 from ..approval_service import AuthenticatedApprovalService
@@ -20,6 +20,7 @@ from ..invoices import extract_invoice_preview
 from .store import BundleNotFound, PrivateAuditStore, RunConflict
 from .promotion import ReviewedBundleService, ReviewRequired
 from .recovery import RecoveryLedger, CaseConflict
+from .reports import customer_case, render_export, ReportNotReady
 from .uploads import (ClamAVScanner, MAX_UPLOAD, ScannerUnavailable,
                       UploadRejected, UploadService)
 
@@ -486,6 +487,49 @@ def create_app(*, service: AuthenticatedApprovalService,
                                  legal_entity_id=legal_entity_id, reviewer_id=actor)
         except BundleNotFound as exc:
             raise HTTPException(status_code=404, detail={"code":"AUDIT_NOT_FOUND"}) from exc
+
+    @app.get("/v1/audits/{audit_id}/report.{fmt}")
+    def download_customer_report(
+        audit_id: UUID,
+        fmt: Literal["json", "pdf", "xlsx"],
+        tenant_id: Annotated[str, Query(min_length=1, max_length=128,
+            pattern=r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")],
+        legal_entity_id: Annotated[str, Query(min_length=1, max_length=128,
+            pattern=r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")],
+        token: str = Depends(access_token),
+    ):
+        actor = authorized_actor(
+            token, tenant=tenant_id, entity=legal_entity_id,
+            required_scope="lhfm:audit:execute",
+        )
+        # A financial export contains realization information, therefore
+        # the SAME verified access token must carry ledger read permission.
+        try:
+            service.verifier.verify(token).require_scope("lhfm:recovery:read")
+        except (PermissionError, ValueError) as exc:
+            raise HTTPException(status_code=403, detail={"code":"REPORT_SCOPE_REQUIRED"}) from exc
+        if recovery is None:
+            raise HTTPException(status_code=503, detail={"code":"RECOVERY_UNAVAILABLE"})
+        try:
+            run = store.get_run(
+                audit_id=str(audit_id), tenant_id=tenant_id,
+                legal_entity_id=legal_entity_id, reviewer_id=actor,
+            )
+            fee = recovery.ledger(
+                audit_id=str(audit_id), tenant_id=tenant_id,
+                legal_entity_id=legal_entity_id, reviewer_id=actor,
+            )
+            case = customer_case(run, fee)
+            payload, mime = render_export(case, fmt)
+        except BundleNotFound as exc:
+            raise HTTPException(status_code=404, detail={"code":"AUDIT_NOT_FOUND"}) from exc
+        except (ReportNotReady, CaseConflict) as exc:
+            raise HTTPException(status_code=409, detail={"code":"REPORT_NOT_READY"}) from exc
+        return Response(
+            content=payload, media_type=mime,
+            headers={"Content-Disposition":
+                     f'attachment; filename="lhfm-{audit_id}.{fmt}"'},
+        )
 
     return app
 
