@@ -201,6 +201,100 @@ class ReviewedPipelineTests(unittest.TestCase):
         self.assertEqual(amounts["input_provenance"]["transactions"]["mapping_sha256"],
                          result.json()["provenance"]["transactions"]["mapping_sha256"])
 
+    def test_mapping_receipts_are_persistently_signed(self):
+        tx,se,co=self.inputs()
+        created=self.post(self.body(tx,se,co))
+        self.assertEqual(created.status_code,201,created.text)
+        bundle=created.json()["bundle_id"]
+        self.assertEqual(created.json()["mapping_approval_status"],"SIGNED_REGISTERED")
+        manifest=self.store.load_bundle(
+            bundle_id=bundle,tenant_id=TENANT,legal_entity_id=ENTITY,
+            reviewer_id=ACTOR,
+        )
+        self.assertEqual(set(manifest["mapping_approvals"]),
+                         {"transactions","settlements"})
+        with self.promotion.mapping_registry.guard(
+            receipts=manifest["mapping_approvals"],
+            provenance=manifest["provenance"],bundle_id=bundle,
+            tenant_id=TENANT,legal_entity_id=ENTITY,reviewer_id=ACTOR,
+            approval_id=manifest["approval_receipt"]["approval_id"],
+        ):
+            db=self.registry._connect()
+            try:
+                with db.cursor() as cur:
+                    cur.execute(
+                        "SELECT COUNT(*) AS n FROM lhfm_mapping_approval_events "
+                        "WHERE bundle_id=%s AND event_type='ISSUED'",(bundle,),
+                    )
+                    self.assertEqual(cur.fetchone()["n"],2)
+            finally:
+                db.close()
+
+    def test_revoked_mapping_blocks_report_even_if_contract_signed(self):
+        tx,se,co=self.inputs()
+        created=self.post(self.body(tx,se,co))
+        self.assertEqual(created.status_code,201,created.text)
+        bundle=created.json()["bundle_id"]
+        changed=self.promotion.mapping_registry.revoke_bundle(
+            bundle_id=bundle,tenant_id=TENANT,
+            legal_entity_id=ENTITY,reviewer_id=ACTOR,
+        )
+        self.assertTrue(changed)
+        self.assertFalse(self.promotion.mapping_registry.revoke_bundle(
+            bundle_id=bundle,tenant_id=TENANT,
+            legal_entity_id=ENTITY,reviewer_id=ACTOR,
+        ))
+        attempt=self.client.post(
+            "/v1/audits",json={**self.scope(),"bundle_id":bundle},
+            headers={**self.headers(),"Idempotency-Key":str(uuid4())},
+        )
+        self.assertEqual(attempt.status_code,503,attempt.text)
+
+    def test_mapping_receipt_tamper_blocks_audit(self):
+        tx,se,co=self.inputs()
+        created=self.post(self.body(tx,se,co))
+        self.assertEqual(created.status_code,201,created.text)
+        bundle=created.json()["bundle_id"]
+        db=self.registry._connect()
+        try:
+            with db.cursor() as cur:
+                cur.execute(
+                    "SELECT manifest_json FROM lhfm_api_bundles WHERE bundle_id=%s",
+                    (bundle,),
+                )
+                manifest=json.loads(cur.fetchone()["manifest_json"])
+                manifest["mapping_approvals"]["transactions"]["source_sha256"]="0"*64
+                cur.execute(
+                    "UPDATE lhfm_api_bundles SET manifest_json=%s WHERE bundle_id=%s",
+                    (json.dumps(manifest),bundle),
+                )
+            db.commit()
+        finally:
+            db.close()
+        attempt=self.client.post(
+            "/v1/audits",json={**self.scope(),"bundle_id":bundle},
+            headers={**self.headers(),"Idempotency-Key":str(uuid4())},
+        )
+        self.assertEqual(attempt.status_code,503,attempt.text)
+
+    def test_cross_tenant_mapping_verification_rejected(self):
+        tx,se,co=self.inputs()
+        created=self.post(self.body(tx,se,co))
+        self.assertEqual(created.status_code,201,created.text)
+        bundle=created.json()["bundle_id"]
+        manifest=self.store.load_bundle(
+            bundle_id=bundle,tenant_id=TENANT,legal_entity_id=ENTITY,
+            reviewer_id=ACTOR,
+        )
+        with self.assertRaises(PermissionError):
+            with self.promotion.mapping_registry.guard(
+                receipts=manifest["mapping_approvals"],
+                provenance=manifest["provenance"],bundle_id=bundle,
+                tenant_id="T-FOREIGN",legal_entity_id=ENTITY,reviewer_id=ACTOR,
+                approval_id=manifest["approval_receipt"]["approval_id"],
+            ):
+                pass
+
     def test_human_review_and_identity_required(self):
         tx,se,co=self.inputs()
         body=self.body(tx,se,co)
