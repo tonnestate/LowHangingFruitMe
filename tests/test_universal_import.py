@@ -245,6 +245,60 @@ class UniversalMappingTests(unittest.TestCase):
 
 @unittest.skipUnless(bool(os.environ.get("LHFM_DB_HOST")), "real MariaDB required")
 class UniversalFullAuditTests(UniversalMappingTests):
+    def test_one_command_signed_erp_sources_through_canonical_audit(self):
+        key=b"synthetic-reviewed-mapping-cli-key-32"
+        doc=self.root/"contract_original.txt"
+        doc.write_text("Synthetic reviewed contract only",encoding="utf-8")
+        rule_file=self.root/"rule.json"
+        rule_file.write_text(json.dumps(RULE),encoding="utf-8")
+        signed=issue_approval(
+            RULE,key=key,tenant_id="T-SYN-1",legal_entity_id="LE-SYN-1",
+            reviewer_id="REVIEWER-SYN-1",approval_id="CLI-"+uuid4().hex,
+            source_revision_id="CLI-SYN-REV-A",
+            document_sha256=sha256(doc.read_bytes()).hexdigest(),
+            approved_at=datetime.now(timezone.utc),
+        )
+        registry=ApprovalRegistry.from_environment()
+        registry.register(
+            signed,rule=RULE,key=key,document_sha256=sha256(doc.read_bytes()).hexdigest(),
+            tenant_id="T-SYN-1",legal_entity_id="LE-SYN-1",
+            authenticated_actor_id="REVIEWER-SYN-1",
+        )
+        def write_json(name,obj):
+            path=self.root/name
+            path.write_text(json.dumps(obj),encoding="utf-8")
+            return path
+        approval=write_json("approval.json",signed)
+        controls=write_json("controls.json",CONTROLS)
+        txplan=write_json("transactions.mapping.json",plan(self.txn,"transactions",TX_MAP))
+        settleplan=write_json("settlements.mapping.json",plan(self.credits,"settlements",SETTLE_MAP))
+        args=[sys.executable,"-m","lowhangingfruitme.intake_cli","audit-sources",
+              "--rule",str(rule_file),"--transactions",str(self.txn),
+              "--settlements",str(self.credits),
+              "--transaction-plan",str(txplan),
+              "--settlement-plan",str(settleplan),
+              "--approval",str(approval),"--contract-source",str(doc),
+              "--controls",str(controls),"--source-system","erp",
+              "--tenant-id","T-SYN-1","--legal-entity-id","LE-SYN-1",
+              "--confirm-transactions-complete","--confirm-settlements-complete",
+              "--confirm-agreements-complete"]
+        environ={**os.environ,"LHFM_APPROVAL_KEY_HEX":key.hex()}
+        run=subprocess.run(args,check=False,capture_output=True,text=True,env=environ)
+        self.assertEqual(run.returncode,0,run.stderr)
+        result=json.loads(run.stdout)
+        self.assertTrue(result["audit_executed"])
+        self.assertEqual(result["difference_net"],"2500.00")
+        self.assertEqual(result["fee_due_net"],"0.00")
+        self.assertEqual(result["status"],"EVIDENCED")
+        self.assertEqual(result["source_lineage"][0]["source_sha256"],
+                         sha256(self.txn.read_bytes()).hexdigest())
+        # Signature approval cannot be replaced with arbitrary agreed=True.
+        args[args.index(str(approval))]=str(write_json("unsigned.json",{"approved":True}))
+        denied=subprocess.run(args,check=False,capture_output=True,text=True,env=environ)
+        self.assertNotEqual(denied.returncode,0)
+        if denied.returncode==0:
+            self.fail("unsigned receipt was accepted")
+
     def test_normalized_sources_reuse_canonical_financial_gate(self):
         key = b"synthetic-universal-integration-key-32"
         rule_path = self.root / "rule.json"
