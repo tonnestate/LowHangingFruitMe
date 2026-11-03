@@ -8,7 +8,7 @@
 - One unprivileged systemd process on **127.0.0.1:3107**; the port is a suggested isolated local binding and **must be checked for conflicts before deployment**.
 - Add a *new* Apache VirtualHost for an **owner-selected domain**. Do not edit existing TonnEstate/WordPress vhosts or reuse their DocumentRoot.
 - Expose only Apache HTTPS; do not publicly expose port 3107.
-- No customer finance document upload, user login or 3%-billing API is served by the marketing site.
+- An OIDC-protected operator workspace and authenticated API proxy are implemented **in source** but not enabled for real customer traffic on the VPS. The public marketing pages still do not accept customer finance documents; there is no real invoicing service.
 - Until real legal operator details, privacy information, domain TLS and a security review and full operator-provided legal texts are completed: \`PUBLIC_LAUNCH_APPROVED=false\`. This generates \`noindex\` and a full robots disallow.
 - Missing contact email means the request page **shows a transparent disabled staging message**, not a success screen or an unhandled form.
 
@@ -52,3 +52,9 @@ The file \`portal/public/brand-measurement.json\` records sampled original pixel
 ## Follow-on application boundary
 
 Any future customer portal or upload API must use its own authenticated backend, tenant isolation and private encrypted document storage. Do not couple lead collection or financial workflows to this static marketing app until the full identity, consent, retention and security design is accepted.
+
+## Current v0.12.0 source-only operator flow
+
+`/arbeitsplatz` is guarded by server-side OIDC session checks; the allowlisted `/api/finance/*` Next.js BFF forwards only approved JWT-scoped routes to `LHFM_API_INTERNAL_URL` at a loopback origin. It supports upload intent/content, inspect source, reviewed contract bundle, audit run, recovery evidence and independent finance review. Report downloads `report.pdf`, `report.xlsx`, `report.json` are forwarded as binary-safe, no-store replies after the Python API checks reviewer/tenant/ledger permissions.
+
+This is a tested development flow, **not** proof of the customer's chosen identity provider, deployed server settings, TLS hardening, ClamAV daemon, retention, customer consent or legally billable fee. The existing neon PNG remains the only permitted visual brand source. See `../docs/FOUR_WEEK_ACCEPTANCE.md`.

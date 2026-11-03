@@ -1,6 +1,22 @@
 # LowHangingFruitMe – API-, Daten- und Rechenkern-Spezifikation v0.1
 
-**Stand:** 03.11.2026 | **Status:** Überwiegend Zielvertrag. **Begrenzte HTTP-Teilbereiche sind in v0.8.0 und v0.9.0 implementiert:** `POST /v1/audits` (synchroner Audit bereits registrierter servereigener Quelldatenpakete), `GET /v1/audits/{id}` (gespeicherter Bericht) und `GET /healthz` (Liveness). v0.9 ergänzt eine private, authentifizierte, scannerpflichtige Upload-Staging-API, aber **keinen freigegebenen öffentlichen Kunden-Upload**, keine Live-Browseranbindung, keine Job-Queue, Login-/ERP-/Recovery-Integration. Tatsächliche v0.8-Parameter und HTTP-Status in [AUDIT_API.md](AUDIT_API.md).
+**Stand:** 03.11.2026 | **Status:** Zielvertrag **plus tatsächlich implementierte Teilbereiche bis v0.12.0**. JWT-geschützte Audit-API, Scannerpflicht-/Upload-Staging, signierte und fachlich bestätigte Datenpakete, Recovery-Ledger mit gesondertem Finanzprüfer sowie JSON-/PDF-/XLSX-Reportdownloads sind als synthetischer End-to-End-Pfad implementiert. Ein Next.js-OIDC-BFF ist im Code getestet, aber **weder reale Kundenanmeldung noch produktive ClamAV-/IdP-/VPS-Konfiguration** abgenommen. Keine Live-ERP-Anbindung, keine externe Pilotbestätigung, keine autorisierte tatsächliche Honorarrechnung. [Aktueller Abnahmestand](FOUR_WEEK_ACCEPTANCE.md) und [historische v0.8-Details](AUDIT_API.md).
+
+## Aktuelle tatsächlich vorhandene HTTP-Routen (v0.12.0)
+
+Zusätzlich zur untenstehenden **teilweise erst geplanten** API-Gesamtspezifikation existieren:
+
+- `GET /healthz` – ohne Finanzdaten;
+- `POST /v1/uploads`, `PUT /v1/uploads/{id}/content`, `GET /v1/uploads/{id}` – scannerpflichtiges, privates Staging;
+- `GET /v1/uploads/{id}/inspect` – Quellspalten-/Arbeitsblattvorschläge;
+- `GET /v1/uploads/{id}/invoice-preview` – schreibgeschützte UBL/CII-Vorschau, keine Buchung;
+- `POST /v1/bundles` – ausdrücklich reviewed/signed Quellenpaket, nur beim berechtigten Prüfer;
+- `POST /v1/audits`, `GET /v1/audits/{id}` – Freigabe- und Readiness-geschützte Prüfung;
+- `GET /v1/audits/{id}/report.pdf`, `report.xlsx`, `report.json` – nur evidenzierter Audit, zusätzlicher Ledger-Lesescope und selber Mandant/Reviewer;
+- `POST /v1/audits/{id}/recovery-events`, `GET /v1/audits/{id}/fee-ledger`, `POST /v1/recovery-events/{event_id}/review` – nachweisgebundene manuelle Realisierungen mit unabhängigem Finanzprüfer;
+- `POST /v1/audits/{id}/case-status` – finanzprüferautorisierte Dispute-/Closure-/Reopen-Protokolle.
+
+**Wichtig:** Keine der Routen bewirkt automatische ERP-Buchung, Lieferantenforderung, Bankzahlung, Rechnungsstellung oder tatsächliche 3%-Gebührenfälligkeit. Originaldokumente bleiben im privaten Staging und werden nicht über diese Download-Routen ausgespielt.
 
 ## 1. API-Grundregeln
 

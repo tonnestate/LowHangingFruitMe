@@ -1,4 +1,6 @@
-# LowHangingFruitMe authenticated Audit API – v0.8.0
+# LowHangingFruitMe authenticated Audit API – v0.8.0 (historical baseline)
+
+**This document records the original v0.8 subset.** For current v0.12 authenticated upload, mapping, ledger and PDF/XLSX/JSON report APIs, see [API_AND_DATA.md](API_AND_DATA.md) and [FOUR_WEEK_ACCEPTANCE.md](FOUR_WEEK_ACCEPTANCE.md). The original v0.8 contract below is retained for traceability.
 
 **Actual implemented boundary:** `src/lowhangingfruitme/api/http.py`, `src/lowhangingfruitme/api/store.py`, `sql/002_audit_api.sql`.  
 **Status:** tested **operator-provisioned bundle → JWT-authorized HTTP audit → MariaDB report**. Not deployed; not production ready; no customer uploads.

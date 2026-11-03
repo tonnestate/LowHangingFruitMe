@@ -1,13 +1,13 @@
 # Website implementation and acceptance – LowHangingFruitMe portal 0.1.0
 
 **Date:** 2026-11-03  
-**Python backend:** v0.7.0, unchanged  
+**Python backend:** v0.12.0 source repository; not deployed  
 **Marketing frontend:** new Next.js 16 / React 19 portal, standalone app in the existing repository  
 **Deployment status:** **not installed on the production VPS**. No DNS, Apache, TLS, WordPress or systemd changes have been made.
 
 ## Purpose and data separation
 
-The frontend is a dedicated German acquisition and educational website on the operator's existing webserver, not a WordPress page. It is **not** yet a customer portal, financial data upload, authenticated API or account-management app. All financial computations continue to belong exclusively to \`src/lowhangingfruitme\`. A simple **3% of hypothetical actually realized net recovery** pricing illustration is permitted on the public site, clearly marked as an example; it is not an audit, a recovery claim or an invoice.
+The frontend is a dedicated German acquisition and educational website on the operator's existing webserver, not a WordPress page. The original marketing website has since been extended by a separately protected OIDC/BFF-based finance workspace with synthetic staging uploads, manual mapping approvals, audited reports and 3%-ledger proposals. It is **not** a deployed or real-customer-approved service; financial data must not be submitted to the public marketing landing pages. All financial computations continue to belong exclusively to \`src/lowhangingfruitme\`. A simple **3% of hypothetical actually realized net recovery** pricing illustration is permitted on the public site, clearly marked as an example; it is not an audit, a recovery claim or an invoice.
 
 ## Implemented routes
 
@@ -59,3 +59,9 @@ A production deployment or public SEO indexing is **not** approved by the mere e
 ## Next action
 
 Close the remaining infrastructure and legal prerequisites, then deploy staging for domain/TLS, security and real screenshot acceptance. Only after that, separately implement authenticated customer accounts, private file upload, verified source integration and the recovery ledger in the Python/API service.
+
+## v0.12.0 addendum – authenticated internal workspace (03.11.2026)
+
+The route `/arbeitsplatz` and related `/api/auth/*` and `/api/finance/*` infrastructure are present in the source code. It uses an allowlisted server-side proxy to the Python resource server. The current code can stage scanned data, review CSV/XLSX mappings and a source-linked contract rule, submit an authenticated audit, view recovery events, attest case states in a separate finance role and download PDF/XLSX/JSON reports. Build and tests are synthetic; no OIDC account-provider issuance or deployment to the user's VPS has been verified.
+
+The brand build continues using **only** `../docs/Neon-Low-Hanging-FruitMe-Banner.png`. No new logo or theme is authorized. No live processing of customer data before the production security gate. See [FOUR_WEEK_ACCEPTANCE.md](FOUR_WEEK_ACCEPTANCE.md).
