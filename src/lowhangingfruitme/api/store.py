@@ -12,7 +12,6 @@ from hashlib import sha256
 import json
 from pathlib import Path
 import re
-import shutil
 import tempfile
 from typing import Any, Iterator
 from uuid import uuid4
@@ -23,6 +22,7 @@ from ..approval_registry import ApprovalRegistry
 ROLES = ("rule", "transactions", "settlements", "contract")
 SUFFIX = {"rule": ".json", "transactions": ".csv",
           "settlements": ".csv", "contract": ".txt"}
+CONTRACT_SUFFIXES = frozenset({".txt", ".pdf", ".docx"})
 MAX_BYTES = {"rule": 1024 * 1024, "transactions": 16 * 1024 * 1024,
              "settlements": 16 * 1024 * 1024, "contract": 20 * 1024 * 1024}
 IDENTIFIER = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$")
@@ -72,7 +72,8 @@ class PrivateAuditStore:
         if not isinstance(expected_hash, str) or not HEX_SHA256.fullmatch(expected_hash):
             raise ValueError("invalid source content hash")
         path = self._private_path(relative)
-        if path.suffix.lower() != SUFFIX[role]:
+        if (path.suffix.lower() not in CONTRACT_SUFFIXES if role == "contract"
+                else path.suffix.lower() != SUFFIX[role]):
             raise ValueError("invalid source suffix for " + role)
         size = path.stat().st_size
         if not 0 < size <= MAX_BYTES[role]:
@@ -121,7 +122,8 @@ class PrivateAuditStore:
         self._validated_manifest(manifest)
         for role, ref in manifest["files"].items():
             path = self._private_path(ref["path"])
-            if path.suffix.lower() != SUFFIX[role]:
+            if (path.suffix.lower() not in CONTRACT_SUFFIXES if role == "contract"
+                    else path.suffix.lower() != SUFFIX[role]):
                 raise ValueError("invalid source format")
             if not HEX_SHA256.fullmatch(ref["sha256"]):
                 raise ValueError("invalid source SHA-256")
@@ -177,7 +179,8 @@ class PrivateAuditStore:
             copied: dict[str, Path] = {}
             for role in ROLES:
                 item = manifest["files"][role]
-                dst = Path(tmp) / (role + SUFFIX[role])
+                original_suffix = Path(item["path"]).suffix.lower()
+                dst = Path(tmp) / (role + (original_suffix if role == "contract" else SUFFIX[role]))
                 self._checked_copy(
                     relative=item["path"], expected_hash=item["sha256"],
                     dest=dst, role=role,
@@ -188,6 +191,11 @@ class PrivateAuditStore:
     def reserve_run(self, *, tenant_id: str, legal_entity_id: str,
                     reviewer_id: str, bundle_id: str,
                     idempotency_key: str) -> tuple[dict[str, Any], bool]:
+        """Use the DB uniqueness constraint to make concurrent replay atomic.
+
+        The second process must not independently execute an audit for the
+        same signed request, even if both initially saw an empty table.
+        """
         signature = sha256(
             json.dumps([tenant_id, legal_entity_id, reviewer_id, bundle_id],
                        separators=(",", ":")).encode()
@@ -196,6 +204,16 @@ class PrivateAuditStore:
         try:
             with connection.cursor() as cursor:
                 cursor.execute(
+                    """INSERT INTO lhfm_api_runs
+                       (audit_id, tenant_id, legal_entity_id, reviewer_id, bundle_id,
+                        idempotency_key, request_sha256, status, audit_executed)
+                       VALUES (%s,%s,%s,%s,%s,%s,%s,'PROCESSING',0)
+                       ON DUPLICATE KEY UPDATE audit_id=audit_id""",
+                    (str(uuid4()), tenant_id, legal_entity_id, reviewer_id,
+                     bundle_id, idempotency_key, signature),
+                )
+                created = cursor.rowcount == 1
+                cursor.execute(
                     """SELECT audit_id, request_sha256, status, audit_executed
                        FROM lhfm_api_runs WHERE tenant_id=%s AND
                        legal_entity_id=%s AND reviewer_id=%s AND idempotency_key=%s
@@ -203,22 +221,10 @@ class PrivateAuditStore:
                     (tenant_id, legal_entity_id, reviewer_id, idempotency_key),
                 )
                 existing = cursor.fetchone()
-                if existing:
-                    if existing["request_sha256"] != signature:
-                        raise RunConflict("idempotency key reused with different bundle")
-                    connection.commit()
-                    return existing, False
-                audit_id = str(uuid4())
-                cursor.execute(
-                    """INSERT INTO lhfm_api_runs
-                       (audit_id, tenant_id, legal_entity_id, reviewer_id, bundle_id,
-                        idempotency_key, request_sha256, status, audit_executed)
-                       VALUES (%s,%s,%s,%s,%s,%s,%s,'PROCESSING',0)""",
-                    (audit_id, tenant_id, legal_entity_id, reviewer_id,
-                     bundle_id, idempotency_key, signature),
-                )
+                if not existing or existing["request_sha256"] != signature:
+                    raise RunConflict("idempotency key reused with different bundle")
             connection.commit()
-            return {"audit_id": audit_id, "status": "PROCESSING", "audit_executed": False}, True
+            return existing, created
         except Exception:
             connection.rollback()
             raise
