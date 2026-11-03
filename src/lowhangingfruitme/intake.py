@@ -203,7 +203,8 @@ def audit_from_csv(
         return {
             "status": "REVIEW_REQUIRED" if readiness["status"] == "LIMITED" else "NOT_CALCULABLE",
             "audit_executed": False, "readiness": readiness,
-            "difference_net": None, "expected_bonus_net": None, "recorded_bonus_net": None,
+            "difference_net": None, "calculated_variance_net": None,
+            "expected_bonus_net": None, "recorded_bonus_net": None,
             "billable_recovery_net": "0.00", "fee_due_net": "0.00",
             "warnings": [issue["code"] for issue in readiness["issues"]],
             "imports": [{k: v for k, v in item.items() if k != "entries"}
@@ -239,7 +240,8 @@ def audit_from_csv(
         return {
             "status": "NOT_CALCULABLE", "audit_executed": False,
             "readiness": readiness,
-            "difference_net": None, "expected_bonus_net": None,
+            "difference_net": None, "calculated_variance_net": None,
+            "expected_bonus_net": None,
             "recorded_bonus_net": None, "billable_recovery_net": "0.00",
             "fee_due_net": "0.00",
             "warnings": [item["code"] for item in readiness["issues"]],

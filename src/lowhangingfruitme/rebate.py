@@ -374,6 +374,7 @@ def audit(payload: dict[str, Any]) -> dict[str, Any]:
         "expected_bonus_net": str(expected) if expected is not None else None,
         "recorded_bonus_net": str(_money(recorded)) if recorded >= 0 else None,
         "difference_net": str(difference) if difference is not None else None,
+        "calculated_variance_net": str(difference) if difference is not None else None,
         "included_transactions": included, "matched_settlements": matched,
         "excluded_entries": sorted(excluded, key=lambda e: (e["entry"], e["reason"])),
         "warnings": sorted(warnings), "blocking_reasons": sorted(blocking),
