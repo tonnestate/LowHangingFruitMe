@@ -13,7 +13,7 @@ test("homepage contains honest business claim, complete sections and original ba
  expect(imageResponse.ok()).toBeTruthy();
  await expect(page.getByAltText("Originales Neon-Low-Hanging-FruitMe-Markenbanner")).toBeVisible();
  await expect(page.getByText("Sieben mögliche Prüffelder. Ein klarer Start.")).toBeVisible();
- await expect(page.getByText("3 %", {exact:false}).first()).toBeVisible();
+ await expect(page.locator("#calculator-title")).toContainText("3 %");
  await page.screenshot({path:"test-results/home-"+testInfo.project.name+".png",fullPage:true});
 });
 test("responsive navigation and FAQ are functional",async({page},testInfo)=>{
