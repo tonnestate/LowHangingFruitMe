@@ -60,6 +60,8 @@ def customer_case(run: dict[str, Any], ledger: dict[str, Any]) -> dict[str, Any]
         "period_start": report["period_start"],
         "period_end": report["period_end"],
         "currency": "EUR",
+        "audit_quality": report["readiness"].get("quality_metrics"),
+        "readiness_status": report["readiness"].get("status"),
         "eligible_base_net": report.get("eligible_base_net"),
         "expected_bonus_net": report["expected_bonus_net"],
         "recorded_bonus_net": report["recorded_bonus_net"],
@@ -147,6 +149,14 @@ def render_export(case: dict[str, Any], fmt: str) -> tuple[bytes, str]:
             "Honorarvorschlag 3 Prozent EUR": case["recovery"]["fee_proposal_net"],
             "Abrechenbare Realisierung EUR": case["recovery"]["billable_recovery_net"],
             "Faelliges Honorar EUR": case["recovery"]["fee_due_net"],
+            "Datenabdeckung gegen gelieferte Zeilenkontrollen Prozent":
+                (case["audit_quality"] or {}).get("data_coverage_pct"),
+            "Vertragsregel-Klarheit technisch Prozent":
+                (case["audit_quality"] or {}).get("rule_clarity_pct"),
+            "Reconciliation-Kontrollen Prozent":
+                (case["audit_quality"] or {}).get("reconciliation_completeness_pct"),
+            "Wertgewichtete Vollstaendigkeit nachgewiesen":
+                "Nein",
             "Quellsnapshot SHA-256": case["input_snapshot_sha256"],
             "Lineage SHA-256": case["lineage_sha256"],
         }
@@ -242,6 +252,16 @@ def render_export(case: dict[str, Any], fmt: str) -> tuple[bytes, str]:
             ("BOTTOMPADDING", (0,0), (-1,-1), 7),
         ]))
         story.append(tab)
+        quality = case.get("audit_quality") or {}
+        story.append(Paragraph("Datenqualitaet und Kontrollstatus", section))
+        story.append(para("Datenabdeckung gegen gelieferte Zeilenkontrollen: " +
+                          str(quality.get("data_coverage_pct") or "nicht bestimmbar") + " %"))
+        story.append(para("Regelklarheit (technisch freigegebene Semantik): " +
+                          str(quality.get("rule_clarity_pct") or "nicht bestimmbar") + " %"))
+        story.append(para("Kontrollsummen-Abgleich: " +
+                          str(quality.get("reconciliation_completeness_pct") or "nicht bestimmbar") + " %"))
+        story.append(para("Die Quoten sind nur Indikatoren gegen bereitgestellte Kontrollberichte. "
+                          "Eine vollstaendige ERP-Quellenbasis oder juristische Klarheit wird nicht bescheinigt."))
         story.append(Paragraph("Quellen und Pruefbelege", section))
         story.append(para("Original-Snapshot: " + case["input_snapshot_sha256"]))
         for kind, item in case["source_provenance"].items():
