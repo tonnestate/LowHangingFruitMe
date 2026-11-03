@@ -128,6 +128,23 @@ def create_app(*, service: AuthenticatedApprovalService,
             raise HTTPException(status_code=503, detail={"code":"UPLOAD_NOT_CONFIGURED"})
         return uploads
 
+    @app.get("/v1/me")
+    def get_verified_reviewer_identity(
+        tenant_id: Annotated[str, Query(min_length=1,max_length=128,
+            pattern=r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")],
+        legal_entity_id: Annotated[str, Query(min_length=1,max_length=128,
+            pattern=r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")],
+        token: str = Depends(access_token),
+    ):
+        actor = authorized_actor(
+            token,tenant=tenant_id,entity=legal_entity_id,
+            required_scope="lhfm:upload:write",
+        )
+        principal = service.verifier.verify(token)
+        return {"subject":actor,"tenant_id":tenant_id,
+                "legal_entity_id":legal_entity_id,
+                "scopes":sorted(principal.scopes)}
+
     @app.post("/v1/uploads", status_code=201)
     def create_upload_intent(
         body: UploadIntentRequest,
