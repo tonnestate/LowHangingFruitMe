@@ -265,7 +265,8 @@ def create_app_from_environment() -> FastAPI:
     if upload_root and scanner_socket:
         source_root = Path(root).resolve(strict=True)
         private_upload_root = Path(upload_root).resolve(strict=True)
-        if private_upload_root == source_root or source_root in private_upload_root.parents:
+        if (private_upload_root == source_root or source_root in private_upload_root.parents
+                or private_upload_root in source_root.parents):
             raise RuntimeError("untrusted upload storage must be outside audit source root")
         upload_service = UploadService(
             registry=service.registry, root=private_upload_root,
