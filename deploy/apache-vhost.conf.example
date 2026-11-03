@@ -1,0 +1,26 @@
+# TEMPLATE ONLY – DO NOT ENABLE WITHOUT DOMAIN, TLS AND PORT VERIFICATION
+# Existing Apache vhosts and WordPress sites must remain unchanged.
+# Requires mod_proxy, mod_proxy_http, mod_headers, mod_ssl.
+<VirtualHost *:80>
+    ServerName SITE_DOMAIN.invalid
+    Redirect permanent / https://SITE_DOMAIN.invalid/
+</VirtualHost>
+<VirtualHost *:443>
+    ServerName SITE_DOMAIN.invalid
+    SSLEngine on
+    SSLCertificateFile /PATH/TO/CERT/fullchain.pem
+    SSLCertificateKeyFile /PATH/TO/CERT/privkey.pem
+
+    ProxyPreserveHost On
+    ProxyRequests Off
+    RequestHeader set X-Forwarded-Proto "https"
+    ProxyPass / http://127.0.0.1:3107/ connectiontimeout=5 timeout=45
+    ProxyPassReverse / http://127.0.0.1:3107/
+
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set X-Frame-Options "DENY"
+
+    ErrorLog /var/log/apache2/lhfm-portal-error.log
+    CustomLog /var/log/apache2/lhfm-portal-access.log combined
+</VirtualHost>

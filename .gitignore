@@ -19,3 +19,15 @@ build/
 customer_data/
 uploads/
 secrets/
+
+# Next.js marketing portal artifacts (generated, not source)
+portal/node_modules/
+portal/.next/
+portal/out/
+portal/.env.local
+portal/.env.production
+portal/app/brand.generated.css
+portal/public/neon-banner.png
+portal/public/brand-measurement.json
+portal/test-results/
+portal/playwright-report/

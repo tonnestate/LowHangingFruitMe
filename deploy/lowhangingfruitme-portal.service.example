@@ -1,0 +1,28 @@
+# TEMPLATE ONLY – review service account, path, Node location and host limits.
+[Unit]
+Description=LowHangingFruitMe standalone marketing website
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=lowhangingfruitme
+Group=lowhangingfruitme
+WorkingDirectory=/srv/lowhangingfruitme/portal
+Environment=NODE_ENV=production
+Environment=HOSTNAME=127.0.0.1
+Environment=PORT=3107
+Environment=PUBLIC_LAUNCH_APPROVED=false
+ExecStart=/usr/bin/node /srv/lowhangingfruitme/portal/.next/standalone/server.js
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=full
+UMask=0077
+MemoryMax=768M
+TasksMax=120
+
+[Install]
+WantedBy=multi-user.target

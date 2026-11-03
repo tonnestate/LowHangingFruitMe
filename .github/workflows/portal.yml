@@ -1,0 +1,56 @@
+name: Marketing website – build, brand and browser
+on:
+  push:
+    branches: [main]
+    paths:
+      - "portal/**"
+      - "docs/Neon-Low-Hanging-FruitMe-Banner.png"
+      - ".github/workflows/portal.yml"
+  pull_request:
+    paths:
+      - "portal/**"
+      - "docs/Neon-Low-Hanging-FruitMe-Banner.png"
+      - ".github/workflows/portal.yml"
+
+jobs:
+  portal:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: portal
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install pinned dependencies
+        run: npm install --no-audit --no-fund
+      - name: Unit tests – 3 percent and source PNG palette
+        run: npm test
+      - name: Verify legal staging gates and render Next standalone
+        run: npm run build
+        env:
+          PUBLIC_LAUNCH_APPROVED: "false"
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Package static assets for standalone Node
+        run: npm run pack:standalone
+      - name: Install headless Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Browser acceptance – 1440, 768, 390 pixels
+        run: npm run test:e2e
+        env:
+          CI: "true"
+          PUBLIC_LAUNCH_APPROVED: "false"
+          HOSTNAME: "127.0.0.1"
+          PORT: "3107"
+      - name: Upload screenshot and brand evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: portal-evidence
+          path: |
+            portal/test-results/*.png
+            portal/public/brand-measurement.json
+          if-no-files-found: warn
