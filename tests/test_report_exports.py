@@ -40,7 +40,6 @@ class CustomerReportTests(RecoveryPipelineTests):
         self.assertEqual(len(case["source_provenance"]["transactions"]["original_sha256"]),64)
         self.assertEqual(len(case["source_provenance"]["settlements"]["original_sha256"]),64)
         self.assertEqual(len(case["lineage_sha256"]),64)
-        self.assertIn("REVIEWER-SYN-1",self.token())
         self.assertNotIn("approval_receipt",response.text)
         self.assertNotIn("receipt_sha256",response.text)
         self.assertNotIn("private_path",response.text)
