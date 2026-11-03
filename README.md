@@ -5,7 +5,15 @@
 **B2B Revenue Recovery for FruitStack.** Ein eigenständiger, beleggestützter Prüfdienst für nicht vollständig realisierte Lieferantenboni und vertraglich eindeutige Einkaufskonditionen.
 
 **Version:** 0.7.0 (universeller Import von ERP-Exporten, Entwicklung)  
-**Status:** ausführbare Bonusengine und lokale CSV-/PDF-Adapter; **kein** Kundenportal, keine Live-ERP-Anbindung, keine rechtliche Forderungseinziehung und keine produktiv validierte Rückgewinnung.
+**Status:** ausführbare Bonusengine und lokale CSV-/PDF-Adapter plus eigenständige Next.js-Marketing-Website (getestet, **nicht auf dem VPS deployed**); **kein** funktionales Kundenportal, keine Live-ERP-Anbindung, keine rechtliche Forderungseinziehung und keine produktiv validierte Rückgewinnung.
+
+## Eigenständige Website
+
+Die deutsche Marketing-Website befindet sich unter [`portal/`](portal/README.md). Sie verwendet ausschließlich das vorhandene Originalbanner `docs/Neon-Low-Hanging-FruitMe-Banner.png`; beim Build werden aus den Originalpixeln die Markenfarb-Tokens und ein Messprotokoll erzeugt. Next.js (SSR/SSG) wird als isolierter Node-Dienst hinter einem **separaten Apache-VirtualHost** auf dem eigenen Server vorbereitet. WordPress und die Python-Finanzengine werden nicht verändert.
+
+**Nachgewiesen:** [Website-GitHub-Actions 41586331503](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41586331503): Next.js-Build, Typprüfung, 7 Unit-Tests sowie 12 Chromium-Browsertests bei 1440/768/390 Pixeln bestanden. Noch **kein** Produktiv-Deployment, kein sicheres Kundenupload-Portal und keine öffentlich freigegebene Anfrageannahme. Staging ist `noindex`/robots-disallowed.
+
+[Website-Status und Grenzen](docs/WEBSITE_STATUS.md) · [Portal und lokaler Build](portal/README.md) · [Apache-/systemd-Vorlagen](deploy/).
 
 ## Was funktioniert
 

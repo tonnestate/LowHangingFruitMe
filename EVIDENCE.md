@@ -112,3 +112,15 @@ The new `inspect-source`/`normalize-source` CLI commands were added in a later c
 **140 tests passed on each of Python 3.11 and 3.12.** The expanded tests explicitly invoke `lhfm inspect-source` and `lhfm normalize-source` as subprocesses against synthetic German-format ERP exports, check source-hash-bound reviewed mapping and refusal to overwrite existing output. The workflows also passed existing MariaDB/Frictionless audit smoke, wheel/sdist build and fresh-wheel installation.
 
 No vendor-specific P21/Eclipse/NetSuite/SAP/Infor/Sage/Lexware/Odoo connector tests, real invoice XML parsing, external SOC 2 attestation, or production customer document imports were executed in this run.
+
+## Marketing portal 0.1.0 – real browser/build evidence (2026-11-03)
+
+**Verified code commit:** [5f30a4bf0cd638e63c9fda53a9c3c19de0f8ed2f](https://github.com/tonnestate/LowHangingFruitMe/commit/5f30a4bf0cd638e63c9fda53a9c3c19de0f8ed2f)  
+**GitHub Actions workflow:** [41586331503](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41586331503) — **completed / success**.
+
+- `npm test`: **7 passed**, includes 3% fee integer-cent arithmetic, original banner hash equivalence, measured pixel-derived CSS and dark/light contrast, and staged/public legal gate refusal.
+- `npm run build`: successful on Next.js 16; `npm run typecheck`: successful; standalone static/public assets packaged for separate Node server.
+- `npm run test:e2e`: **12 passed** on headless Chromium; actual viewports 1440, 768 and 390 pixels. Tests cover rendered page/visible original banner, fee display, responsive mobile/desktop navigation, openable FAQ, proper 404 and non-indexable staging `robots.txt`/meta. Screenshot and measured-brand JSON uploaded as workflow artifacts.
+- Original PNG verified from source at build: **1983 × 793 pixels**, SHA-256 `1525d2f792a9e5fd8aee4f564f34ba048b33fe37956204fff108f7b49f5b797c`. Generated brand measurement report records original pixel coordinates and colors; no guessed HEX tokens claimed.
+- Production Apache, WordPress, DNS, server ports and SSL certificates were **not touched**. No customer marketing leads, financial data or live ERP accounts were used. This is staging build evidence only, not proof of deployed live website.
+- DistroAgents visual pixel-matching or interaction reverse engineering in the *reference's live browser* remains open. We tested our own website, not a 1:1 reproduction.

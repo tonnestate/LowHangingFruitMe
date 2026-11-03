@@ -34,3 +34,9 @@ Canonical customer CSV audits require a registered ACTIVE approval with matching
 ## Access tokens / auth facade (v0.6.0)
 
 All future customer-facing authentication **must** use `AccessTokenVerifier` and `AuthenticatedApprovalService` or an equally verified boundary. Never expose raw `ApprovalRegistry.register/revoke` or `issue_approval` as endpoints accepting arbitrary `authenticated_actor_id` strings. Accept only RS256 access tokens (`typ=at+jwt`) from configured HTTPS issuer/audience/client; never fetch token-provided key URLs, accept ID tokens, or infer tenant permissions from token claims. The DB reviewer grant must be checked before filesystem access and again within the row-locked calculation. Local CLI remains a synthetic/dev utility, not an HTTP backend.
+
+## Next.js marketing website – separate public workstream
+
+`portal/` is an authorized, independent Next.js marketing application, **not** a WordPress plugin or the protected customer service. Only the tested `docs/Neon-Low-Hanging-FruitMe-Banner.png` may provide brand colors; generate CSS palette and pixel provenance from the actual original at build time. Do not adopt DistroAgents copyrights, assets, text or unjustified statistics. Keep 3% of **verified actually realized incremental net recovery** as commercial target; pilot contracting still requires legal acceptance. No invented customer cases, certifications, SOC 2, ERP connectors or autonomous claim recovery. Public launch must remain disabled until real legal text, protected contact paths, HTTPS, security and authorization are independently approved. The existing Apache/WordPress vhosts must never be changed in a development run.
+
+`npm test`, `npm run build`, `npm run typecheck`, `npm run pack:standalone` (inside portal) plus CI Playwright 1440/768/390 are the frontend release evidence. Never claim a VPS deployment without inspecting and operating the actual server with explicit authority.

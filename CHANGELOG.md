@@ -1,5 +1,16 @@
 # Changelog
 
+## Portal 0.1.0 – standalone German marketing site (2026-11-03)
+
+- Introduced a Next.js 16 / React 19 marketing website under `portal/`, separate from the existing Python financial engine (which remains v0.7.0).
+- Added original German product pages, five editorial articles, SEO metadata, navigable sections, keyboard-accessible FAQs and responsive desktop/tablet/mobile navigation.
+- Added browser-only 3% fee **illustration** using exact integer cents; neither recovery calculation nor billable fee is performed by the browser.
+- Reused existing `docs/Neon-Low-Hanging-FruitMe-Banner.png`; automatically extracted audited color tokens and pixel coordinates from that PNG during builds.
+- Added noindex/robots staging defaults, enforced operator-provided legal text before public-build opt-in, and transparent pilot-contact gating.
+- Added self-hosted Next standalone artifact, separate Apache and systemd templates that preserve existing WordPress services.
+- Successful GitHub Actions frontend CI: unit, TypeScript/build, and 3-viewport Playwright interaction checks.
+- Still no VPS deployment, production legal approval, protected customer portal, FastAPI upload, invoice parsing or recovery ledger.
+
 ## 0.7.0 – ERP-neutral local intake (development; 2026-11-02)
 
 - Accepts noncanonical UTF-8 CSV and selected worksheets of XLSX for inspection; suggests DE/EN columns without approving them.
