@@ -196,10 +196,15 @@ class MappingApprovalRegistry:
                     ):
                         if not hmac.compare_digest(row[name], expected):
                             raise PermissionError("registered mapping content mismatch")
+                # Do NOT lock the shared reviewer-grant row here. The existing
+                # contract approval guard obtains its own FOR UPDATE grant lock
+                # on a distinct connection *inside* this guard. Holding it on
+                # this connection would deadlock the audit against itself.
+                # The inner contract guard performs authoritative grant locking.
                 cur.execute(
                     """SELECT role,active FROM lhfm_reviewer_grants
-                       WHERE tenant_id=%s AND legal_entity_id=%s AND reviewer_id=%s
-                       FOR UPDATE""", (tenant_id,legal_entity_id,reviewer_id),
+                       WHERE tenant_id=%s AND legal_entity_id=%s AND reviewer_id=%s""",
+                    (tenant_id,legal_entity_id,reviewer_id),
                 )
                 grant=cur.fetchone()
                 if not grant or grant["role"]!="contract_reviewer" or not grant["active"]:
