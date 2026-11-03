@@ -77,6 +77,14 @@ class FinanceReviewRequest(BaseModel):
     confirm_evidence_review: Literal[True]
 
 
+class CaseStatusRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    tenant_id: str = Field(min_length=1,max_length=128,pattern=r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
+    legal_entity_id: str = Field(min_length=1,max_length=128,pattern=r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
+    directive: Literal["DISPUTED", "CLOSED", "OPEN"]
+    reason: str = Field(min_length=1,max_length=200)
+
+
 def create_app(*, service: AuthenticatedApprovalService,
                store: PrivateAuditStore,
                uploads: UploadService | None = None,
@@ -369,6 +377,33 @@ def create_app(*, service: AuthenticatedApprovalService,
             raise HTTPException(status_code=404,detail={"code":"AUDIT_NOT_FOUND"}) from exc
         except CaseConflict as exc:
             raise HTTPException(status_code=409,detail={"code":"LEDGER_REVIEW_REQUIRED"}) from exc
+
+    @app.post("/v1/audits/{audit_id}/case-status", status_code=201)
+    def record_case_status(
+        audit_id: UUID, body: CaseStatusRequest, token: str = Depends(access_token),
+    ):
+        if recovery is None:
+            raise HTTPException(status_code=503, detail={"code":"RECOVERY_UNAVAILABLE"})
+        try:
+            principal = service.verifier.verify(token)
+        except (PermissionError, ValueError) as exc:
+            raise HTTPException(status_code=401, detail={"code":"INVALID_ACCESS_TOKEN"}) from exc
+        try:
+            principal.require_scope("lhfm:recovery:verify")
+            return recovery.annotate_status(
+                audit_id=str(audit_id), tenant_id=body.tenant_id,
+                legal_entity_id=body.legal_entity_id,
+                finance_actor_id=principal.subject,
+                directive=body.directive, reason=body.reason,
+            )
+        except PermissionError as exc:
+            raise HTTPException(status_code=403, detail={"code":"FINANCE_NOT_AUTHORIZED"}) from exc
+        except BundleNotFound as exc:
+            raise HTTPException(status_code=404, detail={"code":"RECOVERY_CASE_NOT_FOUND"}) from exc
+        except CaseConflict as exc:
+            raise HTTPException(status_code=409, detail={"code":"CASE_STATUS_CONFLICT"}) from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail={"code":"INVALID_CASE_STATUS"}) from exc
 
     @app.post("/v1/recovery-events/{event_id}/review")
     def verify_recovery(
