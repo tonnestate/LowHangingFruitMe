@@ -8,7 +8,7 @@ from .documents import extract_pdf
 from .intake import audit_from_csv
 from .approval import key_from_environment
 from .approval_registry import ApprovalRegistry
-from .universal_import import inspect_source, normalize_source
+from .universal_import import inspect_source, normalize_source, audit_from_sources
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="LowHangingFruitMe source intake")
@@ -38,6 +38,22 @@ def main() -> int:
     norm_cmd.add_argument("--source-system", required=True)
     norm_cmd.add_argument("--plan", required=True, type=Path)
     norm_cmd.add_argument("--output", required=True, type=Path)
+    source_cmd = sub.add_parser(
+        "audit-sources", help="One verified import-mapping-audit run for reviewed CSV/XLSX")
+    source_cmd.add_argument("--rule", required=True, type=Path)
+    source_cmd.add_argument("--transactions", required=True, type=Path)
+    source_cmd.add_argument("--settlements", required=True, type=Path)
+    source_cmd.add_argument("--transaction-plan", required=True, type=Path)
+    source_cmd.add_argument("--settlement-plan", required=True, type=Path)
+    source_cmd.add_argument("--approval", required=True, type=Path)
+    source_cmd.add_argument("--contract-source", required=True, type=Path)
+    source_cmd.add_argument("--controls", required=True, type=Path)
+    source_cmd.add_argument("--source-system", required=True)
+    source_cmd.add_argument("--tenant-id", required=True)
+    source_cmd.add_argument("--legal-entity-id", required=True)
+    source_cmd.add_argument("--confirm-transactions-complete", action="store_true")
+    source_cmd.add_argument("--confirm-settlements-complete", action="store_true")
+    source_cmd.add_argument("--confirm-agreements-complete", action="store_true")
     args = parser.parse_args()
     try:
         if args.action == "audit-csv":
@@ -57,6 +73,26 @@ def main() -> int:
                     "agreements_complete": args.confirm_agreements_complete,
                 },
             )
+        elif args.action == "audit-sources":
+            output = audit_from_sources(
+                rule_path=args.rule, transactions_source=args.transactions,
+                settlements_source=args.settlements,
+                transaction_plan=json.loads(args.transaction_plan.read_text(encoding="utf-8")),
+                settlement_plan=json.loads(args.settlement_plan.read_text(encoding="utf-8")),
+                source_system=args.source_system,
+                controls=json.loads(args.controls.read_text(encoding="utf-8")),
+                completeness={
+                    "transactions_complete": args.confirm_transactions_complete,
+                    "settlements_complete": args.confirm_settlements_complete,
+                    "agreements_complete": args.confirm_agreements_complete,
+                },
+                approval_receipt=json.loads(args.approval.read_text(encoding="utf-8")),
+                approval_key=key_from_environment(),
+                approval_scope={"tenant_id":args.tenant_id,
+                                "legal_entity_id":args.legal_entity_id},
+                contract_source_path=args.contract_source,
+                approval_registry=ApprovalRegistry.from_environment(),
+            )
         elif args.action == "extract-pdf":
             output = extract_pdf(args.file)
         elif args.action == "inspect-source":
@@ -75,7 +111,7 @@ def main() -> int:
         print(f"intake rejected: {exc}", file=sys.stderr)
         return 2
     print(json.dumps(output, ensure_ascii=False, indent=2, sort_keys=True))
-    return 1 if args.action == "audit-csv" and output["status"] != "EVIDENCED" else 0
+    return 1 if args.action in ("audit-csv", "audit-sources") and output["status"] != "EVIDENCED" else 0
 
 if __name__ == "__main__":
     raise SystemExit(main())
