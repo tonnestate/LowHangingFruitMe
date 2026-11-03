@@ -16,6 +16,7 @@ from typing import Any
 from uuid import uuid4
 
 from ..approval_service import AuthenticatedApprovalService
+from ..mapping_approval import MappingApprovalRegistry
 from ..universal_import import inspect_source, normalize_source
 from .store import PrivateAuditStore
 from .uploads import UploadService, UploadRejected
@@ -47,6 +48,9 @@ class ReviewedBundleService:
         self.service = service
         self.uploads = uploads
         self.store = store
+        self.mapping_registry = MappingApprovalRegistry(
+            registry=service.registry, key=service.approval_key,
+        )
         if store.root == uploads.root or store.root in uploads.root.parents or uploads.root in store.root.parents:
             raise ValueError("clean staging and approved audit source roots must be independent")
 
@@ -129,6 +133,7 @@ class ReviewedBundleService:
             final_dir = self.store.root / bundle_id
             staging.mkdir(mode=0o700)
             signed_id: str | None = None
+            mapping_registered = False
             moved = False
             try:
                 tx_data = normalized_txn.pop("canonical_csv").encode("utf-8")
@@ -182,7 +187,14 @@ class ReviewedBundleService:
                     source_revision_id=source_revision_id, approval_id=signed_id,
                     tenant_id=tenant_id, legal_entity_id=legal_entity_id,
                 )
+                mapping_receipts = self.mapping_registry.register_bundle(
+                    bundle_id=bundle_id, tenant_id=tenant_id,
+                    legal_entity_id=legal_entity_id, reviewer_id=actor.subject,
+                    approval_id=signed_id, provenance=provenance,
+                )
+                mapping_registered = True
                 manifest = {
+                    "mapping_approvals": mapping_receipts,
                     "files": {
                         "rule": {"path": bundle_id + "/rule.json", "sha256": rule_digest},
                         "transactions": {"path": bundle_id + "/transactions.csv", "sha256": tx_digest},
@@ -203,12 +215,22 @@ class ReviewedBundleService:
                 return {
                     "bundle_id": bundle_id, "approval_id": signed_id,
                     "status": "REGISTERED",
+                    "mapping_approval_status": "SIGNED_REGISTERED",
                     "reviewed_by": actor.subject,
                     "provenance": provenance,
                     "source_ledger_complete_proven": False,
                     "audit_executed": False,
                 }
             except Exception:
+                if mapping_registered:
+                    try:
+                        self.mapping_registry.revoke_bundle(
+                            bundle_id=bundle_id, tenant_id=tenant_id,
+                            legal_entity_id=legal_entity_id, reviewer_id=actor.subject,
+                        )
+                    except Exception:
+                        # Manual reconciliation required on unavailable DB.
+                        pass
                 if signed_id is not None:
                     try:
                         self.service.registry.revoke(
