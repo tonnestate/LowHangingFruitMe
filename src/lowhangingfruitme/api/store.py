@@ -91,8 +91,11 @@ class PrivateAuditStore:
 
     @staticmethod
     def _validated_manifest(manifest: dict[str, Any]) -> dict[str, Any]:
-        if not isinstance(manifest, dict) or set(manifest) != {
+        if not isinstance(manifest, dict) or not {
             "files", "source_system", "controls", "completeness", "approval_receipt"
+        }.issubset(manifest) or set(manifest) - {
+            "files", "source_system", "controls", "completeness", "approval_receipt",
+            "provenance"
         }:
             raise ValueError("complete server-owned manifest required")
         files = manifest["files"]
@@ -113,6 +116,24 @@ class PrivateAuditStore:
                     "transactions_complete", "settlements_complete", "agreements_complete"
                 } or any(type(v) is not bool for v in manifest["completeness"].values())):
             raise ValueError("exact explicit completeness assertions required")
+        if "provenance" in manifest:
+            origin = manifest["provenance"]
+            if (not isinstance(origin, dict) or
+                    set(origin) != {"transactions", "settlements", "contract", "lineage_sha256"}):
+                raise ValueError("invalid provenance shape")
+            for field in ("transactions", "settlements"):
+                detail = origin[field]
+                if (not isinstance(detail, dict) or
+                        set(detail) != {"upload_id", "original_sha256", "mapping_sha256", "rows"} or
+                        type(detail["rows"]) is not int or detail["rows"] < 0 or
+                        any(not isinstance(detail[name], str)
+                            for name in ("upload_id", "original_sha256", "mapping_sha256"))):
+                    raise ValueError("invalid dataset source provenance")
+            if not isinstance(origin["contract"], dict) or set(origin["contract"]) != {
+                    "upload_id", "original_sha256"}:
+                raise ValueError("invalid contract provenance")
+            if not HEX_SHA256.fullmatch(origin["lineage_sha256"]):
+                raise ValueError("invalid lineage digest")
         if len(json.dumps(manifest, ensure_ascii=False)) > 65536:
             raise ValueError("source manifest too large")
         return manifest
