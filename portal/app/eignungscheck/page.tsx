@@ -17,6 +17,6 @@ export default function Check(){
  <h2>Anfrage zur Pilotphase</h2>
  {email?<><p>Für eine unverbindliche erste Eignungsabklärung kann eine kurze Anfrage ohne vertrauliche Anhänge gesendet werden.</p><a className="button-primary" href={"mailto:"+email+"?subject="+subject+"&body="+body}>Eignungscheck per E-Mail anfragen</a></>:
  <div className="info-block"><h3>Annahme noch nicht aktiviert</h3><p>Der öffentliche Kontaktkanal wird erst nach Betreiber-, Datenschutz- und Sicherheitsfreigabe eingerichtet. Auf dieser Staging-Seite wird keine Anfrage erfasst.</p></div>}
- <p className="note">Die 3 % Erfolgsprovision sind ein vorgesehenes Vertragsmodell. Eine Eignungsanfrage ist weder ein rechtsverbindlicher Auftrag noch eine Zustimmung zu Kosten.</p>
+ <p className="note">Die 5 % Erfolgsprovision sind ein vorgesehenes Vertragsmodell. Eine Eignungsanfrage ist weder ein rechtsverbindlicher Auftrag noch eine Zustimmung zu Kosten.</p>
  </section></>;
 }
