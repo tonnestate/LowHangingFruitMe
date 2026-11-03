@@ -1,0 +1,28 @@
+{
+  "name": "lowhangingfruitme-portal",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "predev": "node scripts/prepare-brand.mjs",
+    "dev": "next dev --hostname 127.0.0.1 --port 3107",
+    "prebuild": "node scripts/prepare-brand.mjs",
+    "build": "next build",
+    "start": "next start --hostname 127.0.0.1 --port 3107",
+    "pretest": "node scripts/prepare-brand.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "next": "16.4.2",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "pngjs": "7.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@types/pngjs": "^6.0.5",
+    "typescript": "^5.9.0"
+  }
+}
