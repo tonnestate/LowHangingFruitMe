@@ -1,4 +1,4 @@
-# Contract Rule Approval – signed receipt v0.4.0
+# Contract Rule Approval – signed rule receipts with v0.13 R2 semantic binding
 
 **Status:** Implemented for local canonical CSV checks, tested with synthetic records. **Not** a production identity or legal-signature service.
 
@@ -55,3 +55,17 @@ All sample data are synthetic and intentionally fictitious. To reproduce the CI 
 The earlier v0.4 descriptions of missing revocation/persistence have now been **partly superseded**. `src/lowhangingfruitme/approval_registry.py` implements MariaDB ACTIVE/REVOKED persistence, scoped reviewer grants and a SELECT FOR UPDATE calculation guard, and the canonical CSV path refuses to produce final findings without a registry.
 
 This does **not** supply actual reviewer authentication, revocation-aware completed-report distribution, service-wide identity integration, production key custody or legal signature status. See [APPROVAL_REGISTRY.md](APPROVAL_REGISTRY.md) and [EVIDENCE.md](../EVIDENCE.md).
+
+## v0.13: mandatory R2 semantic attestation
+
+Every non-FLAT_RATE rule must include a versioned, exact `tier_semantics` value:
+```json
+{
+  "application": "EXCESS_ONLY",
+  "evidence_ref": "agreement.pdf#page=2&clause=4",
+  "reviewed": true
+}
+```
+Allowed applications: `FULL_BASE` exclusively for `RETROACTIVE_FULL_BASE`; `EXCESS_ONLY` (exactly one threshold) or `BANDS` (at least two ordered thresholds) for `MARGINAL_PER_TIER`; `FIXED_REWARD` for `FIXED_THRESHOLD_REWARD`. The evidence reference must exist in the rule's approved `evidence_refs` list. R1 rejects extraneous `tier_semantics`.
+
+`rule_sha256` cryptographically binds the parsed tier semantics **only for R2**; the legacy R1 projection is unchanged. The signed human-review marker remains an assertion of an authenticated and authorized reviewer behind `AuthenticatedApprovalService`, not an AI interpretation or independent legal proof. An unknown/mismatched source clause is review-required; no speculative fallback calculation. Incoming bundle HTTP errors use `RULE_SEMANTICS_NEEDS_REVIEW`.

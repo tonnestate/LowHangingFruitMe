@@ -1,4 +1,4 @@
-# Implementation status – LowHangingFruitMe v0.12.0
+# Implementation status – LowHangingFruitMe v0.13.0
 
 **Stand:** 03.11.2026. Produktentwicklung, kein kommerzieller oder produktiver Betrieb. Der aktuelle Revisionsnachweis steht in [EVIDENCE.md](../EVIDENCE.md); keine behaupteten Live-Kunden- oder ERP-Erfolge.
 
@@ -35,6 +35,12 @@
 
 **Portal:** Der vorhandene Next.js-Arbeitsbereich ist OIDC-geschützt, verfügt über einen serverseitigen BFF-Allowlist-Proxy für die tatsächlichen FastAPI-Routen und bietet Upload, Mapping, Regelbestätigung, Audit, Recovery und Bericht-Download. *Nur synthetisch im isolierten CI-/Entwicklungsstand getestet*, keine echte externe Kundenanmeldung oder Browser-zu-VPS-Kundenabnahme.
 
+**Signierte Mappingfreigabe v0.13.0 (03.11.2026):** `sql/006_mapping_approvals.sql` und `mapping_approval.py` speichern gesonderte HMAC-receipts für Einkaufs- und Gutschriftenmapping, jeweils gebunden an Bundle, Originaldatei-Hash, Mapping-Hash, Regel-Freigabe-ID, Mandant, juristische Einheit und verifizierten Reviewer. Active/Revoked-Ereignisse werden append-only protokolliert. Der bestehende `/v1/audits`-Pfad sperrt beide Mappingdatensätze beim Dispatch und ruft **darunter** die bestehende signierte Vertrags-/Readiness-Prüfung auf. Kein öffentliches unsigniertes Mapping kann als Customer-Audit gelten. Der Ein-Befehl-CLI-Pfad bleibt eine **lokale Operator-Schnittstelle** mit zuvor geprüften Plänen; die separate kryptografische Mappingfreigabe gilt im HTTP-Upload/Bundle-Pfad. Bestehende manuell operatorprovisionierte Bundles ohne Upload-Provenienz bleiben gesondert vertrauensgebunden.
+
+**Harter R2-Parser-Gate v0.13.0:** `BonusRule.load` verlangt für Staffelregeln ein explizites `tier_semantics`-Objekt mit `application` (`FULL_BASE`, `EXCESS_ONLY`, `BANDS`, `FIXED_REWARD`), `reviewed=true` und `evidence_ref`, die in den freigegebenen Vertragsfundstellen enthalten sein muss. Ein Überschussmodus kann nur genau eine Schwelle, ein Bandmodell mindestens zwei Intervalle deklarieren. Falscher Typ, semantischer Widerspruch oder fehlende Fundstelle werden **vor der Bundle-Promotion** mit `RULE_SEMANTICS_NEEDS_REVIEW` als HTTP 422 abgewiesen. HMAC-Bindung umfasst die genaue Anwendung und Klausel; kein automatisches Modell darf daraus eigenmächtig ein Staffelrecht machen.
+
+**Qualitätskennzahlen v0.13.0:** Readiness liefert `quality_metrics` mit Zähler/Nenner für importierte Zeilen gegenüber bereitgestellten ERP-Kontrollen, booleschen Reconciliation-Ergebnissen für die zwei obligatorischen Prüfreports und der eindeutigen freigegebenen technischen Regel-Semantik. Jeder Wert enthält Herkunfts- und Unsicherheitsgrenzen; fehlende Nenner werden `null`, nicht geschätzt. `value_weighted_source_coverage_pct` ist mangels echter wertgewichteter Ausgangsbasis bewusst `null`. Die drei Quoten, einschließlich den `issues[].code`-Blockern, werden im Next.js-Arbeitsbereich angezeigt und sind in Kunden-JSON, PDF und XLSX enthalten. **Quoten haben keinerlei Wirkung auf `audit_admissible`.** Dies ist ein synthetisch getesteter Entwicklungsstand, keine Betriebsabnahme.
+
 ## Ungeprüfte Aspekte und klare Grenzen
 
 - GitHub Actions ist der tatsächliche Testnachweis; nicht jede neu geschriebene Testdatei wurde lokal ausgeführt. Ergebnisse mit Run-ID in EVIDENCE.md festhalten.
@@ -44,7 +50,7 @@
 - **Verifizierte JWT-Subjektidentität ist implementiert, aber noch keine produktive IdP-Anmeldung.** DB-Grants und Widerruf sind vorhanden; externe Benutzeranlage/-sperrung, administratives Provisioning, JWKS-Rotation und Keyrotation fehlen. Der direkte lokale CLI-Testweg ist weiterhin ausdrücklich kein authentifizierter Kundendienst. Die HMAC-Signatur belegt nur, dass die Daten mit dem verwendeten Secret signiert wurden; kein gesetzlicher oder externer Identitätsnachweis. Die lokale CLI nimmt Tenant-/Gesellschaftskennung als Parameter und ist kein sicheres Kundentor.
 - Ein **funktionaler OIDC-geschützter Browser-Arbeitsbereich mit Portal-BFF** ist im Repository vorhanden und synthetisch getestet; aber **kein** produktiv konfigurierter Identity Provider, echter Kundenvertrag, vom VPS erreichbarer Produktivservice, echter ClamAV-Betrieb oder freigegebener öffentlicher Multi-Tenant-Upload. Browser-Pilot mit realen Kunden ist nicht abgenommen.
 - Keine Live-Lexware-/weclapp-/Odoo-/Frappe-/Dolibarr-Schnittstellen, keine Marktplatzfreigabe.
-- Manuelle Vertragsregel-Freigabe über das Arbeitsbereich-Formular ist vorhanden; **keine** durchgehend versionierte EXTRACTED/NEEDS_CONFIRMATION/APPROVED/SUPERSEDED-Regelzustandsmaschine, keine eigenständige registrierte HMAC-Mapping-Freigabe, keine automatische rechtliche Bewertung, keine juristische Forderungsdurchsetzung.
+- Manuelle Vertragsregel-Freigabe über das Arbeitsbereich-Formular ist vorhanden; **keine** durchgehend versionierte EXTRACTED/NEEDS_CONFIRMATION/APPROVED/SUPERSEDED-Regelzustandsmaschine. Die eigenständig registrierte Mapping-HMAC-Freigabe besteht im HTTP-Upload/Bundle-Pfad, nicht im lokalen, operatorgesteuerten Legacy-CLI. Keine automatische rechtliche Bewertung und keine juristische Forderungsdurchsetzung.
 - RecoveryLedger mit MariaDB, Belegmeldungen, unabhängiger manueller Finanzverifikation und 3%-Honorar**vorschlag** ist vorhanden. **Noch keine** verbindliche Fee-Allocation, steuerliche Prüfung, Rechnungsgenehmigung oder automatische Rechnungsstellung; billable_recovery_net und fee_due_net bleiben bis zu dieser Freigabe absichtlich 0.00.
 - Keine abgesicherte Ausführung untrusted PDF, keine produktive DSGVO-/RDG-/Lizenzprüfung oder Kundenabnahme.
 - Die endgültige Veröffentlichungs-/Distributionslizenz ist eine noch offene Eigentümerentscheidung.
@@ -79,6 +85,6 @@ Für PDF: optional `python -m pip install -e ".[docs]"`, dann `lhfm extract-pdf 
 
 ## Nächster produktbezogener Schritt
 
-Reale synthetisch nachgebildete Exportvarianten je ERP und XRechnung/ZUGFeRD fachlich gegen das kanonische Modell benchmarken; CI und sichere Dateiverarbeitung ausbauen. Echte anonymisierte und rechtmäßig bereitgestellte Testdokumente mit manuellem Goldstandard gegen Docling und den Rechenkern prüfen; Spaltenmapping und fehlende Buchungsdaten definieren. Danach eine sichere, mandantenfähige API mit Kundenportal und bestätigten Vertragsbedingungen. Keine ungestützten Release- oder Return-on-Investment-Aussagen.
+Reale synthetisch nachgebildete Exportvarianten je ERP und XRechnung/ZUGFeRD fachlich gegen das kanonische Modell benchmarken; CI und sichere Dateiverarbeitung ausbauen. Echte anonymisierte und rechtmäßig bereitgestellte Testdokumente mit manuellem Goldstandard gegen Docling und den Rechenkern prüfen; Spaltenmapping und fehlende Buchungsdaten definieren. Die vorhandene stagingfähige API und das Portal mit echtem IdP, vollständig geprüftem Dateibetrieb, externen Vertragsbedingungen und Pilotabnahme absichern und produktiv installieren. Keine ungestützten Release- oder Return-on-Investment-Aussagen.
 
 **Abnahme gegen den verbindlichen Vier-Wochen-Plan:** [FOUR_WEEK_ACCEPTANCE.md](FOUR_WEEK_ACCEPTANCE.md). **Reproduzierbarer synthetischer Goldstandard:** [PILOT_GOLDSTANDARD.md](PILOT_GOLDSTANDARD.md).

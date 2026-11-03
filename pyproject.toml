@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lowhangingfruitme"
-version = "0.12.0"
+version = "0.13.0"
 description = "Evidence-based supplier rebate audit kernel and optional source adapters"
 requires-python = ">=3.11"
 dependencies = []

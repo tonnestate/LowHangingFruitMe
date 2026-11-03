@@ -4,9 +4,9 @@
 
 **B2B Revenue Recovery for FruitStack.** Ein eigenständiger, beleggestützter Prüfdienst für nicht vollständig realisierte Lieferantenboni und vertraglich eindeutige Einkaufskonditionen.
 
-**Python-Version:** 0.12.0 (geschlossener synthetischer Prüfpfad, Recovery-Status und Kundenbericht – Entwicklungsstand)  
+**Python-Version:** 0.13.0 (signierte Mappingfreigabe, harte R2-Semantik, messbare Audit-Datenqualität – Entwicklungsstand)  
 **Marketing-Portal:** 0.1.0 (noch nicht deployed)  
-**Status:** Bonusengine, ERP-Import mit manueller Freigabe, JWT-/MariaDB-geschützte Audit-API, scannerpflichtige private Upload-Staging-Schnittstelle, synthetisch getesteter authentifizierter Next.js-Arbeitsbereich, persistentes Recovery-Ledger (3%-Honorarvorschlag) und Kundenberichte als JSON/PDF/XLSX. **Weder API noch Website sind auf dem VPS deployed.** Kein produktiv freigegebener Kundendatei-Upload, keine Live-ERP-Anbindung, kein externer Piloterfolg und keine automatische abrechenbare Honorarrechnung.
+**Status:** Bonusengine, ERP-Import mit HMAC-signierter, persistierter und widerrufbarer Mappingfreigabe, JWT-/MariaDB-geschützte Audit-API, scannerpflichtige private Upload-Staging-Schnittstelle, synthetisch getesteter authentifizierter Next.js-Arbeitsbereich, persistentes Recovery-Ledger (3%-Honorarvorschlag) und Kundenberichte als JSON/PDF/XLSX. **Weder API noch Website sind auf dem VPS deployed.** Kein produktiv freigegebener Kundendatei-Upload, keine Live-ERP-Anbindung, kein externer Piloterfolg und keine automatische abrechenbare Honorarrechnung.
 
 ## Eigenständige Website
 
@@ -15,6 +15,8 @@ Die deutsche Marketing-Website befindet sich unter [`portal/`](portal/README.md)
 **Nachgewiesen:** [Website-GitHub-Actions 41607305839](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41607305839): Next.js-Build, Typprüfung, 7 Unit-Tests sowie 12 Chromium-Browsertests bei 1440/768/390 Pixeln bestanden. Noch **kein** Produktiv-Deployment und keine öffentlich freigegebene Annahme echter Kundendaten. Der authentifizierte Arbeitsbereich wird nur mit synthetischen Daten und isolierter Testinfrastruktur geprüft. Staging ist `noindex`/robots-disallowed.
 
 [Website-Status und Grenzen](docs/WEBSITE_STATUS.md) · [Portal und lokaler Build](portal/README.md) · [Apache-/systemd-Vorlagen](deploy/).
+
+Die Audit-Ergebnisse weisen nun drei erklärbare Datenqualitäts-Indikatoren aus: Abdeckung gegenüber bereitgestellten Kontrollzeilen, signierte Regelklarheit und Abgleich der Kontrollsummen. Fehlende Nachweise werden nicht als perfekte 100-%-Abdeckung dargestellt; die vollständige ERP-Quellenlage ist weiterhin **nicht** unabhängig bestätigt. R2-Schwellenvarianten werden nur mit explizit belegter und signierter Anwendungssemantik berechnet.
 
 ## Was funktioniert
 

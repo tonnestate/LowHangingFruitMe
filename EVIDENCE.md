@@ -163,3 +163,12 @@ No positive claim about actual bank-realized customer money, real customer porta
 **Portal report-download and case-status verification:** [GitHub Actions 41607305839](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41607305839) — completed/success at commit `8295b1c874709ef19459661e588c0f42a30aaf80`. Later changes to documentation have their own checks and must be verified separately.
 
 See [synthetic manual goldstandard](docs/PILOT_GOLDSTANDARD.md) and [four-week acceptance matrix](docs/FOUR_WEEK_ACCEPTANCE.md).
+
+## v0.13.0 – signed mapping and quality, early observed successful checks
+
+- [GitHub Actions 41628524925](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41628524925) – completed/success on commit `84b1e15f82a94b7d606869049b90b06707dce4b0`: isolated tenant tests of signed mapping approval integration and persistence passed on both Python versions.
+- [GitHub Actions 41628737637](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41628737637) – completed/success on commit `bfa3a21deb969f0614261440ab8b2b0b844f3652`: new Readiness quality indicators passed on both versions.
+- [GitHub Actions 41629117022](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41629117022) – completed/success on commit `dec6ff33d59286e65d09eb9ed4902333ca47b1d5`: strict R2 kind/application tests with sourced semantic review passed on both versions.
+- [GitHub Actions 41629294987](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41629294987) – completed/success on commit `3e83ef2ef17dd31166bc59983c2290ad0dc4214f`: **293 Python tests passed on both 3.11 and 3.12**, including source mapping, API, recovery, quality metrics and actual customer XLSX/JSON/PDF export. Wheel packaging and CLI smoke passed. The later R2 HTTP/portal changes require the final release CI check and are not certified by this earlier run.
+
+All figures are synthetic. No automatic real recovery, finance invoice issuance, live ERP connector, independent contract/legal signoff or SOC-2 attestation is established.

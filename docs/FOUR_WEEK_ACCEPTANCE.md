@@ -1,6 +1,6 @@
 # LowHangingFruitMe – prüfbare Abnahme des Vier-Wochen-Plans
 
-**Stand:** 03.11.2026 | **Code:** v0.12 Entwicklungsstand | **keine Produktiv- oder Kundenabnahme**
+**Stand:** 03.11.2026 | **Code:** v0.13 Entwicklungsstand | **keine Produktiv- oder Kundenabnahme**
 
 Status: **PASS** = durch CI mit synthetischen Daten nachgewiesen, **TEILWEISE** = technische Teilfunktion, **OFFEN** = nicht umgesetzt/nicht belegbar. Aus einem abgeschlossenen Wochenplan folgt keine rechtsgeschäftliche oder datenschutzrechtliche Freigabe.
 
@@ -19,7 +19,7 @@ Status: **PASS** = durch CI mit synthetischen Daten nachgewiesen, **TEILWEISE** 
 | Kriterium | Bewertung / Nachweis |
 |---|---|
 | Authentifizierter Mapping-Reviewer und dokumentiertes Mapping | **PASS**: JWT-Subjekt wird geprüft, Quell- und Mapping-Hash werden in privaten, kopierten Quellenbündeln dokumentiert; signierter Vertrag mit Dokument-/Regel-Hash in MariaDB. |
-| **Eigenständige Mapping-HMAC-Bestätigung mit Registry-Eintrag** | **OFFEN**: es gibt noch keinen separat signierten, versionierten Mapping-Freigaberecord. Nicht als erledigt kennzeichnen. |
+| **Eigenständige Mapping-HMAC-Bestätigung mit Registry-Eintrag** | **PASS – HTTP-Staging:** zwei HMAC-signierte, in MariaDB registrierte Mappingfreigaben mit Quell-/Plan-Hash, Tenant/Entity/Reviewer, verknüpfter Vertragsfreigabe und Widerruf. **Nicht** für den lokalen operatorgesteuerten CLI-Legacyweg als eigene Mappingfreigabe nachgewiesen. |
 | Docling + Vertragsregel + Original als ein Freigabeobjekt | **TEILWEISE**: Vertragsoriginal und vom Prüfer manuell eingetragene Regel werden gemeinsam freigegeben; Docling-Extraktion ist ein getrennter Prototyp. |
 | Vollständige Regel-Lifecycle-State-Machine mit SUPERSEDED | **OFFEN**: unterschriebene HMAC-Approval und Revoke vorhanden, vorgeschlagene Statusübergänge nicht vollständig modelliert. |
 | Negative Datenszenarien | **PASS**: fehlende Spalten, widersprüchliche Kontrollsummen, unklare/nicht implementierte Staffel-Semantik werden abgewiesen oder als Review/Not Calculable markiert. |
@@ -48,13 +48,13 @@ Status: **PASS** = durch CI mit synthetischen Daten nachgewiesen, **TEILWEISE** 
 
 | Gate | Ziel / aktueller Nachweis |
 |---|---|
-| R2: Eindeutige Staffel-Semantik vor Parserfreigabe | **TEILWEISE**: drei unterschiedliche Regeltypen sind im Rechenkern kodiert; ein durchgehender, originalklauselgebundener Parser-/Reviewer-Semantiknachweis fehlt. Unklare Staffelvorschläge dürfen keine Geldberechnung auslösen. |
-| Sichtbare Audit-Level-Qualitätsindikatoren | **OFFEN**: Prozentdefinitionen und Nennergrenzen sind verbindlich im Konzept spezifiziert; reale API-/Portal-Implementierung und Tests noch gesondert nachzuweisen. |
+| R2: Eindeutige Staffel-Semantik vor Parserfreigabe | **PASS – technische Staging-Validierung:** explizites, mit Quellenreferenz HMAC-gebundenes tier_semantics (FULL_BASE/EXCESS_ONLY/BANDS/FIXED_REWARD). Fehlende/widersprüchliche Angaben werden früh mit RULE_SEMANTICS_NEEDS_REVIEW abgewiesen. **Echte externe Klauselprüfung weiterhin OFFEN.** |
+| Sichtbare Audit-Level-Qualitätsindikatoren | **PASS – technische Staging-Implementierung:** Readiness-Quoten für Zeilenabdeckung, fachlich signierte Regel und Kontrollsummenteilnahme; Anzeige im Portal und Export in JSON, XLSX, PDF. **Wertgewichtete ERP-Quellenabdeckung bleibt null / echter Pilot offen.** |
 | Lexware P1 ausschließlich read-only R1-Belege und Gutschriften | **OFFEN**: kein reales Lexware-Testkonto/API-Connector; API-Lücken müssen zum Export statt künstlicher Vollständigkeit führen. |
 | Pilotminimum / offene Positionen | **OFFEN**: 12 Monate, mindestens 200.000 EUR anrechenbare Nettobasis, ≥95 % wertgewichtete Erfassungsabdeckung, ≤10 % fachlich ungeklärte Positionen; bei finaler Rechnung 100 % Abgleich mit vorliegenden Kontrollsummen. Die Schwellwerte sind interne Abnahmeentscheidungen, keine externe Marktstatistik. |
 | Unabhängiger Goldstandard | **OFFEN**: ein namentlich benannter unabhängiger Einkäufer/Controller muss Original, Berechnung, Belege und gegebenenfalls begründeten Nullfall prüfen. |
 | Externer RDG-/Success-Fee-Review | **OFFEN**: dokumentierte juristische Prüfung vor erster kommerzieller Beauftragung, insbesondere Abgrenzung Differenzakte/Anspruchsdurchsetzung. |
-| Vollständig HMAC-signierte und im Register prüfbare Mapping-Approvals | **IN ARBEIT**: v0.13 Mapping-Freigaberecords und Audit-Dispatch-Sperren implementiert; CI und Regressionsergebnis noch zu finalisieren. |
+| Vollständig HMAC-signierte und im Register prüfbare Mapping-Approvals | **PASS – synthetische Integration:** v0.13 Mapping-HMAC und MariaDB-Events, Audit-Dispatch-Sperren; Widerruf, Manipulation und Cross-Tenant in isolierten Tests. **Echte Reviewer-/VPS-Abnahme offen.** |
 
 Ein bestandener synthetischer End-to-End-Test erfüllt **keines** der externen Pilot-/Rechtsabnahmekriterien.
 

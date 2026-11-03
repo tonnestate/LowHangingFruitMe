@@ -1,6 +1,8 @@
 # LowHangingFruitMe – verbindliches fachliches und technisches Konzept (laufend konsolidiert)
 
-**Stand:** 03.11.2026 | **Status:** v0.12 Staging-Implementierung; v0.13 Mapping-Freigabe in CI, kein produktiver Kundenbetrieb | **Produktverantwortung:** eigenständiges FruitStack-Schwesterprodukt
+**Stand:** 03.11.2026 | **Status:** v0.13 Staging-Implementierung, CI-synthetisch geprüft; kein produktiver Kundenbetrieb | **Produktverantwortung:** eigenständiges FruitStack-Schwesterprodukt
+
+**Technischer Umsetzungsabgleich v0.13:** Die harten R2-Anwendungsarten sind jetzt als `tier_semantics` mit verifizierter Fundstelle im Parser und in den HMAC-Regelhash eingebunden. Mappingfreigaben sind im HTTP-Staging für beide Datensätze gesondert HMAC-signiert und registriert. Die Audit-Quoten werden aus den bereitgestellten Kontrollsummen abgeleitet und im Kundenbericht/Portal angezeigt; echte **wertgewichtete ERP-Quelldatenabdeckung** bleibt mangels belastbarem externen Nenner `null`. Die verbindlichen externen Pilot- und RDG-Gates bleiben ausdrücklich offen.
 
 ## Verbindliche Ergänzungen zur fachlichen Abnahme – 03.11.2026
 

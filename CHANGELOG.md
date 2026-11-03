@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.13.0 – signed mapping, strict tier semantics and visible quality (2026-11-03)
+
+- Added separately HMAC-signed and MariaDB-registered transaction/settlement mapping receipts, with precise tenant/legal-entity/actor/source/plan/contract-approval binding and explicit revocation events.
+- Protected the existing HTTP audit with both mapping approval row locks while retaining the original HMAC contractual rule and Frictionless/readiness dispatch; unverified uploaded plans cannot silently become billable findings.
+- Required exact human-reviewed R2 tier application (FULL_BASE, EXCESS_ONLY, BANDS, FIXED_REWARD), backed by an approved clause reference; R2 semantics now enter the rule's signed digest. Early HTTP rejection `RULE_SEMANTICS_NEEDS_REVIEW` instead of an invented calculation.
+- Added audit-level quality metrics with precise source-count denominator, signed technical rule clarity and matched-control percentage; customer-facing PDF/XLSX/JSON reports and the existing Next.js workspace show these indicators and concrete data issues.
+- Consolidated `CONCEPT.md`, pilot admission thresholds, narrow Lexware read-only scope and explicit external RDG/3%-success-fee review requirements.
+- The measured percentages do not prove source-ERP completeness or independently validate commercial claims. Source-value-weighted coverage, real ERP account, real pilot, independent legal opinion and VPS/IdP deployment are still absent.
+
+
 ## 0.12.0 – closed synthetic pilot path, report downloads and status tracking (2026-11-03)
 
 - Added `lhfm audit-sources`: a single local command consuming separately signed contract receipts, source-hash-bound ERP CSV/XLSX mappings and independent control totals through the existing guarded calculation.

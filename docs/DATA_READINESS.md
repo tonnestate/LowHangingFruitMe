@@ -92,3 +92,14 @@ An omitted control file returns `REVIEW_REQUIRED`, `audit_executed=false` and nu
 - All customer data must remain in a private access-controlled storage service; the current CLI is not a secure public upload platform.
 
 The authoritative implementation is `src/lowhangingfruitme/readiness.py` and its call inside `src/lowhangingfruitme/intake.py`. No other service may bypass this gate when it represents a completed customer audit.
+
+## v0.13 implemented technical indicators
+
+`src/lowhangingfruitme/readiness.py` now calculates `quality_metrics`:
+
+- `data_coverage_pct`: row count ratio **capped at 100.00** against supplied, separately referenced ERP control rows. Both numerator and denominator are exposed. This is not the intended **value-weighted** pilot metric and does not prove an ERP's completeness.
+- `rule_clarity_pct`: 100.00 only if this **single-rule** scope has a valid HMAC receipt and cited explicit semantics; otherwise `null`. It does not assess legal meaning of an unverified clause.
+- `reconciliation_completeness_pct`: 0/50/100 based on both expected row counts **and** net sum matching for purchase and settlement controls. Without controls, `null`.
+- `blocker_codes` and `warning_codes` remain surfaced for rejection reasons. `source_ledger_completeness_proven=false` and `value_weighted_source_coverage_pct=null` are explicit even if every technical check passes.
+
+The existing `audit_admissible` gate does not consume any of these percentages; a mismatch remains `NOT_READY` with no final monetary claim. Customer reports include indicators and their limits; staging portal shows the issue codes. Real independent reporting completeness remains to be validated.
