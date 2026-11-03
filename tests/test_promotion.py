@@ -226,8 +226,11 @@ class ReviewedPipelineTests(unittest.TestCase):
             "/v1/audits", json={**self.scope(), "bundle_id": old_id},
             headers={**self.headers(), "Idempotency-Key": str(uuid4())},
         )
-        self.assertEqual(stale.status_code, 503, stale.text)
-        self.assertEqual(stale.json()["detail"]["code"], "AUDIT_EXECUTION_FAILED")
+        # The existing audit service converts invalid/revoked approval to a
+        # non-final NEEDS_REVIEW result rather than exposing financial amounts.
+        self.assertEqual(stale.status_code, 201, stale.text)
+        self.assertEqual(stale.json()["status"], "NEEDS_REVIEW")
+        self.assertFalse(stale.json()["audit_executed"])
         # Completed reports are immutable historical evidence, not live re-runs.
         history = self.client.get(
             "/v1/audits/" + original.json()["audit_id"],
