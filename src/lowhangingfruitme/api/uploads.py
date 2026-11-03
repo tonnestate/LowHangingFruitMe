@@ -246,18 +246,22 @@ class UploadService:
                 raise UploadRejected("malware scan did not approve this content")
             # Validate only AFTER trusted malware screening. XML parser rejects
             # external entities, Office parser bounds ZIP expansion.
-            typed = self.root / (upload_id + suffix + ".inspect")
             # _source needs the correct suffix. The verified bytes are already
             # in the exclusive .part file, so use os.link for the inspected name.
             inspected = self.root / (upload_id + ".inspect" + suffix)
             os.link(staging, inspected)
             try:
-                _source(inspected)
+                try:
+                    _source(inspected)
+                except (ValueError, RuntimeError) as exc:
+                    raise UploadRejected("file format validation failed") from exc
             finally:
                 inspected.unlink(missing_ok=True)
-            if final.exists():
-                raise UploadRejected("upload filename collision")
-            os.replace(staging, final)
+            try:
+                os.link(staging, final)  # O_EXCL-like: do not replace pre-existing path
+            except FileExistsError as exc:
+                raise UploadRejected("upload filename collision") from exc
+            staging.unlink()
             self.settle(
                 upload_id=upload_id, state="CLEAN", tenant_id=tenant_id,
                 legal_entity_id=legal_entity_id, reviewer_id=reviewer_id,
