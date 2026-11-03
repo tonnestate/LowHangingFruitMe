@@ -95,7 +95,7 @@ class PrivateAuditStore:
             "files", "source_system", "controls", "completeness", "approval_receipt"
         }.issubset(manifest) or set(manifest) - {
             "files", "source_system", "controls", "completeness", "approval_receipt",
-            "provenance"
+            "provenance", "mapping_approvals"
         }:
             raise ValueError("complete server-owned manifest required")
         files = manifest["files"]
@@ -117,6 +117,9 @@ class PrivateAuditStore:
                 } or any(type(v) is not bool for v in manifest["completeness"].values())):
             raise ValueError("exact explicit completeness assertions required")
         if "provenance" in manifest:
+            if (not isinstance(manifest.get("mapping_approvals"), dict)
+                    or set(manifest["mapping_approvals"]) != {"transactions","settlements"}):
+                raise ValueError("source provenance requires signed mapping approval receipts")
             origin = manifest["provenance"]
             if (not isinstance(origin, dict) or
                     set(origin) != {"transactions", "settlements", "contract", "lineage_sha256"}):
@@ -134,6 +137,8 @@ class PrivateAuditStore:
                 raise ValueError("invalid contract provenance")
             if not HEX_SHA256.fullmatch(origin["lineage_sha256"]):
                 raise ValueError("invalid lineage digest")
+        if "mapping_approvals" in manifest and "provenance" not in manifest:
+            raise ValueError("mapping approval cannot be detached from source provenance")
         if len(json.dumps(manifest, ensure_ascii=False)) > 65536:
             raise ValueError("source manifest too large")
         return manifest
