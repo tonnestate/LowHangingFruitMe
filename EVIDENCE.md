@@ -150,3 +150,16 @@ The upload tests cover JWT bearer and scoped grant, unauthorized cross-tenant/ac
 **Later commits** introduced the one-command `audit-sources` and explicit `calculated_variance_net`; their own final status must be read from GitHub Actions, not inferred from the earlier success. Original financial fixtures remain synthetic. Manual goldstandard is independently described in [docs/PILOT_GOLDSTANDARD.md](docs/PILOT_GOLDSTANDARD.md).
 
 No positive claim about actual bank-realized customer money, real customer portal login, live ClamAV on VPS, successful external ERP connection, DOCX/PDF model extraction quality or permission to bill. 
+
+### v0.12.0 acceptance – full integration and one-command path
+
+**Observed latest full code-release CI:** [GitHub Actions 41608125460](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41608125460), commit [af15f95ea7629da9426e43d01c5bc6ddfe0f97ac](https://github.com/tonnestate/LowHangingFruitMe/commit/af15f95ea7629da9426e43d01c5bc6ddfe0f97ac). **Completed / success**.
+
+- Python 3.11: **261 tests passed**, including real isolated MariaDB, proof-linked recovery ledger, finance-only case status, one-command signed ERP CSV/XLSX source audit, PDF/XLSX/JSON downloaded report, scoped API and safety-negative cases.
+- Python 3.12: **261 tests passed**, same test matrix and independent runner.
+- Existing CLI smoke, build of installable wheel/sdist and clean wheel smoke also passed.
+- All data and approvals were **synthetic**; scanner decisions were CI test adapters. These tests are not evidence of productive installation, real external CRM/ERP account, legal authority or actual bank settlement.
+
+**Portal report-download and case-status verification:** [GitHub Actions 41607305839](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41607305839) — completed/success at commit `8295b1c874709ef19459661e588c0f42a30aaf80`. Later changes to documentation have their own checks and must be verified separately.
+
+See [synthetic manual goldstandard](docs/PILOT_GOLDSTANDARD.md) and [four-week acceptance matrix](docs/FOUR_WEEK_ACCEPTANCE.md).
