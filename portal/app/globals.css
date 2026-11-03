@@ -134,3 +134,34 @@ small,.fineprint{font-size:.82rem}
  h1{font-size:clamp(2.45rem,12vw,3.4rem)}
 }
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+/* Customer workspace reuses the real banner-derived brand tokens. No new palette. */
+.workspace{max-width:1320px}
+.workspace-content{margin-top:32px;display:grid;gap:24px}
+.workspace-content fieldset{min-width:0;margin:0;border:1px solid var(--line);
+ background:var(--panel);padding:24px}
+.workspace-content fieldset:disabled{opacity:.65}
+.workspace-content legend{font-size:1.12rem;font-weight:800;padding:0 8px}
+.workspace-content label{display:flex;flex-direction:column;gap:7px;font-size:.88rem;font-weight:600}
+.workspace-grid,.map-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:18px 0}
+.map-fields{grid-template-columns:repeat(2,minmax(0,1fr))}
+.workspace-content input:not([type="checkbox"]),.workspace-content select{
+ min-width:0;width:100%;border:1px solid var(--line);border-radius:0;
+ background:var(--brand-background);color:var(--brand-text);
+ padding:12px;font-size:1rem}
+.workspace-content input[type="file"]{font-size:.85rem}
+.workspace-content button{cursor:pointer;border-radius:0;margin:8px 8px 8px 0}
+.workspace-content fieldset:disabled button{cursor:not-allowed}
+.workspace-content .map-section{border-top:1px solid var(--line);margin-top:24px;padding-top:20px}
+.workspace-content .map-section h3{font-size:1.12rem}
+.workspace-content .workspace-confirmations{display:grid;gap:12px;margin:22px 0}
+.workspace-content .workspace-confirmations label{display:flex;align-items:flex-start;
+ flex-direction:row;gap:12px;font-size:.94rem;font-weight:400}
+.workspace-content .workspace-confirmations input{accent-color:var(--brand-primary)}
+.workspace-content .workspace-notice{border-left:3px solid var(--brand-primary);
+ background:var(--panel);padding:16px 20px}
+.workspace-content code{overflow-wrap:anywhere}
+@media(max-width:860px){
+ .workspace-grid,.map-fields{grid-template-columns:1fr}
+ .workspace-content fieldset{padding:18px}
+}
