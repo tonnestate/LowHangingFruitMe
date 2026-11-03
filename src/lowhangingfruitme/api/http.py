@@ -20,7 +20,7 @@ from .store import BundleNotFound, PrivateAuditStore, RunConflict
 
 
 class AuditRequest(BaseModel):
-    model_config = ConfigDict(extra="forbid", strict=True)
+    model_config = ConfigDict(extra="forbid")
     bundle_id: UUID
     tenant_id: str = Field(min_length=1, max_length=128, pattern=r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
     legal_entity_id: str = Field(min_length=1, max_length=128, pattern=r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
@@ -73,7 +73,7 @@ def create_app(*, service: AuthenticatedApprovalService,
     @app.post("/v1/audits", status_code=201)
     def submit(
         body: AuditRequest, request: Request,
-        token: Annotated[str, Depends(access_token)],
+        token: str = Depends(access_token),
         idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key")] = None,
     ):
         if not idempotency_key:
@@ -142,7 +142,7 @@ def create_app(*, service: AuthenticatedApprovalService,
                 pattern=r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")],
         legal_entity_id: Annotated[str, Query(min_length=1, max_length=128,
                 pattern=r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")],
-        token: Annotated[str, Depends(access_token)],
+        token: str = Depends(access_token),
     ):
         actor = authorized_actor(token, tenant=tenant_id, entity=legal_entity_id)
         try:
