@@ -47,7 +47,7 @@ class MariaDBRegistryTests(unittest.TestCase):
             self.assertEqual(record["revocation_status"], "ACTIVE_LOCKED_AT_DISPATCH")
 
     def test_unknown_signed_approval_is_rejected(self):
-        with self.assertRaisesRegex(PermissionError, "missing or revoked"):
+        with self.assertRaisesRegex(PermissionError, "superseded or has no reviewed lineage"):
             with self.guard():
                 pass
 
@@ -79,6 +79,101 @@ class MariaDBRegistryTests(unittest.TestCase):
         self.assertTrue(self.registry.revoke(self.receipt["approval_id"], **args))
         self.assertFalse(self.registry.revoke(self.receipt["approval_id"], **args))
         with self.assertRaisesRegex(PermissionError, "revoked"):
+            with self.guard():
+                pass
+
+    def test_new_contract_revision_supersedes_old_in_same_scope(self):
+        self.register()
+        old_id = self.receipt["approval_id"]
+        revised = {**RULE, "revision": "2", "rate": "0.03"}
+        new_document = sha256(b"synthetic replacement contract").hexdigest()
+        successor = issue_approval(
+            revised, key=KEY, **SCOPE, reviewer_id="REVIEWER-SYN-1",
+            approval_id="REGTEST-" + uuid4().hex,
+            source_revision_id="REV-SECOND", document_sha256=new_document,
+            approved_at=datetime.now(timezone.utc),
+        )
+        self.registry.register(
+            successor, rule=revised, key=KEY, document_sha256=new_document,
+            **SCOPE, authenticated_actor_id="REVIEWER-SYN-1",
+        )
+        with self.assertRaisesRegex(PermissionError, "superseded"):
+            with self.guard():
+                pass
+        with self.registry.guard(
+            successor, rule=revised, key=KEY,
+            document_sha256=new_document, **SCOPE,
+            acting_reviewer_id="REVIEWER-SYN-1",
+        ) as verified:
+            self.assertEqual(verified["rule_lifecycle"], "CURRENT_APPROVED_REVISION")
+        db = self.registry._connect()
+        try:
+            with db.cursor() as cur:
+                cur.execute(
+                    """SELECT state, superseded_by FROM lhfm_approval_records
+                       WHERE approval_id=%s""", (old_id,),
+                )
+                old = cur.fetchone()
+                self.assertEqual(old["state"], "REVOKED")
+                self.assertEqual(old["superseded_by"], successor["approval_id"])
+                cur.execute(
+                    """SELECT event_type FROM lhfm_rule_revision_events
+                       WHERE approval_id=%s ORDER BY event_id""",
+                    (old_id,),
+                )
+                self.assertEqual(
+                    [event["event_type"] for event in cur.fetchall()],
+                    ["APPROVED", "SUPERSEDED"],
+                )
+        finally:
+            db.close()
+        self.assertTrue(self.registry.revoke(
+            successor["approval_id"], **SCOPE,
+            authenticated_actor_id="REVIEWER-SYN-1",
+        ))
+        with self.assertRaises(PermissionError):
+            with self.registry.guard(
+                successor, rule=revised, key=KEY,
+                document_sha256=new_document, **SCOPE,
+            ):
+                pass
+
+    def test_supersession_waits_for_current_audit_guard(self):
+        self.register()
+        started = threading.Event()
+        completed = threading.Event()
+        errors = []
+
+        def replace_rule():
+            revised = {**RULE, "revision": "2"}
+            replacement = issue_approval(
+                revised, key=KEY, **SCOPE, reviewer_id="REVIEWER-SYN-1",
+                approval_id="REGTEST-" + uuid4().hex,
+                source_revision_id="REV-SECOND",
+                document_sha256=DOCUMENT_SHA,
+                approved_at=datetime.now(timezone.utc),
+            )
+            started.set()
+            try:
+                self.registry.register(
+                    replacement, rule=revised, key=KEY,
+                    document_sha256=DOCUMENT_SHA, **SCOPE,
+                    authenticated_actor_id="REVIEWER-SYN-1",
+                )
+            except Exception as exc:
+                errors.append(exc)
+            finally:
+                completed.set()
+
+        with self.guard():
+            thread = threading.Thread(target=replace_rule, daemon=True)
+            thread.start()
+            self.assertTrue(started.wait(timeout=2))
+            self.assertFalse(completed.wait(timeout=0.25))
+        self.assertTrue(completed.wait(timeout=5))
+        thread.join(timeout=2)
+        self.assertEqual(errors, [])
+        with self.assertRaises(PermissionError):
             with self.guard():
                 pass
 
