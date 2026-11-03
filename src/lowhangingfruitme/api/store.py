@@ -17,6 +17,7 @@ from typing import Any, Iterator
 from uuid import uuid4
 
 from ..approval_registry import ApprovalRegistry
+from ..approval import rule_sha256
 
 
 ROLES = ("rule", "transactions", "settlements", "contract")
@@ -131,6 +132,16 @@ class PrivateAuditStore:
                 raise ValueError("source too large")
             if sha256(path.read_bytes()).hexdigest() != ref["sha256"]:
                 raise ValueError("operator source SHA mismatch")
+        # A bundle must be internally self-consistent before an API caller
+        # can reference it; HMAC and active approval are checked at dispatch.
+        if manifest["approval_receipt"].get("document_sha256") != manifest["files"]["contract"]["sha256"]:
+            raise ValueError("source contract digest differs from signed receipt")
+        try:
+            rule_payload = json.loads(self._private_path(manifest["files"]["rule"]["path"]).read_text(encoding="utf-8"))
+        except (ValueError, UnicodeError) as exc:
+            raise ValueError("invalid source rule JSON") from exc
+        if manifest["approval_receipt"].get("rule_sha256") != rule_sha256(rule_payload):
+            raise ValueError("source rule digest differs from signed receipt")
         if str(manifest["approval_receipt"].get("tenant_id")) != tenant_id:
             raise ValueError("approval tenant mismatch")
         if str(manifest["approval_receipt"].get("legal_entity_id")) != legal_entity_id:

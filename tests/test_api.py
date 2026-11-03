@@ -6,6 +6,7 @@ all source files are synthetic and never persisted to the public repository.
 from __future__ import annotations
 
 from copy import deepcopy
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from hashlib import sha256
 import json
@@ -249,6 +250,43 @@ class AuditApiIntegrationTests(unittest.TestCase):
         self.assertEqual(r.status_code,404)
         a=self.submit().json()["audit_id"]
         self.assertEqual(self.get_report(a,tenant="OTHER").status_code,403)
+
+    def test_atomic_parallel_idempotency_reservation(self):
+        key = str(uuid4())
+        def attempt(_):
+            return self.store.reserve_run(
+                tenant_id=TENANT, legal_entity_id=LEGAL,
+                reviewer_id=ACTOR, bundle_id=self.bundle_id,
+                idempotency_key=key,
+            )
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            result = list(executor.map(attempt, range(2)))
+        self.assertEqual(sum(int(created) for _, created in result), 1)
+        self.assertEqual(result[0][0]["audit_id"], result[1][0]["audit_id"])
+
+    def test_provision_rejects_contract_hash_different_from_receipt(self):
+        manifest=deepcopy(self.manifest)
+        bad_doc=self.root/"different_contract.pdf"
+        bad_doc.write_bytes(b"%PDF-1.7\\n%Synthetic-other-contract\\n")
+        manifest["files"]["contract"]=self.ref(bad_doc.name)
+        with self.assertRaisesRegex(ValueError,"contract digest"):
+            self.store.provision_bundle(
+                bundle_id=str(uuid4()),tenant_id=TENANT,
+                legal_entity_id=LEGAL,manifest=manifest,
+            )
+
+    def test_provision_rejects_rule_file_not_in_signed_receipt(self):
+        bad_rule=self.root/"changed_rule.json"
+        altered=deepcopy(self.rule)
+        altered["rate"]="0.03"
+        bad_rule.write_text(json.dumps(altered),encoding="utf-8")
+        manifest=deepcopy(self.manifest)
+        manifest["files"]["rule"]=self.ref(bad_rule.name)
+        with self.assertRaisesRegex(ValueError,"rule digest"):
+            self.store.provision_bundle(
+                bundle_id=str(uuid4()),tenant_id=TENANT,
+                legal_entity_id=LEGAL,manifest=manifest,
+            )
 
     def test_bundle_path_traversal_and_symlink_rejected(self):
         link=self.root/"other.csv"
