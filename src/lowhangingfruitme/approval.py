@@ -74,6 +74,13 @@ def rule_sha256(rule: dict[str, Any]) -> str:
         } for t in parsed.tiers],
         "evidence_refs": sorted(parsed.evidence_refs),
     }
+    if parsed.tier_application is not None:
+        # R2 semantics are part of the actual signed contract-rule identity,
+        # not optional unsigned metadata that could be changed post-approval.
+        data["tier_semantics"] = {
+            "application": parsed.tier_application,
+            "evidence_ref": parsed.tier_source_ref, "reviewed": True,
+        }
     return sha256(_json_bytes(data)).hexdigest()
 
 
