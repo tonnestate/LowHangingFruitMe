@@ -17,12 +17,18 @@ from uuid import uuid4
 
 from ..approval_service import AuthenticatedApprovalService
 from ..mapping_approval import MappingApprovalRegistry
+from ..rebate import BonusRule
 from ..universal_import import inspect_source, normalize_source
 from .store import PrivateAuditStore
 from .uploads import UploadService, UploadRejected
 
 
 class ReviewRequired(ValueError):
+    pass
+
+
+class RuleSemanticReviewRequired(ReviewRequired):
+    """Reject ambiguous/invalid R2 before any source promotion or rule signing."""
     pass
 
 
@@ -98,6 +104,16 @@ class ReviewedBundleService:
                 raise ReviewRequired("mapping plan reviewer must equal authenticated subject")
         if not isinstance(rule, dict) or rule.get("approved") is not True or not rule.get("evidence_refs"):
             raise ReviewRequired("a reviewed, sourced and approved contract rule is required")
+        # Fail early: a signed flag or generic contract citation cannot
+        # supply missing retroactive/excess/band semantics. BonusRule.load
+        # validates the exact application, required cited clause, and
+        # explicit human-review declaration before creating private bundles.
+        try:
+            BonusRule.load(rule)
+        except (ValueError, KeyError, TypeError) as exc:
+            raise RuleSemanticReviewRequired(
+                "contract rule needs explicit source-grounded semantic review"
+            ) from exc
         if transaction_upload_id == settlement_upload_id or contract_upload_id in (
             transaction_upload_id, settlement_upload_id
         ):
