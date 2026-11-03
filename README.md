@@ -4,9 +4,9 @@
 
 **B2B Revenue Recovery for FruitStack.** Ein eigenständiger, beleggestützter Prüfdienst für nicht vollständig realisierte Lieferantenboni und vertraglich eindeutige Einkaufskonditionen.
 
-**Python-Version:** 0.8.0 (JWT-geschützte Audit-HTTP-API, Entwicklungsstand)  
+**Python-Version:** 0.9.0 (geschützter, gescannter Datei-Staging-Upload, Entwicklungsstand)  
 **Marketing-Portal:** 0.1.0 (noch nicht deployed)  
-**Status:** Bonusengine, ERP-Export-Adapter, JWT-/MariaDB-geschützter HTTP-Auditpfad für **serverseitig registrierte Datenpakete** sowie separat getestete Next.js-Marketing-Website. **Weder API noch Website sind auf dem VPS deployed.** Kein Kundendatei-Upload, kein funktionales Self-Service-Portal, keine Live-ERP-Anbindung und kein Recovery-Ledger.
+**Status:** Bonusengine, ERP-Export-Adapter, JWT-/MariaDB-geschützte Audit-API und eine **private, malware-scanpflichtige Upload-Staging-Schnittstelle** sowie separat getestete Next.js-Marketing-Website. **Weder API noch Website sind auf dem VPS deployed.** Kein produktiv freigegebener Kundendatei-Upload, kein Self-Service-Portal, keine Live-ERP-Anbindung und kein Recovery-Ledger.
 
 ## Eigenständige Website
 
@@ -23,6 +23,7 @@ Die deutsche Marketing-Website befindet sich unter [`portal/`](portal/README.md)
 - Einlieferung kanonischer Einkaufs- und Gutschriften-CSV mit **Frictionless** als echtem Schema-Prüfer und anschließend strenger fachlicher Validierung; Herkunftsverweise auf Datei-Hash und Quellzeile.
 - **Freigabenachweis:** Vertragsregel und konkrete Dokumentdatei werden per SHA-256 mit einer HMAC-signierten Bestätigung verknüpft. Der CSV-Pfad verlangt Mandanten- und Gesellschaftsbindung; `approved: true` allein genügt nicht. Keine produktive Prüfer-Authentifizierung oder Widerrufsverwaltung.
 - **Verifizierte Access-Tokens:** RFC-9068-kompatible RS256-Signaturprüfung anhand einer vertrauenswürdig bereitgestellten öffentlichen JWKS, Prüfung von Aussteller, Audience, Client-ID, Gültigkeit und Berechtigungsumfang. Eine durch MariaDB berechtigte Person kann Regeln über `AuthenticatedApprovalService` freigeben, widerrufen und eingeschränkte Audits starten. **Noch keine Live-IdP-Anbindung; schmale HTTP-API für bereits sicher bereitgestellte Datenpakete vorhanden, kein öffentlicher Upload.**
+- **Private Dateiannahme v0.9:** `POST /v1/uploads` (15-Minuten-Absicht), `PUT /v1/uploads/{id}/content` (begrenzter Rohdatenstrom) und `GET /v1/uploads/{id}` (Status), mit JWT-/Mandantenprüfung, exakten Bytes und SHA-256, verpflichtendem ClamAV-Scanner-Verdikt und geprüfter Dateiklassifikation. **Erfolgreich gescannte Dateien sind noch keine freigegebenen Auditquellen. Kein echter ClamAV-Betrieb auf dem VPS.** [Dokumentation](docs/UPLOAD_INTAKE.md).
 - **Authentifizierte Audit-API v0.8:** `POST /v1/audits` und `GET /v1/audits/{id}` für serverseitig registrierte, SHA-256-geprüfte private Quellen. JWT/Reviewer-Grants, MariaDB-Idempotenz, Quellen-Snapshots und Berichtsspeicherung sind gegen synthetische Daten getestet. **Keine öffentliche Kundendatenannahme und kein VPS-Deployment.**
 - **Persistierte Freigaben:** Genehmigungen werden in MariaDB registriert, mandantenbezogen freigegeben oder widerrufen und während der Berechnung durch `SELECT ... FOR UPDATE` vor konkurrierenden Änderungen geschützt. Ohne Registry läuft kein finaler CSV-Audit.
 - **Readiness-Gate:** separate ERP-Kontrollsummen für Anzahl und Nettobetrag, Scope-Kontrolle für Lieferant/Vertrag/Periode, Status `READY_FOR_AUDIT` / `LIMITED` / `NOT_READY`. Bei fehlenden oder widersprüchlichen Kontrollen entsteht kein abschließender Geldbefund.
@@ -89,7 +90,7 @@ lhfm extract-pdf --file /path/to/your/local-contract.pdf
 
 ## Produktarchitektur
 
-Eigenständiges Marketing-Portal (**gebaut, nicht deployed**) / gesicherter Kunden-Upload und ERP-Connector (**geplant**) → begrenzte, authentifizierte REST-API (**entwickelt; nur operatorseitig registrierte Datenpakete**) → Intake-Adapter (CSV-Frictionless/PDF-Docling) → bestätigte Vertragsregel → deterministischer Audit → belegte Differenzakte → Recovery-Ledger und erfolgsabhängige Abrechnung (**geplant**).
+Eigenständiges Marketing-Portal (**gebaut, nicht deployed**) / geschützter Dateiupload (**Staging implementiert, keine Portalanbindung oder Datenfreigabe**) und ERP-Connector (**geplant**) → begrenzte, authentifizierte REST-API (**entwickelt; nur operatorseitig registrierte Datenpakete**) → Intake-Adapter (CSV-Frictionless/PDF-Docling) → bestätigte Vertragsregel → deterministischer Audit → belegte Differenzakte → Recovery-Ledger und erfolgsabhängige Abrechnung (**geplant**).
 
 Es wird **kein** eigenständiges ERP oder FruitStack-Orchestrierungssystem dupliziert. Kernberechnung und Datenimport sind plattformunabhängig. Lexware, weclapp, Odoo, ERPNext/Frappe, Dolibarr und Oro sind recherchierte Integrations-/Distributionsziele; sie sind **nicht produktiv angebunden**.
 
@@ -111,6 +112,7 @@ Angedachtes Kundenangebot: eine einmalige Prüfung gegen **3 % von der nachweisl
 - [Authentifizierung und JWT-Trust-Boundaries](docs/AUTHENTICATION.md)
 - [Universeller ERP-Export-Import und Vertrauensgrenzen](docs/UNIVERSAL_IMPORT.md)
 - [Audit-HTTP-API v0.8, Aufrufvertrag und Sicherheitsgrenzen](docs/AUDIT_API.md)
+- [Private Dateiannahme v0.9 – Malware-Scan und Trust-Boundary](docs/UPLOAD_INTAKE.md)
 - [Release-Evidenz](EVIDENCE.md), [Changelog](CHANGELOG.md), [Sicherheit](SECURITY.md), [Agentenvorgaben](AGENTS.md), [Drittherstellerhinweise](THIRD_PARTY_NOTICES.md)
 
 Das öffentliche Repo enthält ausschließlich eigene Implementierung und synthetische Testdaten. Es wurden keine Fremd-ERP-Quelltexte kopiert. Für das Projekt wurde noch **keine Open-Source-Distributionslizenz festgelegt**; öffentlich lesbarer Code ist nicht automatisch frei zur Weiterverwendung.

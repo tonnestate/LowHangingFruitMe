@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.9.0 – scoped private staged upload intake (development; 2026-11-03)
+
+- Added `POST /v1/uploads`, `PUT /v1/uploads/{id}/content` and `GET /v1/uploads/{id}`, accepting only JWT-authorized reviewers of the matching tenant/legal entity.
+- Added single-use MariaDB upload intent (15 minute TTL) with exact size/SHA256, atomic claim, 16 MiB bounded raw streaming, owner-only private blob staging and strict no-overwrite promotion.
+- Added ClamAV clamd UNIX-socket INSTREAM client; an explicit scanner CLEAN verdict is mandatory and unavailability/infection blocks promotion. After scan, basic document/CSV/ZIP/XML type safety checks are applied.
+- Each successful staged file remains `usable_for_audit=false`; no automatic financial acceptance, bundle creation or calculation from a raw upload.
+- Added real MariaDB synthetic-JWT HTTP tests for tenant separation, hash/size tampering, concurrent reservation, expiry, simulated malware/scan failure, XML entity blocking and protocol framing.
+- Still **no live ClamAV daemon, browser login, public upload deployment, end-to-end customer data workflow, ERP connector, recovery ledger or 3%-fee billing**.
+
 ## 0.8.0 – authenticated audit API vertical slice (development; 2026-11-03)
 
 - Added FastAPI app with `POST /v1/audits`, `GET /v1/audits/{id}` and liveness, using existing RSA JWT access-token verifier and active scoped MariaDB reviewer authorization.

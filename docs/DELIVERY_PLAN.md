@@ -1,6 +1,6 @@
 # LowHangingFruitMe – Umsetzung, Testabnahme und Markteintritt v0.1
 
-**Stand:** 03.11.2026 | **Ist:** ausführbarer Python-Kern v0.8, importfähige Datenadapter, abgesicherte API für operatorseitig registrierte Datenpakete und eigenständige Marketing-Website 0.1.0; **keine realen Kunden- oder Produktionsabnahmetests**. Dieser Plan setzt Prioritäten, aber behauptet keine feste Laufzeit, produktive Anbindung oder Marktvalidierung.
+**Stand:** 03.11.2026 | **Ist:** ausführbarer Python-Kern v0.9, importfähige Datenadapter, abgesicherte Audit-API und private, scannerpflichtige Upload-Staging-API sowie Marketing-Website 0.1.0; **keine realen Kunden- oder Produktionsabnahmetests**. Dieser Plan setzt Prioritäten, aber behauptet keine feste Laufzeit, produktive Anbindung oder Marktvalidierung.
 
 ## 1. Entwicklungsprinzip und Schutz gegen Scope-Drift
 

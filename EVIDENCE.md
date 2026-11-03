@@ -1,6 +1,6 @@
 # Evidence ledger – LowHangingFruitMe
 
-Last updated: 2026-11-02. This is a record of observed implementation and CI results, not a production certification.
+Last updated: 2026-11-03. This is a record of observed implementation and CI results, not a production certification.
 
 ## v0.2.0 – validated source intake
 
@@ -133,3 +133,12 @@ No vendor-specific P21/Eclipse/NetSuite/SAP/Infor/Sage/Lexware/Odoo connector te
 **158 tests passed** per runner including actual MariaDB 11.4, synthetic RSA JWT verification, FastAPI TestClient, canonical Frictionless → readiness → active-registry-locked bonus calculation. New API cases prove guarded POST/GET, source hash and signer binding, 2500.00 EUR synthetic financial difference but **0.00 EUR actual recoveries or fees**, revoked approvals, missing controls, JWT scope/client/tenant denial, 404 vs 403, arbitrary HTTP source path rejection, private path traversal, symlink detection, idempotency replay/conflict and **concurrent single-reservation** under unique DB key.
 
 The test registry `lhfm_test` and source files are synthetic; server-provisioned bundle registration is not a public upload endpoint. **No real IdP, protected tenant document storage, API deployment, virus scanning, async job worker, ERP connection, audit report download through the website or legally approved 3% billing was tested.** This is an API code acceptance, not a live-production certification.
+
+## v0.9.0 – scoped upload staging HTTP acceptance (2026-11-03)
+
+**Executed code commit:** [ecc923cb6d1bfe475ae1b3658429f10cd13287e0](https://github.com/tonnestate/LowHangingFruitMe/commit/ecc923cb6d1bfe475ae1b3658429f10cd13287e0).  
+**Verified CI:** [41593011185](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41593011185) – **completed/success** under Python **3.11 and 3.12**; **175 tests passed per runner** including real MariaDB.
+
+The upload tests cover JWT bearer and scoped grant, unauthorized cross-tenant/actor access, new intent, size and SHA256-bound byte stream, 0600 private file, status GET, no financial-audit bypass, single-writer claim under concurrent requests, expired reservation, tampered/oversized/repeated PUT, invalid content type, malicious invoice XML, malformed PDF, scanner infection/outage fail-closed and no residual file. A fake local clamd-compatible UNIX socket verifies the INSTREAM frame structure. Existing 158 API/kernel tests also pass.
+
+**Limitations:** These tests use a **test-only scanner double**, not a running real ClamAV service or detection efficacy benchmark. A fake UNIX socket protocol implementation also does not prove real daemon configuration, security operations or updated virus signatures. The marketing portal is not connected to a live upload API; no customer upload on the VPS, no encryption at rest and no scope-approved dataset promotion. No external SaaS, billing or ERP integration was exercised.

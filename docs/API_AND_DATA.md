@@ -1,6 +1,6 @@
 # LowHangingFruitMe – API-, Daten- und Rechenkern-Spezifikation v0.1
 
-**Stand:** 03.11.2026 | **Status:** Überwiegend Zielvertrag. **Ein begrenzter HTTP-Teil ist in v0.8.0 implementiert:** `POST /v1/audits` (synchroner Audit bereits registrierter servereigener Quelldatenpakete), `GET /v1/audits/{id}` (gespeicherter Bericht) und `GET /healthz` (Liveness). Kein Job-Queue-, öffentlicher Upload-, Login-, ERP- oder Recovery-Endpunkt. Tatsächliche v0.8-Parameter und HTTP-Status in [AUDIT_API.md](AUDIT_API.md).
+**Stand:** 03.11.2026 | **Status:** Überwiegend Zielvertrag. **Begrenzte HTTP-Teilbereiche sind in v0.8.0 und v0.9.0 implementiert:** `POST /v1/audits` (synchroner Audit bereits registrierter servereigener Quelldatenpakete), `GET /v1/audits/{id}` (gespeicherter Bericht) und `GET /healthz` (Liveness). v0.9 ergänzt eine private, authentifizierte, scannerpflichtige Upload-Staging-API, aber **keinen freigegebenen öffentlichen Kunden-Upload**, keine Live-Browseranbindung, keine Job-Queue, Login-/ERP-/Recovery-Integration. Tatsächliche v0.8-Parameter und HTTP-Status in [AUDIT_API.md](AUDIT_API.md).
 
 ## 1. API-Grundregeln
 
@@ -17,8 +17,10 @@ Alle Quellbelege werden im sicheren Speicher gehalten; API-Ergebnisse verwenden 
 | POST /v1/organizations | Unternehmens-Onboarding | verifizierter Betreiber | organization_id, Status |
 | POST /v1/engagements | Mandat/Leistungsumfang festlegen | Org-Admin | engagement_id, Vertragsversion, effective_status |
 | POST /v1/engagements/{id}/accept | Dokumentierte Annahme | Org-Admin + Auth-Nachweis | acceptance_id, terms_hash, timestamp |
-| POST /v1/uploads | Upload-Absicht mit Dateityp/Hash | uploader | upload_id, sicherer Upload-Slot |
-| POST /v1/uploads/{id}/finalize | Nach Scan/Speicher-Commit schließen | uploader | file_ref, fingerprint, detected_type |
+| POST /v1/uploads | **v0.9 implementiert:** 15-Minuten-Absicht, Kategorie/Größe/SHA256, ohne öffentl. Slot | RS256-JWT lhfm:upload:write + aktiver Mandantenreviewer | upload_id, PENDING |
+| PUT /v1/uploads/{id}/content | **v0.9 implementiert:** roher Datenstrom ≤16MiB; Hash, ClamAV-Socket-Prüfung und Dateityp | Gleiches JWT/DB-Recht; eigene UUID | CLEAN/REJECTED; keine Auditfreigabe |
+| GET /v1/uploads/{id} | **v0.9 implementiert:** eigener Upload-Status, keine Bytes | Gleiches JWT/DB-Recht | status, sha256, usable_for_audit=false |
+| POST /v1/uploads/{id}/finalize | **Noch nicht implementiert:** Übernahme in überprüften Dataset-/Vertragskontext | fachliche Freigabe erforderlich | keine öffentliche Funktion |
 | POST /v1/agreements | Vereinbarungszuordnung anlegen | uploader | agreement_id |
 | GET /v1/agreements/{id}/rules | Erkannte Klauseln und Quellen | reviewer | vorgeschlagene Regeln |
 | POST /v1/agreements/{id}/rules/{rule_id}/approve | Regel mit Status/Fundstelle bestätigen | reviewer | rule_version, approved_at |
