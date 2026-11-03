@@ -19,7 +19,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from ..approval_service import AuthenticatedApprovalService
 from ..invoices import extract_invoice_preview
 from .store import BundleNotFound, PrivateAuditStore, RunConflict
-from .promotion import ReviewedBundleService, ReviewRequired
+from .promotion import ReviewedBundleService, ReviewRequired, RuleSemanticReviewRequired
 from .recovery import RecoveryLedger, CaseConflict
 from .reports import customer_case, render_export, ReportNotReady
 from .uploads import (ClamAVScanner, MAX_UPLOAD, ScannerUnavailable,
@@ -312,6 +312,12 @@ def create_app(*, service: AuthenticatedApprovalService,
             )
         except BundleNotFound as exc:
             raise HTTPException(status_code=404, detail={"code":"UPLOAD_NOT_FOUND"}) from exc
+        except RuleSemanticReviewRequired as exc:
+            raise HTTPException(
+                status_code=422,
+                detail={"code":"RULE_SEMANTICS_NEEDS_REVIEW",
+                        "next_action":"CHECK_ORIGINAL_CONTRACT_AND_CONFIRM_TIER_APPLICATION"},
+            ) from exc
         except (ReviewRequired, UploadRejected, ValueError) as exc:
             raise HTTPException(status_code=422, detail={"code":"BUNDLE_REVIEW_FAILED"}) from exc
         except PermissionError as exc:
