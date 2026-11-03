@@ -162,6 +162,21 @@ class AuditApiIntegrationTests(unittest.TestCase):
             headers={"Idempotency-Key":str(uuid4())})
         self.assertEqual(r.status_code,401)
 
+    def test_verified_identity_endpoint_never_exposes_access_token(self):
+        token=self.token(scope="lhfm:upload:write")
+        result=self.client.get("/v1/me",params={
+            "tenant_id":TENANT,"legal_entity_id":LEGAL,
+        },headers={"Authorization":"Bearer "+token})
+        self.assertEqual(result.status_code,200,result.text)
+        self.assertEqual(result.json()["subject"],ACTOR)
+        self.assertEqual(result.json()["tenant_id"],TENANT)
+        self.assertIn("lhfm:upload:write",result.json()["scopes"])
+        self.assertNotIn(token,result.text)
+        denied=self.client.get("/v1/me",params={
+            "tenant_id":"OTHER-TENANT","legal_entity_id":LEGAL,
+        },headers={"Authorization":"Bearer "+token})
+        self.assertEqual(denied.status_code,403)
+
     def test_untrusted_jwt_and_wrong_oauth_client_rejected(self):
         self.assertEqual(self.submit(token="forged-token").status_code,401)
         self.assertEqual(self.submit(token=self.token(client_id="other")).status_code,401)
