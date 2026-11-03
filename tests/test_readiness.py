@@ -121,6 +121,52 @@ class ReadinessTests(unittest.TestCase):
         self.assertEqual(assess()["gate_snapshot_sha256"], assess()["gate_snapshot_sha256"])
         self.assertIsNone(assess()["automated_percentage_score"])
 
+    def test_audit_level_quality_metrics_are_readable_and_bounded(self):
+        result = assess()
+        quality = result["quality_metrics"]
+        self.assertEqual(quality["data_coverage_pct"], "100.00")
+        self.assertEqual(quality["data_coverage_numerator"], 3)
+        self.assertEqual(quality["data_coverage_denominator"], 3)
+        self.assertEqual(quality["rule_clarity_pct"], "100.00")
+        self.assertFalse(quality["rule_clarity_contract_interpretation_independently_proven"])
+        self.assertEqual(quality["reconciliation_completeness_pct"], "100.00")
+        self.assertEqual(quality["reconciliation_matched_pairs"], 2)
+        self.assertIsNone(quality["value_weighted_source_coverage_pct"])
+        self.assertFalse(quality["source_ledger_completeness_proven"])
+
+    def test_quality_does_not_suppress_mismatched_reconciliation(self):
+        controls = deepcopy(CONTROLS)
+        controls["transactions"]["net_total"] = "200000.01"
+        result = assess(controls=controls)
+        quality = result["quality_metrics"]
+        self.assertEqual(result["status"], "NOT_READY")
+        self.assertEqual(quality["data_coverage_pct"], "100.00")
+        self.assertEqual(quality["reconciliation_completeness_pct"], "50.00")
+        self.assertIn("NET_TOTAL_MISMATCH", quality["blocker_codes"])
+        self.assertFalse(result["audit_admissible"])
+
+    def test_no_controls_have_no_fabricated_quality_percentages(self):
+        quality = assess(controls=None)["quality_metrics"]
+        for field in ("data_coverage_pct","rule_clarity_contract_interpretation_independently_proven",
+                      "reconciliation_completeness_pct"):
+            if field != "rule_clarity_contract_interpretation_independently_proven":
+                self.assertIsNone(quality[field])
+        self.assertEqual(quality["rule_clarity_pct"], "100.00")
+        self.assertIn("SOURCE_CONTROLS_MISSING", quality["warning_codes"])
+
+    def test_row_overcoverage_is_capped_and_blocked(self):
+        controls = deepcopy(CONTROLS)
+        controls["transactions"]["row_count"] = 1
+        result = assess(controls=controls)
+        self.assertEqual(result["status"], "NOT_READY")
+        self.assertEqual(result["quality_metrics"]["data_coverage_pct"], "100.00")
+        self.assertIn("ROW_COUNT_MISMATCH", result["quality_metrics"]["blocker_codes"])
+
+    def test_unsigned_rule_has_null_rule_clarity(self):
+        result = assess(proof=False)
+        self.assertIsNone(result["quality_metrics"]["rule_clarity_pct"])
+        self.assertEqual(result["status"], "LIMITED")
+
     def test_unposted_purchase_blocks(self):
         payload = deepcopy(BASE)
         payload["transactions"][0]["posted"] = False
