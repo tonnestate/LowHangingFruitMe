@@ -116,6 +116,8 @@ class BonusRule:
     tiers: tuple[Tier, ...]
     approved: bool
     evidence_refs: tuple[str, ...]
+    tier_application: str | None = None
+    tier_source_ref: str | None = None
 
     @classmethod
     def load(cls, raw: dict[str, Any]) -> BonusRule:
@@ -130,6 +132,38 @@ class BonusRule:
         thresholds = [t.threshold for t in tiers]
         if thresholds != sorted(set(thresholds)):
             raise ValueError("tier thresholds must be strictly increasing")
+        # R2 must never guess whether a threshold is retroactive,
+        # applicable only to excess, banded or a fixed reward.
+        # A signed, active reviewer grant later authenticates the human
+        # assertion; an unsiged true flag by itself is NOT authorization.
+        semantics = raw.get("tier_semantics")
+        tier_application = None
+        tier_source_ref = None
+        if kind == RuleKind.FLAT_RATE:
+            if semantics is not None:
+                raise ValueError("R1 cannot contain a tier_semantics declaration")
+        else:
+            if not isinstance(semantics, dict) or set(semantics) != {
+                "application", "evidence_ref", "reviewed"
+            } or semantics["reviewed"] is not True:
+                raise ValueError("R2 tier semantics require a complete explicit human review")
+            tier_application = semantics["application"]
+            tier_source_ref = semantics["evidence_ref"]
+            applications = {
+                RuleKind.RETROACTIVE_FULL_BASE: ("FULL_BASE",),
+                RuleKind.MARGINAL_PER_TIER: ("EXCESS_ONLY", "BANDS"),
+                RuleKind.FIXED_THRESHOLD_REWARD: ("FIXED_REWARD",),
+            }
+            if tier_application not in applications[kind]:
+                raise ValueError("tier application contradicts calculation rule kind")
+            if tier_application == "EXCESS_ONLY" and len(tiers) != 1:
+                raise ValueError("EXCESS_ONLY must define exactly one marginal threshold")
+            if tier_application == "BANDS" and len(tiers) < 2:
+                raise ValueError("BANDS must explicitly define at least two tiers")
+            if not isinstance(tier_source_ref, str) or (
+                tier_source_ref not in raw.get("evidence_refs", [])
+            ):
+                raise ValueError("R2 tier application must reference a cited contract clause")
         start, end = _date(raw["period_start"], "period_start"), _date(raw["period_end"], "period_end")
         if start > end:
             raise ValueError("period_start must be <= period_end")
@@ -149,6 +183,8 @@ class BonusRule:
             rate=rate, tiers=tiers,
             approved=_boolean(raw.get("approved"), "approved"),
             evidence_refs=_evidence(raw.get("evidence_refs"), "evidence_refs"),
+            tier_application=tier_application,
+            tier_source_ref=tier_source_ref,
         )
 
 
@@ -354,6 +390,11 @@ def audit(payload: dict[str, Any]) -> dict[str, Any]:
                    "reward": str(t.reward) if t.reward is not None else None} for t in rule.tiers],
         "approved": rule.approved, "evidence_refs": sorted(rule.evidence_refs),
     }
+    if rule.tier_application is not None:
+        normalized_rule["tier_semantics"] = {
+            "application": rule.tier_application,
+            "evidence_ref": rule.tier_source_ref, "reviewed": True,
+        }
     normalized_entries = lambda es: [{"source_system": e.source_system, "external_id": e.external_id,
         "supplier_id": e.supplier_id, "date": e.date.isoformat(), "currency": e.currency,
         "amount_net": str(e.amount), "kind": e.kind.value, "posted": e.posted,
