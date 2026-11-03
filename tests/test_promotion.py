@@ -208,7 +208,7 @@ class ReviewedPipelineTests(unittest.TestCase):
         bundle=created.json()["bundle_id"]
         self.assertEqual(created.json()["mapping_approval_status"],"SIGNED_REGISTERED")
         manifest=self.store.load_bundle(
-            bundle_id=bundle,tenant_id=TENANT,legal_entity_id=ENTITY,
+            bundle_id=bundle,tenant_id=self.scope()['tenant_id'],legal_entity_id=self.scope()['legal_entity_id'],
             reviewer_id=ACTOR,
         )
         self.assertEqual(set(manifest["mapping_approvals"]),
@@ -216,7 +216,7 @@ class ReviewedPipelineTests(unittest.TestCase):
         with self.promotion.mapping_registry.guard(
             receipts=manifest["mapping_approvals"],
             provenance=manifest["provenance"],bundle_id=bundle,
-            tenant_id=TENANT,legal_entity_id=ENTITY,reviewer_id=ACTOR,
+            tenant_id=self.scope()['tenant_id'],legal_entity_id=self.scope()['legal_entity_id'],reviewer_id=ACTOR,
             approval_id=manifest["approval_receipt"]["approval_id"],
         ):
             db=self.registry._connect()
@@ -236,13 +236,13 @@ class ReviewedPipelineTests(unittest.TestCase):
         self.assertEqual(created.status_code,201,created.text)
         bundle=created.json()["bundle_id"]
         changed=self.promotion.mapping_registry.revoke_bundle(
-            bundle_id=bundle,tenant_id=TENANT,
-            legal_entity_id=ENTITY,reviewer_id=ACTOR,
+            bundle_id=bundle,tenant_id=self.scope()['tenant_id'],
+            legal_entity_id=self.scope()['legal_entity_id'],reviewer_id=ACTOR,
         )
         self.assertTrue(changed)
         self.assertFalse(self.promotion.mapping_registry.revoke_bundle(
-            bundle_id=bundle,tenant_id=TENANT,
-            legal_entity_id=ENTITY,reviewer_id=ACTOR,
+            bundle_id=bundle,tenant_id=self.scope()['tenant_id'],
+            legal_entity_id=self.scope()['legal_entity_id'],reviewer_id=ACTOR,
         ))
         attempt=self.client.post(
             "/v1/audits",json={**self.scope(),"bundle_id":bundle},
@@ -283,14 +283,14 @@ class ReviewedPipelineTests(unittest.TestCase):
         self.assertEqual(created.status_code,201,created.text)
         bundle=created.json()["bundle_id"]
         manifest=self.store.load_bundle(
-            bundle_id=bundle,tenant_id=TENANT,legal_entity_id=ENTITY,
+            bundle_id=bundle,tenant_id=self.scope()['tenant_id'],legal_entity_id=self.scope()['legal_entity_id'],
             reviewer_id=ACTOR,
         )
         with self.assertRaises(PermissionError):
             with self.promotion.mapping_registry.guard(
                 receipts=manifest["mapping_approvals"],
                 provenance=manifest["provenance"],bundle_id=bundle,
-                tenant_id="T-FOREIGN",legal_entity_id=ENTITY,reviewer_id=ACTOR,
+                tenant_id="T-FOREIGN",legal_entity_id=self.scope()['legal_entity_id'],reviewer_id=ACTOR,
                 approval_id=manifest["approval_receipt"]["approval_id"],
             ):
                 pass
