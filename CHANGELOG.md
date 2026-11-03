@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.8.0 – authenticated audit API vertical slice (development; 2026-11-03)
+
+- Added FastAPI app with `POST /v1/audits`, `GET /v1/audits/{id}` and liveness, using existing RSA JWT access-token verifier and active scoped MariaDB reviewer authorization.
+- Added operator-only private source bundle manifest with exact SHA-256 rule, transaction, settlement and contract-source hashes; rejects file path traversal, symlinks and mismatched signed rule/document digests.
+- Added private copied snapshots before the unchanged canonical CSV financial audit. Report remains non-billable until verified economic recovery is recorded separately.
+- Added MariaDB audit job ledger and cross-thread atomic idempotency reservation (one execution per scoped request), with statuses PROCESSING, COMPLETED, NEEDS_REVIEW and FAILED.
+- Added real MariaDB integration tests using memory-generated RSA access tokens, HTTP TestClient and synthetic source files.
+- **No live IdP, customer upload endpoint, production VPS installation, worker queue, legal contract acceptance, Recovery Ledger, billing, ERP connection or third-party certification.**
+
 ## Portal 0.1.0 – standalone German marketing site (2026-11-03)
 
 - Introduced a Next.js 16 / React 19 marketing website under `portal/`, separate from the existing Python financial engine (which remains v0.7.0).

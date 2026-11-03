@@ -1,6 +1,6 @@
 # LowHangingFruitMe – API-, Daten- und Rechenkern-Spezifikation v0.1
 
-**Stand:** 02.11.2026 | **Status:** PLANNED. Keine Endpunkte sind implementiert. Diese Datei ist ein Entwurf für eine verbindliche technische Abnahme, nicht die Behauptung einer bestehenden API.
+**Stand:** 03.11.2026 | **Status:** Überwiegend Zielvertrag. **Ein begrenzter HTTP-Teil ist in v0.8.0 implementiert:** `POST /v1/audits` (synchroner Audit bereits registrierter servereigener Quelldatenpakete), `GET /v1/audits/{id}` (gespeicherter Bericht) und `GET /healthz` (Liveness). Kein Job-Queue-, öffentlicher Upload-, Login-, ERP- oder Recovery-Endpunkt. Tatsächliche v0.8-Parameter und HTTP-Status in [AUDIT_API.md](AUDIT_API.md).
 
 ## 1. API-Grundregeln
 
@@ -24,8 +24,8 @@ Alle Quellbelege werden im sicheren Speicher gehalten; API-Ergebnisse verwenden 
 | POST /v1/agreements/{id}/rules/{rule_id}/approve | Regel mit Status/Fundstelle bestätigen | reviewer | rule_version, approved_at |
 | POST /v1/datasets | Transaktions-/Gutschriften-Dataset anmelden | uploader | dataset_id, schema_version |
 | GET /v1/datasets/{id}/quality | Import- und Mappingfehler | uploader/reviewer | coverage, errors, warnings |
-| POST /v1/audits | Audit mit Versionen/Snapshots starten | reviewer | audit_id, job_id, status |
-| GET /v1/audits/{id} | Status und Gating | viewer | status, missing_inputs, revision |
+| POST /v1/audits | **Teilweise implementiert v0.8**: synchrone Ausführung eines serverseitig vorregistrierten Bundles; keine öffentliche Upload-/Queue-Job-ID | JWT-Reviewer, DB Grant, UUID-Idempotenz | audit_id, status, audit_executed |
+| GET /v1/audits/{id} | **Teilweise implementiert v0.8**: Bericht für genau den ausführenden Reviewer in gleicher Tenant-/Entity-Scope | JWT-Reviewer + DB-Grant | audit_id, status, audit_executed, report |
 | GET /v1/audits/{id}/findings | Differenzakte | reviewer/viewer | cases + evidence links |
 | GET /v1/audits/{id}/exports | Reportformate | freigegebene Rollen | PDF/XLSX/JSON-Manifeste |
 | POST /v1/findings/{id}/recovery-events | belegte Realisierung/Storno | finance/reviewer | recovery_event_id, verified_status |

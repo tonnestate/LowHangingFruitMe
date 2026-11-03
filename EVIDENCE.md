@@ -124,3 +124,12 @@ No vendor-specific P21/Eclipse/NetSuite/SAP/Infor/Sage/Lexware/Odoo connector te
 - Original PNG verified from source at build: **1983 × 793 pixels**, SHA-256 `1525d2f792a9e5fd8aee4f564f34ba048b33fe37956204fff108f7b49f5b797c`. Generated brand measurement report records original pixel coordinates and colors; no guessed HEX tokens claimed.
 - Production Apache, WordPress, DNS, server ports and SSL certificates were **not touched**. No customer marketing leads, financial data or live ERP accounts were used. This is staging build evidence only, not proof of deployed live website.
 - DistroAgents visual pixel-matching or interaction reverse engineering in the *reference's live browser* remains open. We tested our own website, not a 1:1 reproduction.
+
+## v0.8.0 – authenticated HTTP Audit API: implementation acceptance (2026-11-03)
+
+**Executed source commit:** [80a212abe5e47bfba5ac0ad7e5f68b723a6f9495](https://github.com/tonnestate/LowHangingFruitMe/commit/80a212abe5e47bfba5ac0ad7e5f68b723a6f9495).  
+**Verified GitHub Actions:** [41591509755](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41591509755) – completed/success on **both Python 3.11 and Python 3.12**.
+
+**158 tests passed** per runner including actual MariaDB 11.4, synthetic RSA JWT verification, FastAPI TestClient, canonical Frictionless → readiness → active-registry-locked bonus calculation. New API cases prove guarded POST/GET, source hash and signer binding, 2500.00 EUR synthetic financial difference but **0.00 EUR actual recoveries or fees**, revoked approvals, missing controls, JWT scope/client/tenant denial, 404 vs 403, arbitrary HTTP source path rejection, private path traversal, symlink detection, idempotency replay/conflict and **concurrent single-reservation** under unique DB key.
+
+The test registry `lhfm_test` and source files are synthetic; server-provisioned bundle registration is not a public upload endpoint. **No real IdP, protected tenant document storage, API deployment, virus scanning, async job worker, ERP connection, audit report download through the website or legally approved 3% billing was tested.** This is an API code acceptance, not a live-production certification.
