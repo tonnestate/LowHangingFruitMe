@@ -45,6 +45,8 @@ def customer_case(run: dict[str, Any], ledger: dict[str, Any]) -> dict[str, Any]
     # Fee proposal does not constitute an invoice or payment proof.
     if ledger.get("billing_authorized") is not False or ledger.get("invoice_created") is not False:
         raise ReportNotReady("unsupported billing state in MVP")
+    if ledger.get("fee_rate") not in ("0.03", "0.05"):
+        raise ReportNotReady("unsupported or missing fee rate in saved recovery case")
     for money in ("confirmed_realization_net", "fee_proposal_net", "fee_due_net"):
         if not isinstance(ledger.get(money), str):
             raise ReportNotReady("missing financial ledger field")
@@ -84,7 +86,7 @@ def customer_case(run: dict[str, Any], ledger: dict[str, Any]) -> dict[str, Any]
             "case_status": ledger.get("case_status", "NONE"),
             "case_status_reason": ledger.get("case_status_reason"),
             "confirmed_realization_net": ledger["confirmed_realization_net"],
-            "fee_rate": "0.03",
+            "fee_rate": ledger["fee_rate"],
             "fee_proposal_net": ledger["fee_proposal_net"],
             "billable_recovery_net": "0.00",
             "fee_due_net": ledger["fee_due_net"],
@@ -105,7 +107,7 @@ def customer_case(run: dict[str, Any], ledger: dict[str, Any]) -> dict[str, Any]
             "Rechnerische Differenz ist keine rechtlich festgestellte Forderung.",
             "ERP-Vollstaendigkeit nur gegen extern gelieferte Kontrollsummen und Erklaerungen plausibilisiert.",
             "Finanzpruefer-Bestaetigung ersetzt keinen unabhaengigen Banknachweis.",
-            "3 Prozent sind nur ein unverbindlicher Honorarvorschlag; Rechnung und Zahlungsanspruch sind nicht freigegeben.",
+            f"{int(ledger['fee_rate'][-2:])} Prozent sind nur ein unverbindlicher Honorarvorschlag; Rechnung und Zahlungsanspruch sind nicht freigegeben.",
             "Detaillierte Originaldatei-Zeilenreferenzen bleiben im privaten, hashgebundenen Lineage-Snapshot.",
         ],
     }
@@ -146,7 +148,7 @@ def render_export(case: dict[str, Any], fmt: str) -> tuple[bytes, str]:
             "Rechnerische Differenz EUR": case["calculated_variance_net"],
             "Fallstatus": case["recovery"]["case_status"],
             "Finanziell bestaetigte Realisierung EUR": case["recovery"]["confirmed_realization_net"],
-            "Honorarvorschlag 3 Prozent EUR": case["recovery"]["fee_proposal_net"],
+            f"Honorarvorschlag {int(case['recovery']['fee_rate'][-2:])} Prozent EUR": case["recovery"]["fee_proposal_net"],
             "Abrechenbare Realisierung EUR": case["recovery"]["billable_recovery_net"],
             "Faelliges Honorar EUR": case["recovery"]["fee_due_net"],
             "Datenabdeckung gegen gelieferte Zeilenkontrollen Prozent":
@@ -240,7 +242,7 @@ def render_export(case: dict[str, Any], fmt: str) -> tuple[bytes, str]:
             ("Rechnerische Differenz", case["calculated_variance_net"]),
             ("Fallstatus", case["recovery"]["case_status"]),
             ("Bestaetigte Realisierung", case["recovery"]["confirmed_realization_net"]),
-            ("Honorarvorschlag (3 %)", case["recovery"]["fee_proposal_net"]),
+            (f"Honorarvorschlag ({int(case['recovery']['fee_rate'][-2:])} %)", case["recovery"]["fee_proposal_net"]),
             ("Abrechenbarer Betrag", case["recovery"]["billable_recovery_net"]),
             ("Faelliges Honorar", case["recovery"]["fee_due_net"]),
         ]

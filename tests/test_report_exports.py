@@ -35,7 +35,7 @@ class CustomerReportTests(RecoveryPipelineTests):
         self.assertEqual(case["recovery"]["fee_proposal_net"],"0.00")
         self.assertEqual(case["recovery"]["billable_recovery_net"],"0.00")
         self.assertEqual(case["recovery"]["fee_due_net"],"0.00")
-        self.assertEqual(case["recovery"]["fee_rate"],"0.03")
+        self.assertEqual(case["recovery"]["fee_rate"],"0.05")
         self.assertEqual(case["audit_id"],audit)
         self.assertEqual(case["audit_quality"]["data_coverage_pct"],"100.00")
         self.assertEqual(case["audit_quality"]["rule_clarity_pct"],"100.00")
@@ -56,7 +56,7 @@ class CustomerReportTests(RecoveryPipelineTests):
         case=self.download(audit).json()
         self.assertEqual(case["calculated_variance_net"],"2500.00")
         self.assertEqual(case["recovery"]["confirmed_realization_net"],"1000.00")
-        self.assertEqual(case["recovery"]["fee_proposal_net"],"30.00")
+        self.assertEqual(case["recovery"]["fee_proposal_net"],"50.00")
         self.assertEqual(case["recovery"]["fee_due_net"],"0.00")
         self.assertEqual(case["recovery"]["events"][0]["state"],"CONFIRMED")
 
@@ -80,7 +80,7 @@ class CustomerReportTests(RecoveryPipelineTests):
             self.assertIn("Evidenz",book.sheetnames)
             values={row[0]:row[1] for row in book["Differenzfall"].iter_rows(values_only=True)}
             self.assertEqual(values["Rechnerische Differenz EUR"],"2500.00")
-            self.assertEqual(values["Honorarvorschlag 3 Prozent EUR"],"0.00")
+            self.assertEqual(values["Honorarvorschlag 5 Prozent EUR"],"0.00")
             self.assertEqual(values["Datenabdeckung gegen gelieferte Zeilenkontrollen Prozent"],"100.00")
             self.assertEqual(values["Reconciliation-Kontrollen Prozent"],"100.00")
             self.assertEqual(values["Faelliges Honorar EUR"],"0.00")

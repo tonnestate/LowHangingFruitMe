@@ -1,4 +1,4 @@
-"""Evidence-linked realization ledger and reversible 3% fee PROPOSAL.
+"""Evidence-linked realization ledger and reversible rate-snapshotted fee PROPOSAL.
 
 Amounts use integer euro-cents. A second, independently authorized finance
 actor must attest evidence before it counts. No event creates an invoice,
@@ -39,9 +39,14 @@ def _eur(cents: int) -> str:
     return f"{sign}{value // 100}.{value % 100:02d}"
 
 
-def _fee_proposal(cents: int) -> str:
-    # 3% applied to aggregate verified net, half-up to the nearest cent.
-    return _eur((max(cents, 0) * 3 + 50) // 100)
+NEW_CASE_FEE_RATE_BPS = 500  # 5%, proposal only; no entitlement to invoice.
+
+
+def _fee_proposal(cents: int, basis_points: int = NEW_CASE_FEE_RATE_BPS) -> str:
+    # Half-up cent rounding on aggregate verified net, not on each event.
+    if basis_points not in (300, 500):
+        raise ValueError("unrecognized, unapproved fee policy")
+    return _eur((max(cents, 0) * basis_points + 5000) // 10000)
 
 
 def _claim_key(report: dict[str, Any], tenant_id: str,
@@ -134,11 +139,11 @@ class RecoveryLedger:
                 cur.execute(
                     """INSERT INTO lhfm_recovery_cases
                        (case_id,audit_id,tenant_id,legal_entity_id,reviewer_id,
-                        claim_sha256,difference_cents)
-                       VALUES (%s,%s,%s,%s,%s,%s,%s)
+                        claim_sha256,difference_cents,fee_rate_bps)
+                       VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
                        ON DUPLICATE KEY UPDATE case_id=case_id""",
                     (case_id,audit_id,tenant_id,legal_entity_id,
-                     reviewer_id,claim_hash,difference),
+                     reviewer_id,claim_hash,difference,NEW_CASE_FEE_RATE_BPS),
                 )
                 cur.execute(
                     """SELECT case_id,difference_cents FROM lhfm_recovery_cases
@@ -384,7 +389,7 @@ class RecoveryLedger:
         try:
             with db.cursor() as cur:
                 cur.execute(
-                    """SELECT case_id FROM lhfm_recovery_cases
+                    ""SELECT case_id,fee_rate_bps FROM lhfm_recovery_cases
                        WHERE audit_id=%s AND tenant_id=%s AND legal_entity_id=%s
                          AND reviewer_id=%s""",
                     (audit_id,tenant_id,legal_entity_id,reviewer_id),
@@ -431,8 +436,8 @@ class RecoveryLedger:
             "billable_recovery_net":"0.00",
             "audited_difference_net":_eur(difference),
             "confirmed_realization_net":_eur(net),
-            "fee_rate":"0.03",
-            "fee_proposal_net":_fee_proposal(net),
+            "fee_rate":f"0.{(int(case['fee_rate_bps']) if case else NEW_CASE_FEE_RATE_BPS) // 100:02d}",
+            "fee_proposal_net":_fee_proposal(net, int(case['fee_rate_bps']) if case else NEW_CASE_FEE_RATE_BPS),
             "fee_due_net":"0.00",
             "invoice_created":False,
             "billing_authorized":False,

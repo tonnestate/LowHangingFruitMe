@@ -1,4 +1,4 @@
-"""Two-actor 3% recovery ledger acceptance against real isolated MariaDB.
+"""Two-actor 5% recovery ledger acceptance against real isolated MariaDB.
 
 Synthetic reviewers and PDF evidence; no assertion of real bank reconciliation.
 """
@@ -177,7 +177,8 @@ class RecoveryPipelineTests(ReviewedPipelineTests):
         self.assertEqual(verified.json()["status"],"CONFIRMED")
         ledger=self.ledger(audit).json()
         self.assertEqual(ledger["confirmed_realization_net"],"1000.00")
-        self.assertEqual(ledger["fee_proposal_net"],"30.00")
+        self.assertEqual(ledger["fee_proposal_net"],"50.00")
+        self.assertEqual(ledger["fee_rate"],"0.05")
         self.assertEqual(ledger["fee_due_net"],"0.00")
         self.assertFalse(ledger["invoice_created"])
         r2,_=self.add_event(audit,"1500.00")
@@ -185,10 +186,10 @@ class RecoveryPipelineTests(ReviewedPipelineTests):
         self.assertEqual(self.review(r2.json()["event_id"]).status_code,200)
         ledger=self.ledger(audit).json()
         self.assertEqual(ledger["confirmed_realization_net"],"2500.00")
-        self.assertEqual(ledger["fee_proposal_net"],"75.00")
+        self.assertEqual(ledger["fee_proposal_net"],"125.00")
         self.assertFalse(ledger["billing_authorized"])
 
-    def test_storno_reduces_net_and_3pct_fee(self):
+    def test_storno_reduces_net_and_5pct_fee(self):
         audit=self.audit_id()
         realized,_=self.add_event(audit,"2000.00")
         self.assertEqual(realized.status_code,201,realized.text)
@@ -199,12 +200,12 @@ class RecoveryPipelineTests(ReviewedPipelineTests):
         self.assertEqual(self.review(rev.json()["event_id"]).status_code,200)
         result=self.ledger(audit).json()
         self.assertEqual(result["confirmed_realization_net"],"1500.00")
-        self.assertEqual(result["fee_proposal_net"],"45.00")
+        self.assertEqual(result["fee_proposal_net"],"75.00")
         other,_=self.add_event(audit,"1600.00",kind="REVERSAL",reverses=original)
         self.assertEqual(other.status_code,201,other.text)
         rejected=self.review(other.json()["event_id"])
         self.assertEqual(rejected.status_code,409)
-        self.assertEqual(self.ledger(audit).json()["fee_proposal_net"],"45.00")
+        self.assertEqual(self.ledger(audit).json()["fee_proposal_net"],"75.00")
 
     def test_finance_verifier_must_be_independent_and_authorized(self):
         audit=self.audit_id()
@@ -228,6 +229,28 @@ class RecoveryPipelineTests(ReviewedPipelineTests):
             db.close()
         self.assertEqual(self.review(event,sub="REVIEWER-SYN-1").status_code,403)
         self.assertEqual(self.ledger(audit).json()["fee_proposal_net"],"0.00")
+
+    def test_existing_3_percent_case_preserves_its_fee_policy(self):
+        audit=self.audit_id()
+        r,_=self.add_event(audit,"1000.00")
+        self.assertEqual(r.status_code,201,r.text)
+        self.assertEqual(self.review(r.json()["event_id"]).status_code,200)
+        # Simulate a pre-migration case after SQL 007 backfilled 300 bps.
+        db=self.registry._connect()
+        try:
+            with db.cursor() as cur:
+                cur.execute(
+                    """UPDATE lhfm_recovery_cases SET fee_rate_bps=300
+                       WHERE audit_id=%s AND tenant_id=%s""",
+                    (audit,self.tenant),
+                )
+            db.commit()
+        finally:
+            db.close()
+        old=self.ledger(audit).json()
+        self.assertEqual(old["fee_rate"],"0.03")
+        self.assertEqual(old["fee_proposal_net"],"30.00")
+        self.assertEqual(old["fee_due_net"],"0.00")
 
     def test_no_duplicate_evidence_and_idempotent_replay(self):
         audit=self.audit_id()
@@ -276,14 +299,15 @@ class RecoveryPipelineTests(ReviewedPipelineTests):
         self.assertEqual(second.status_code,200,second.text)
         self.assertTrue(second.json()["idempotent"])
         self.assertEqual(self.review(event,tenant="WRONG").status_code,403)
-        self.assertEqual(self.ledger(audit).json()["fee_proposal_net"],"18.00")
+        self.assertEqual(self.ledger(audit).json()["fee_proposal_net"],"30.00")
 
 
 class RecoveryCentsTests(ReviewedPipelineTests):
     def test_strict_money_and_half_up_remainder(self):
         self.assertEqual(_cents("0.01"),1)
-        self.assertEqual(_fee_proposal(50),"0.02")
-        self.assertEqual(_fee_proposal(1000),"0.30")
+        self.assertEqual(_fee_proposal(50),"0.03")
+        self.assertEqual(_fee_proposal(1000),"0.50")
+        self.assertEqual(_fee_proposal(1000,300),"0.30")
         for raw in ("-1.00","1","1.1","1.234","NaN","1e5","00.01","0.00"):
             with self.assertRaises(ValueError):
                 _cents(raw)
