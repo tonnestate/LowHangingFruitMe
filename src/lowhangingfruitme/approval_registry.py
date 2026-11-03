@@ -81,47 +81,140 @@ class ApprovalRegistry:
         finally:
             connection.close()
 
+    @staticmethod
+    def _lineage(rule: dict[str, Any]) -> tuple[str, str, str]:
+        """Contract + rule ID are the unambiguous key across signed revisions."""
+        if not isinstance(rule, dict):
+            raise ValueError("contract rule must be an object")
+        values = tuple(_nonempty(rule.get(k), k) for k in
+                       ("agreement_id", "rule_id", "revision"))
+        if any(len(value) > 128 for value in values):
+            raise ValueError("contract lineage identifier exceeds storage limit")
+        return values
+
     def register(self, receipt: dict[str, Any], *, rule: dict[str, Any],
                  key: bytes, document_sha256: str,
                  tenant_id: str, legal_entity_id: str,
                  authenticated_actor_id: str) -> None:
-        """Persist approval only for an active reviewer grant.
+        """Atomically approve latest sourced revision and supersede its predecessor.
 
-        IMPORTANT: authenticated_actor_id is an assertion of a TRUSTED caller,
-        not validated against a login provider by this library.
+        This operation is only called after upstream authentication. A receipt
+        and approved rule never grant authority by themselves.
         """
         actor = self._require_actor(authenticated_actor_id)
+        agreement_id, rule_id, revision = self._lineage(rule)
         verified = verify_approval(
             receipt, rule, key=key, tenant_id=tenant_id,
             legal_entity_id=legal_entity_id, document_sha256=document_sha256,
         )
         if not hmac.compare_digest(actor, verified["reviewer_id"]):
             raise PermissionError("receipt reviewer differs from authenticated actor")
+        source_revision_id = _nonempty(verified["source_revision_id"], "source_revision_id")
+        if len(source_revision_id) > 128:
+            raise ValueError("source revision identifier exceeds storage limit")
         digest = sha256(_json_bytes(receipt)).hexdigest()
         connection = self._connect()
         try:
             with connection.cursor() as cursor:
+                # Always lock the lineage head BEFORE the predecessor approval;
+                # guard() takes the same order so a replacement cannot race an
+                # active audit or commit while that audit is running.
+                cursor.execute(
+                    """INSERT INTO lhfm_rule_heads
+                       (tenant_id, legal_entity_id, agreement_id, rule_id,
+                        current_approval_id)
+                       VALUES (%s,%s,%s,%s,NULL)
+                       ON DUPLICATE KEY UPDATE current_approval_id=current_approval_id""",
+                    (tenant_id, legal_entity_id, agreement_id, rule_id),
+                )
+                cursor.execute(
+                    """SELECT current_approval_id FROM lhfm_rule_heads
+                       WHERE tenant_id=%s AND legal_entity_id=%s
+                         AND agreement_id=%s AND rule_id=%s FOR UPDATE""",
+                    (tenant_id, legal_entity_id, agreement_id, rule_id),
+                )
+                head = cursor.fetchone()
+                if head is None:
+                    raise RuntimeError("lineage head cannot be locked")
+                previous_id = head["current_approval_id"]
+                if previous_id == receipt["approval_id"]:
+                    raise ValueError("approval already registered for this rule")
+                previous = None
+                if previous_id:
+                    cursor.execute(
+                        """SELECT approval_id, state, agreement_id, rule_id
+                           FROM lhfm_approval_records
+                           WHERE approval_id=%s AND tenant_id=%s
+                             AND legal_entity_id=%s FOR UPDATE""",
+                        (previous_id, tenant_id, legal_entity_id),
+                    )
+                    previous = cursor.fetchone()
+                    if (not previous or previous["agreement_id"] != agreement_id
+                            or previous["rule_id"] != rule_id
+                            or previous["state"] not in ("ACTIVE", "REVOKED")):
+                        raise RuntimeError("corrupted rule lineage, manual recovery required")
                 cursor.execute(
                     """SELECT role, active FROM lhfm_reviewer_grants
                        WHERE tenant_id=%s AND legal_entity_id=%s AND reviewer_id=%s
                        FOR UPDATE""",
                     (tenant_id, legal_entity_id, actor),
                 )
-                role = cursor.fetchone()
-                if not role or role["role"] != "contract_reviewer" or not role["active"]:
+                grant = cursor.fetchone()
+                if not grant or grant["role"] != "contract_reviewer" or not grant["active"]:
                     raise PermissionError("reviewer does not have an active scoped grant")
                 cursor.execute(
                     """INSERT INTO lhfm_approval_records
                        (approval_id, tenant_id, legal_entity_id, reviewer_id,
-                        rule_sha256, document_sha256, receipt_sha256, state)
-                       VALUES (%s,%s,%s,%s,%s,%s,%s,'ACTIVE')""",
+                        rule_sha256, document_sha256, receipt_sha256, state,
+                        agreement_id, rule_id, rule_revision, source_revision_id)
+                       VALUES (%s,%s,%s,%s,%s,%s,%s,'ACTIVE',%s,%s,%s,%s)""",
                     (receipt["approval_id"], tenant_id, legal_entity_id, actor,
-                     verified["rule_sha256"], verified["document_sha256"], digest),
+                     verified["rule_sha256"], verified["document_sha256"], digest,
+                     agreement_id, rule_id, revision, source_revision_id),
                 )
+                if previous and previous["state"] == "ACTIVE":
+                    cursor.execute(
+                        """UPDATE lhfm_approval_records SET state='REVOKED',
+                           revoked_by=%s, revoked_at=UTC_TIMESTAMP(6),
+                           superseded_by=%s
+                           WHERE approval_id=%s AND state='ACTIVE'""",
+                        (actor, receipt["approval_id"], previous_id),
+                    )
+                    if cursor.rowcount != 1:
+                        raise RuntimeError("concurrent supersession state change")
+                    cursor.execute(
+                        """INSERT INTO lhfm_approval_events
+                           (approval_id, tenant_id, legal_entity_id, actor_id, event_type)
+                           VALUES (%s,%s,%s,%s,'REVOKED')""",
+                        (previous_id, tenant_id, legal_entity_id, actor),
+                    )
+                    cursor.execute(
+                        """INSERT INTO lhfm_rule_revision_events
+                           (approval_id, tenant_id, legal_entity_id, actor_id,
+                            event_type, replaced_by)
+                           VALUES (%s,%s,%s,%s,'SUPERSEDED',%s)""",
+                        (previous_id, tenant_id, legal_entity_id, actor,
+                         receipt["approval_id"]),
+                    )
+                cursor.execute(
+                    """UPDATE lhfm_rule_heads SET current_approval_id=%s
+                       WHERE tenant_id=%s AND legal_entity_id=%s
+                         AND agreement_id=%s AND rule_id=%s""",
+                    (receipt["approval_id"], tenant_id, legal_entity_id,
+                     agreement_id, rule_id),
+                )
+                if cursor.rowcount != 1:
+                    raise RuntimeError("lineage head transition failed")
                 cursor.execute(
                     """INSERT INTO lhfm_approval_events
                        (approval_id, tenant_id, legal_entity_id, actor_id, event_type)
                        VALUES (%s,%s,%s,%s,'ISSUED')""",
+                    (receipt["approval_id"], tenant_id, legal_entity_id, actor),
+                )
+                cursor.execute(
+                    """INSERT INTO lhfm_rule_revision_events
+                       (approval_id, tenant_id, legal_entity_id, actor_id, event_type)
+                       VALUES (%s,%s,%s,%s,'APPROVED')""",
                     (receipt["approval_id"], tenant_id, legal_entity_id, actor),
                 )
             connection.commit()
@@ -183,6 +276,12 @@ class ApprovalRegistry:
                        VALUES (%s,%s,%s,%s,'REVOKED')""",
                     (approval_id, tenant_id, legal_entity_id, actor),
                 )
+                cursor.execute(
+                    """INSERT INTO lhfm_rule_revision_events
+                       (approval_id, tenant_id, legal_entity_id, actor_id, event_type)
+                       VALUES (%s,%s,%s,%s,'REVOKED')""",
+                    (approval_id, tenant_id, legal_entity_id, actor),
+                )
             connection.commit()
             return True
         except Exception:
@@ -196,12 +295,12 @@ class ApprovalRegistry:
               key: bytes, document_sha256: str, tenant_id: str,
               legal_entity_id: str,
               acting_reviewer_id: str | None = None) -> Iterator[dict[str, str]]:
-        """Hold an InnoDB row lock while the actual calculation executes.
+        """Lock the current contract revision throughout calculation.
 
-        This guarantees the revoke transaction cannot commit during this guard.
-        It does not make ERP snapshot import itself atomic; source files must
-        be immutable/snapshotted by the trusted caller.
+        No new approval/supersession can commit while an audit holds the head
+        lock; after release the old signed bundle is permanently non-current.
         """
+        agreement_id, rule_id, revision = self._lineage(rule)
         verified = verify_approval(
             receipt, rule, key=key, tenant_id=tenant_id,
             legal_entity_id=legal_entity_id, document_sha256=document_sha256,
@@ -215,8 +314,20 @@ class ApprovalRegistry:
         try:
             with connection.cursor() as cursor:
                 cursor.execute(
+                    """SELECT current_approval_id FROM lhfm_rule_heads
+                       WHERE tenant_id=%s AND legal_entity_id=%s
+                         AND agreement_id=%s AND rule_id=%s FOR UPDATE""",
+                    (tenant_id, legal_entity_id, agreement_id, rule_id),
+                )
+                head = cursor.fetchone()
+                if (not head or not head["current_approval_id"]
+                        or not hmac.compare_digest(
+                            str(head["current_approval_id"]), verified["approval_id"])):
+                    raise PermissionError("contract rule is superseded or has no reviewed lineage")
+                cursor.execute(
                     """SELECT reviewer_id, rule_sha256, document_sha256,
-                              receipt_sha256, state
+                              receipt_sha256, source_revision_id, rule_revision,
+                              agreement_id, rule_id, state
                        FROM lhfm_approval_records
                        WHERE approval_id=%s AND tenant_id=%s
                          AND legal_entity_id=%s FOR UPDATE""",
@@ -230,9 +341,15 @@ class ApprovalRegistry:
                     ("rule_sha256", verified["rule_sha256"]),
                     ("document_sha256", verified["document_sha256"]),
                     ("receipt_sha256", digest),
+                    ("source_revision_id", verified["source_revision_id"]),
+                    ("rule_revision", revision),
+                    ("agreement_id", agreement_id),
+                    ("rule_id", rule_id),
                 ):
-                    if not hmac.compare_digest(record[name], expected):
-                        raise PermissionError("stored approval content differs: " + name)
+                    if not isinstance(record.get(name), str) or not hmac.compare_digest(
+                        record[name], expected
+                    ):
+                        raise PermissionError("stored contract revision differs: " + name)
                 cursor.execute(
                     """SELECT role, active FROM lhfm_reviewer_grants
                        WHERE tenant_id=%s AND legal_entity_id=%s
@@ -243,7 +360,8 @@ class ApprovalRegistry:
                 if not grant or grant["role"] != "contract_reviewer" or not grant["active"]:
                     raise PermissionError("reviewer grant revoked before audit dispatch")
                 yield {**verified, "revocation_status": "ACTIVE_LOCKED_AT_DISPATCH",
-                       "reviewer_grant": "ACTIVE_AT_DISPATCH"}
+                       "reviewer_grant": "ACTIVE_AT_DISPATCH",
+                       "rule_lifecycle": "CURRENT_APPROVED_REVISION"}
             connection.commit()
         except Exception:
             connection.rollback()
