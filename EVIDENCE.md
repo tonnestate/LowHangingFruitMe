@@ -184,3 +184,13 @@ All figures are synthetic. No automatic real recovery, finance invoice issuance,
 - The later AGENTS.md governance-only update and this evidence appendix each trigger their own workflow; their check outcomes are separate from the above code-commit results.
 
 **External/commercial acceptance still OPEN:** no authorized third-party ERP production dataset, external independent controller sign-off, licensed service contract + external RDG assessment, real customer Identity Provider, live malware-scanned/encrypted VPS storage and business-continuity verification, proven bank-realized recovery, invoice approval or Lexware/Odoo/SAP connector. None is implied by 299 synthetic passing tests.
+
+
+## v0.13.1 – new-case 5% proposal, historical fee preservation (03.11.2026)
+
+**Verified source revision:** [d4747e56d91f83a470d8d9acb417fbc40ce4a450](https://github.com/tonnestate/LowHangingFruitMe/commit/d4747e56d91f83a470d8d9acb417fbc40ce4a450).
+
+- [Python Actions 41694402146](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41694402146): **completed/success**; **302 tests** on Python 3.11 and **302 tests** on Python 3.12, including real isolated MariaDB, approved synthetic recovery events, retroactive 3%-case preservation, new 5%-rate proposal, customer report, byte-exact source and ledger authorization checks. Normal packaging/CLI checks and compilation succeeded.
+- [Portal Actions 41694402050](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41694402050): **completed/success**; **10 Node unit tests**, production Next.js build and TypeScript checks, **15 browser acceptance tests** (desktop/tablet/mobile). Live website not deployed.
+- The earlier intermediate commits on this workstream temporarily failed CI due to a quotation typo and outdated browser fixture, both corrected in the above verified revision. Only the final passing runs are release evidence.
+- **Limitations:** SQL 007 migration was exercised against an isolated CI database, not against the operator's production environment. Historic-case preservation is regression-tested with a simulated 300-bps legacy record. This is not proof of old customer billing terms, accepted new contracts, real bank payments or real 5% fee collections. `fee_due_net` remains 0.00, and the independent RDG/success-fee, data-security and real-pilot gates remain open.
