@@ -414,6 +414,22 @@ def verify_restore(*, defaults_file, backup_dir, identity, target_database, veri
                 digest.update(data)
         if digest.hexdigest() != expected:
             raise DRError("ciphertext tampered or snapshot incomplete")
+    if (restore_upload_root is None) != (restore_source_root is None):
+        raise DRError("both isolated private restore roots must be provided together")
+    target_uploads = target_sources = None
+    if restore_upload_root is not None:
+        target_uploads = private_dir(restore_upload_root)
+        target_sources = private_dir(restore_source_root)
+        source_root = root.resolve(strict=True)
+        upload_dest = target_uploads.resolve(strict=True)
+        audit_dest = target_sources.resolve(strict=True)
+        if (upload_dest == audit_dest
+                or upload_dest.is_relative_to(source_root)
+                or audit_dest.is_relative_to(source_root)
+                or source_root.is_relative_to(upload_dest)
+                or source_root.is_relative_to(audit_dest)
+                or any(any(folder.iterdir()) for folder in (target_uploads,target_sources))):
+            raise DRError("isolated restore directories must be empty and distinct")
     table_counts(credentials, target_database, must_be_empty=True)
     child = subprocess.Popen(
         ["age", "-d", "-i", str(identity), str(root / PARTS[0])],
@@ -443,8 +459,6 @@ def verify_restore(*, defaults_file, backup_dir, identity, target_database, veri
             child.wait()
     if table_counts(credentials, target_database) != manifest["tables"]:
         raise DRError("restored database row counts differ from source snapshot")
-    if (restore_upload_root is None) != (restore_source_root is None):
-        raise DRError("both isolated private restore roots must be provided together")
     with ExitStack() as stack:
         if restore_upload_root is None:
             temporary = stack.enter_context(
@@ -454,17 +468,6 @@ def verify_restore(*, defaults_file, backup_dir, identity, target_database, veri
             target_uploads, target_sources = base / "uploads", base / "sources"
             target_uploads.mkdir(mode=0o700)
             target_sources.mkdir(mode=0o700)
-        else:
-            target_uploads = private_dir(restore_upload_root)
-            target_sources = private_dir(restore_source_root)
-            if (target_uploads.resolve() == target_sources.resolve()
-                    or target_uploads.is_relative_to(root)
-                    or target_sources.is_relative_to(root)
-                    or root.is_relative_to(target_uploads)
-                    or root.is_relative_to(target_sources)
-                    or any(any(target.iterdir()) for target in
-                           (target_uploads,target_sources))):
-                raise DRError("isolated restore directories must be empty and distinct")
         for name, component, target in (
             ("uploads",PARTS[1],target_uploads),
             ("sources",PARTS[2],target_sources),
