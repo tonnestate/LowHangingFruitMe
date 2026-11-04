@@ -298,3 +298,38 @@ Additional contract-rate regression: [Actions 41850007747](https://github.com/to
 - [Encrypted DR Actions 41892137388](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41892137388): **completed/success**, actual synthetic MariaDB 11.4 migrations 001–011, age-encrypted backup, Ed25519-signed manifest, isolated SQL plus private-files restore, replay/tamper refusal.
 - Operator procedure is `docs/UPLOAD_HOUSEKEEPING.md`. All writes require both `LHFM_UPLOAD_HOUSEKEEPING_APPROVED=YES` and `LHFM_UPLOAD_WRITES_STOPPED=YES`, with the upload writers **actually stopped independently**. Nothing schedules or exposes this command publicly. Only old uncompleted staging paths and DB states are in scope; final files, contract evidence, recovered amounts, billing packets and successful CLEAN uploads are never removed by this operator.
 - **Not proven:** customer-host operational maintenance, an independent scheduler/shutdown attestation, complete GDPR erasure or legal holds, live ClamAV/Docling/IdP, a real ERP golden dataset, commercial billing/independent legal signoff or end-to-end application restart. Synthetic CI success is not production release approval.
+
+## Protected customer-workspace and proxy hardening (04.11.2026)
+
+**PR #3 – independently authorized commercial billing workspace and tenant reset.**
+[PR #3](https://github.com/tonnestate/LowHangingFruitMe/pull/3) was merged to main as
+[d44e6ac1](https://github.com/tonnestate/LowHangingFruitMe/commit/d44e6ac1f9101a839f52fcad72a95b8210748c39).
+[Portal Actions 41917137301](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41917137301),
+[Python Actions 41917137283](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41917137283)
+and [DR Actions 41917137353](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41917137353)
+completed successfully for the identical PR head. No real payment, external invoice, live IdP or paid customer was tested.
+
+**PR #4 – bounded streaming responses and Docling proxy budget.**
+[PR #4](https://github.com/tonnestate/LowHangingFruitMe/pull/4) was merged as
+[9db6df38](https://github.com/tonnestate/LowHangingFruitMe/commit/9db6df3813fdb7ca514469a0317e10d7daab8511).
+[Portal Actions 41918309848](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41918309848),
+[Python Actions 41918309861](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41918309861)
+and [DR Actions 41918309857](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41918309857)
+all succeeded. Regression tests cover overlong and malformed Content-Length,
+chunked oversize responses, read-only maximum body buffering and a source-template
+time budget of 120s worker / 135s BFF / 150s Apache. No real VPS reverse proxy was installed or tested.
+
+**PR #5 – reopen saved audits after browser restart.**
+[PR #5](https://github.com/tonnestate/LowHangingFruitMe/pull/5) was merged as
+[7d474b26](https://github.com/tonnestate/LowHangingFruitMe/commit/7d474b262d4cd8bcf5cf2dd4ab4ee61afebd182b).
+The exact PR head passed [portal push Actions 41918692428](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41918692428),
+[Python PR Actions 41918867802](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41918867802)
+and [DR PR Actions 41918867748](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41918867748).
+The authorized resume path uses the existing tenant/entity/reviewer-bound audit GET;
+no business recalculation, new public endpoint or real cross-session OIDC customer acceptance is claimed.
+
+**Remaining production boundaries:** G0–G5 remain externally open: real IDP, real
+ClamAV and offline Docling host, independently reconciled ERP source completeness,
+actual bank/contract/legal/tax/invoice evidence, reliable customer deletion,
+monitoring/alerting and VPS end-to-end acceptance. Green synthetic CI is not
+production release approval.
