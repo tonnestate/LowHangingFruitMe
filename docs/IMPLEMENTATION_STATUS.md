@@ -165,7 +165,7 @@ Stale-/Reversal-/Correction-Prüfung und abgegrenzte BFF-Routen.
 sind NICHT nachgewiesen**.
 
 
-### v0.16 – signiertes verschlüsseltes Disaster Recovery (04.11.2026 – CI-Abnahme ausstehend)
+### v0.16 – signiertes verschlüsseltes Disaster Recovery (04.11.2026 – synthetische CI bestanden)
 
 Der dedizierte Befehl `lhfm-dr` erstellt während bestätigter
 Schreibstillstandsphase einen age-verschlüsselten MariaDB-Dump und zwei
@@ -178,3 +178,6 @@ Wiederherstellung schreibt nur in eine vorab erzeugte leere
 Kein unverschlüsselter Dump auf Festplatte, keine automatische
 Produktivrestaurierung. Operativer VPS-Test und unabhängige RPO-/RTO-
 Abnahme fehlen weiterhin.
+
+
+Die isolierte DR-Abnahme ist über [Actions 41855424879](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41855424879) mit tatsächlichem MariaDB-11.4-Dump/Import, age-Verschlüsselung, Ed25519-Signatur, Leer-Datenbank-Gate, privatem Original-Dateivergleich und Ablehnung von Replay/Fälschung **erfolgreich**. Die [Python-Gesamtsuite 41855296597](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41855296597) ist unter 3.11/3.12 mit je **430 bestandenen Tests** erfolgreich. Keine produktiven Kundenfiles oder VPS-Restore wurden verwendet.

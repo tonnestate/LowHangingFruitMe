@@ -124,5 +124,4 @@ separater GitHub-Actions-Lauf mit age + MariaDB-11.4-Dump und tatsächlichem
 isoliertem Einspielen von SQL sowie privaten Daten. Signed/encrypted
 Manifest, SHA-256-Ciphertext/Dateien, Original-Dateivergleich,
 Rollback-Sicherheit durch leere Restore-Namensräume, Replay- und
-Manipulationsabwehr sind zwingende Testkriterien. **CI-Endabnahme
-steht noch aus; externe Betriebserprobung bleibt OPEN.**
+Manipulationsabwehr sind zwingende Testkriterien. **PASS – synthetische DR-CI:** [Actions 41855424879](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41855424879) mit echter MariaDB 11.4, age, Ed25519-Signatur, einer getrennten Ziel-DB und zwei entschlüsselten Dateibäumen. **PASS – Python-CI:** [Actions 41855296597](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41855296597) mit je 430/430 Tests unter Python 3.11 und 3.12. Externe Betriebserprobung bleibt **OFFEN**.
