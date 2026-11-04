@@ -221,3 +221,8 @@ Die vollständige Statuskette EXTRACTED → NEEDS_CONFIRMATION → APPROVED → 
 ## v0.14-Härtung der parallelen Freigabevorgänge (04.11.2026)
 
 Revoke, Supersede und Audit-Guard müssen sämtliche konkurrierenden Sperren in der festen Reihenfolge **Revisionskopf → Approval → Reviewer-Grant** nehmen. Das Revoke-Verfahren ermittelt die Lineage zunächst ohne Row-Lock, sperrt danach den zugehörigen Revisionskopf und erst anschließend Approval und Reviewer. Legacy-Freigaben ohne Lineage bleiben für neue Audits blockiert. Diese Änderung behebt die zuvor uneinheitliche Sperrreihenfolge, stellt aber keinen vollständigen Entwurfs-/Nachtrags-Lifecycle und keinen produktiven Migrationsnachweis dar.
+
+
+### Kontrolliertes Datenbank-Rollout (04.11.2026)
+
+Migrationen werden ausschließlich als expliziter, autorisierter Wartungsvorgang ausgeführt. Die eigentliche API führt keine DDL aus. Ein MariaDB-Advisory-Lock schützt parallele Installer, jede bekannte Migration wird mit SHA-256 und einem vor Ausführung persistierten IN_PROGRESS-Marker registriert, ein partiell angewendetes DDL blockiert weitere Automatik. Altbestände ohne signierte Migrationshistorie werden weder stillschweigend übernommen noch rückwirkend neu bewertet. Für reale Altbestände bleiben Backup-/Restore-Probe, Schema-Reconciliation und kontrolliertes Go/No-Go verpflichtend.

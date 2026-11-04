@@ -115,3 +115,8 @@ Bestandsfreigaben bleiben offen.
 ### v0.14-Deadlock-Prävention (04.11.2026)
 
 Widerruf übernimmt jetzt dieselbe Reihenfolge von InnoDB-Row-Locks wie Audit-Guard und signierte Supersession (Head → Approval → Reviewer). Der neue CI-MariaDB-Test hält ausschließlich den Head-Lock und kontrolliert, dass Revoke nicht vorzeitig committen kann. Bis zum dazugehörigen GitHub-Actions-Erfolg nur als **implementiert, noch nicht CI-bestätigt** werten.
+
+
+### Revisionssichere SQL-Migrationshistorie (04.11.2026 – CI noch nicht bestätigt)
+
+Der neue CLI-Befehl `lhfm-migrate` ist unabhängig vom API-Start. Er unterstützt schreibfreien Plan, operatorbestätigte DDL-Installation, SHA256-Checksums, MariaDB Advisory Lock und vor DDL persistierte IN_PROGRESS-Marker. API-Start validiert jetzt auch die lückenlose Versionierung 001–008. CI-Setup nutzt denselben Runner auf leerer Testdatenbank. Echte Bestandsmigration, Wiederherstellungstest, Livebetrieb und kundenbezogene Vertrags-/Honorarfreigaben sind weiterhin offen.

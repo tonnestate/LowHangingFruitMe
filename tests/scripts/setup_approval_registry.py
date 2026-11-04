@@ -1,29 +1,21 @@
 """CI-only MariaDB schema setup and synthetic reviewer grant.
 
-NEVER run this against production; future provisioning requires an authenticated
-privileged operator and independently auditable identity verification.
+NEVER run this against production. The migration runner verifies the dedicated
+test database and tracks every DDL file/checksum before test data is inserted.
 """
 import os
 from pathlib import Path
 from lowhangingfruitme.approval_registry import ApprovalRegistry
+from lowhangingfruitme.migrations import migrate_database
 
 if __name__ == "__main__":
     if os.environ.get("LHFM_DB_NAME") != "lhfm_test":
         raise RuntimeError("CI setup only allowed in lhfm_test")
-    c = ApprovalRegistry.from_environment()._connect()
+    registry = ApprovalRegistry.from_environment()
+    migrate_database(registry._connect, Path("sql"), apply=True, ci_test_database=True)
+    c = registry._connect()
     try:
         with c.cursor() as cursor:
-            sql = "\n".join(
-                Path(path).read_text(encoding="utf-8")
-                for path in ("sql/001_approval_registry.sql", "sql/002_audit_api.sql", "sql/003_private_uploads.sql", "sql/004_recovery_ledger.sql", "sql/005_recovery_case_status.sql", "sql/006_mapping_approvals.sql", "sql/007_recovery_fee_policy.sql", "sql/008_rule_revisions.sql")
-            )
-            statements = "\n".join(
-                line for line in sql.splitlines()
-                if line.strip() and not line.lstrip().startswith("--")
-            )
-            for statement in statements.split(";"):
-                if statement.strip():
-                    cursor.execute(statement.strip())
             cursor.execute(
                 """INSERT INTO lhfm_reviewer_grants
                    (tenant_id, legal_entity_id, reviewer_id, role, active)

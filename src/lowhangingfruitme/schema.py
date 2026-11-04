@@ -27,9 +27,11 @@ REQUIRED_TABLES = frozenset({
     "lhfm_mapping_approval_events",
     "lhfm_rule_heads",
     "lhfm_rule_revision_events",
+    "lhfm_schema_migrations",
 })
 
 REQUIRED_COLUMNS: dict[str, frozenset[str]] = {
+    "lhfm_schema_migrations": frozenset({"migration_id", "checksum_sha256", "state", "applied_at"}),
     "lhfm_recovery_cases": frozenset({"fee_rate_bps"}),
     "lhfm_approval_records": frozenset({
         "agreement_id", "rule_id", "rule_revision",
@@ -104,6 +106,22 @@ def find_schema_mismatches(
     return problems
 
 
+def find_migration_ledger_mismatches(rows: list[dict[str, Any]]) -> list[str]:
+    """Reject gaps, unfinished DDL and unknown versions at API startup."""
+    if len(rows) != 8:
+        return ["migration ledger does not contain exactly versions 001..008"]
+    errors = []
+    for version, row in enumerate(rows, start=1):
+        if row.get("migration_id") != version or row.get("state") != "APPLIED":
+            errors.append("migration ledger has gap or unfinished version " + str(version))
+        checksum = row.get("checksum_sha256")
+        if not isinstance(checksum, str) or len(checksum) != 64 or any(
+            c not in "0123456789abcdef" for c in checksum
+        ):
+            errors.append("migration ledger checksum malformed for " + str(version))
+    return errors
+
+
 def require_operational_schema(connect: Callable[[], Any]) -> None:
     """Deny serving real API requests if schema 001..008 is incomplete/drifted.
 
@@ -129,10 +147,19 @@ def require_operational_schema(connect: Callable[[], Any]) -> None:
                 "WHERE TABLE_SCHEMA = DATABASE()"
             )
             constraints = list(cursor.fetchall())
+            ledger_rows = []
+            if any(row["TABLE_NAME"] == "lhfm_schema_migrations" for row in tables):
+                cursor.execute(
+                    "SELECT migration_id, checksum_sha256, state "
+                    "FROM lhfm_schema_migrations ORDER BY migration_id"
+                )
+                ledger_rows = list(cursor.fetchall())
     finally:
         db.close()
 
     problems = find_schema_mismatches(tables, columns, constraints)
+    if ledger_rows or any(row["TABLE_NAME"] == "lhfm_schema_migrations" for row in tables):
+        problems.extend(find_migration_ledger_mismatches(ledger_rows))
     if problems:
         raise SchemaMismatchError(
             "LowHangingFruitMe database is not compatible with current code: "
@@ -151,7 +178,7 @@ def main() -> int:
     except Exception as exc:
         print("SCHEMA_NOT_READY: " + str(exc), file=sys.stderr)
         return 2
-    print("SCHEMA_READY: required tables, columns and constraints verified")
+    print("SCHEMA_READY: migration ledger, tables, columns and constraints verified")
     return 0
 
 

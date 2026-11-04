@@ -7,6 +7,7 @@ import unittest
 from lowhangingfruitme.schema import (
     REQUIRED_TABLES, REQUIRED_COLUMNS, REQUIRED_CONSTRAINTS,
     SchemaMismatchError, find_schema_mismatches, require_operational_schema,
+    find_migration_ledger_mismatches,
 )
 
 
@@ -87,6 +88,16 @@ class SchemaCompatibilityUnitTests(unittest.TestCase):
             for item in find_schema_mismatches(tables, columns, constraints)
         ))
 
+    def test_schema_ledger_rejects_missing_and_incomplete_migrations(self):
+        rows = [
+            {"migration_id": n, "checksum_sha256": "a" * 64, "state": "APPLIED"}
+            for n in range(1, 9)
+        ]
+        self.assertEqual(find_migration_ledger_mismatches(rows), [])
+        self.assertTrue(find_migration_ledger_mismatches(rows[:-1]))
+        rows[4]["state"] = "IN_PROGRESS"
+        self.assertTrue(find_migration_ledger_mismatches(rows))
+
     def test_read_only_verifier_closes_connection_and_fails_closed(self):
         tables, columns, constraints = catalog()
         tables.clear()
@@ -100,7 +111,7 @@ class SchemaCompatibilityUnitTests(unittest.TestCase):
                 return False
             def execute(self, query):
                 self.index += 1
-                self.current = [tables, columns, constraints][self.index-1]
+                self.current = [tables, columns, constraints, []][self.index-1]
             def fetchall(self):
                 return self.current
 

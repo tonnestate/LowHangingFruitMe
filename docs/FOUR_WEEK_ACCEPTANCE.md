@@ -79,3 +79,8 @@ Keine Annahme, dass ein automatischer Wechsel der technischen Regelrevision eine
 ### Zusätzlicher v0.14-Parallelitätstest (04.11.2026)
 
 Ein isolierter echter MariaDB-Test muss beweisen, dass eine Widerrufstransaktion bei allein gesperrtem Regel-Revisionskopf blockiert, selbst wenn die Approval-Zeile frei ist. Erst nach Freigabe des Kopf-Locks darf der Widerruf committen; eine fehlende oder beschädigte Lineage darf nicht stillschweigend umgangen werden. Status bis zum erfolgreichen neuen CI-Lauf: **NICHT ABGENOMMEN**.
+
+
+### Migrations-Prozess-Gate (04.11.2026)
+
+Der Release benötigt den getrennten Schema-Migrationsrunner mit lesendem Plan, überprüften Prüfsummen, Lock, Status IN_PROGRESS/APPLIED, Abbruch bei Drift, korrekter Historisierung von 007/008 sowie verweigerter API-Ausführung bei fehlendem Ledger. CI-Fresh-DB und wiederholter No-Op müssen getestet sein. Stand vor CI: **CODE IMPLEMENTIERT / NICHT ABGENOMMEN**. Realer Restore-Test auf dem VPS bleibt separat OFFEN.

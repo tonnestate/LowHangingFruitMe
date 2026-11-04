@@ -148,3 +148,31 @@ Constraints, InnoDB-Engine oder der historische 3%-Default fehlen. Dabei werden
 **keine** alten Freigaben stillschweigend auf v0.14 hochgezogen und keine
 Produktivdaten geändert. Der Check ersetzt keine Betreiberfreigabe, kein
 Datenbankbackup, keinen Migrations-Runner und keine reale Pilotabnahme.
+
+
+### Kontrollierter SQL-Migrationsprozess (nicht beim API-Start)
+
+`lhfm-migrate --sql-dir /absoluter/pfad/zum/sql` zeigt ausstehende Migrationen
+**nur lesend**. Der Prozess prüft die gespeicherten SHA-256-Prüfsummen der
+ursprünglichen SQL-Dateien, lässt keine Lücken oder erneut gestartete
+Teil-Migrationen zu und verweigert die Übernahme bereits vorhandener Tabellen
+ohne überprüfbaren Migrationsverlauf.
+
+Vor produktiver Migration: Anwendung stoppen, Backup erstellen und dessen
+Wiederherstellung testen, Datenbankrechte und SQL-Dateien überprüfen. Nur nach
+Freigabe durch den Betreiber:
+
+~~~bash
+LHFM_MIGRATION_APPROVED=YES lhfm-migrate --sql-dir /absoluter/pfad/zum/sql --apply --backup-confirmed
+lhfm-schema-check
+~~~
+
+Der Runner nutzt einen MariaDB-Advisory-Lock gegen konkurrierende Migrationen.
+MariaDB-DDL ist nicht transaktional rollbackfähig: ein unterbrochener Lauf
+bleibt **IN_PROGRESS** im Ledger und verhindert einen stillen Retry bis zur
+manuellen DBA-Reconciliation. Das Schema muss nach dem Upgrade die Versionen
+001–008 als angewendet ausweisen, andernfalls verweigert die FastAPI den Start.
+Kein automatisches Upgrade fremder oder bereits ungeprüft manuell migrierter
+Produktivbestände. Die isolierte CI-Testdatenbank wird durch denselben Runner
+initialisiert. Die Dokumentation behauptet weiterhin **keine** reale
+VPS-Migration oder Kundenfreigabe.
