@@ -721,7 +721,11 @@ def create_app(*, service: AuthenticatedApprovalService,
                 status_code=response_code,
                 content={"audit_id":reserved["audit_id"],"status":reserved["status"],
                          "audit_executed":bool(reserved["audit_executed"]),
-                         "replayed":True},
+                         "replayed":True,
+                         "operator_reconciliation_required":(
+                             reserved["status"]=="PROCESSING"
+                             and reserved["elapsed_seconds"] is not None
+                             and int(reserved["elapsed_seconds"])>=3600)},
             )
         audit_id = reserved["audit_id"]
         try:
