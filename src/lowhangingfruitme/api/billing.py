@@ -177,8 +177,11 @@ class BillingHandoffService:
                 snapshot=self._snapshot(cur,case)
                 cur.execute(
                     """SELECT packet_id,state FROM lhfm_billing_packets
-                       WHERE case_id=%s AND ledger_sha256=%s FOR UPDATE""",
-                    (case["case_id"],snapshot["digest"]),
+                       WHERE case_id=%s AND ledger_sha256=%s
+                         AND accepted_terms_sha256=%s
+                         AND legal_clearance_sha256=%s FOR UPDATE""",
+                    (case["case_id"],snapshot["digest"],
+                     terms["accepted_terms_sha256"],terms["legal_clearance_sha256"]),
                 )
                 existing=cur.fetchone()
                 if existing:
@@ -318,7 +321,14 @@ class BillingHandoffService:
                 # Staleness must be visible even for a historically released packet.
                 try:
                     snapshot=self._snapshot(cur,case)
-                    stale=(snapshot["digest"]!=packet["ledger_sha256"])
+                    terms=self._terms(
+                        cur,tenant_id=tenant_id,legal_entity_id=legal_entity_id,
+                        agreement_id=case["agreement_id"],
+                        fee_rate_bps=int(case["fee_rate_bps"]),
+                    )
+                    stale=(snapshot["digest"]!=packet["ledger_sha256"]
+                           or packet["accepted_terms_sha256"]!=terms["accepted_terms_sha256"]
+                           or packet["legal_clearance_sha256"]!=terms["legal_clearance_sha256"])
                 except CaseConflict:
                     stale=True
                 cur.execute(

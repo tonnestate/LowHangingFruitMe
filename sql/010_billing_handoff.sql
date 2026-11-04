@@ -53,7 +53,8 @@ CREATE TABLE lhfm_billing_packets (
   released_at DATETIME(6) NULL,
   voided_at DATETIME(6) NULL,
   PRIMARY KEY (packet_id),
-  UNIQUE KEY uq_billing_packet_snapshot (case_id,ledger_sha256),
+  UNIQUE KEY uq_billing_packet_snapshot (case_id,ledger_sha256,
+    accepted_terms_sha256,legal_clearance_sha256),
   KEY idx_billing_case_history (case_id,created_at),
   CONSTRAINT fk_billing_packet_case FOREIGN KEY (case_id)
     REFERENCES lhfm_recovery_cases(case_id),

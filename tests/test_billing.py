@@ -213,3 +213,56 @@ class BillingHandoffTests(RecoveryPipelineTests):
             db.close()
         self.assertEqual(self.release(pid).status_code,403)
         self.assertEqual(self.packet(pid,actor="BILLING-SYN-2").status_code,403)
+
+    def test_amended_commercial_terms_require_new_proposal_and_release(self):
+        audit=self.audit_id()
+        self.provision_terms()
+        r,_=self.add_event(audit,"1000.00")
+        self.assertEqual(self.review(r.json()["event_id"]).status_code,200)
+        earlier=self.prepare(audit)
+        self.assertEqual(earlier.status_code,201,earlier.text)
+        old=earlier.json()["packet_id"]
+        db=self.registry._connect()
+        try:
+            with db.cursor() as cur:
+                cur.execute(
+                    """UPDATE lhfm_commercial_terms SET accepted_terms_sha256=%s
+                       WHERE tenant_id=%s AND legal_entity_id=%s
+                       AND agreement_id='AGR-1'""",
+                    (sha256(b"second synthetic customer approval").hexdigest(),
+                     self.tenant,self.entity),
+                )
+            db.commit()
+        finally:
+            db.close()
+        self.assertTrue(self.packet(old).json()["stale"])
+        self.assertEqual(self.release(old).status_code,409)
+        current=self.prepare(audit)
+        self.assertEqual(current.status_code,201,current.text)
+        self.assertNotEqual(old,current.json()["packet_id"])
+        self.assertEqual(self.release(current.json()["packet_id"]).status_code,200)
+
+    def test_terms_revocation_flags_previous_released_invoice_handoff(self):
+        audit=self.audit_id()
+        self.provision_terms()
+        r,_=self.add_event(audit,"400.00")
+        self.assertEqual(self.review(r.json()["event_id"]).status_code,200)
+        pid=self.prepare(audit).json()["packet_id"]
+        self.assertEqual(self.release(pid).status_code,200)
+        db=self.registry._connect()
+        try:
+            with db.cursor() as cur:
+                cur.execute(
+                    """UPDATE lhfm_commercial_terms SET active=0
+                       WHERE tenant_id=%s AND legal_entity_id=%s
+                       AND agreement_id='AGR-1'""",
+                    (self.tenant,self.entity),
+                )
+            db.commit()
+        finally:
+            db.close()
+        detail=self.packet(pid)
+        self.assertEqual(detail.status_code,200)
+        self.assertTrue(detail.json()["stale"])
+        self.assertTrue(detail.json()["requires_external_correction"])
+        self.assertEqual(self.prepare(audit).status_code,409)
