@@ -836,9 +836,11 @@ def create_app_from_environment() -> FastAPI:
     if not root:
         raise RuntimeError("LHFM_API_SOURCE_ROOT required")
     service = AuthenticatedApprovalService.from_environment()
-    # Read-only startup gate: never serve against missing SQL 007/008 structures.
-    from ..schema import require_operational_schema
-    require_operational_schema(service.registry._connect)
+    # The actual factory is a production-only boundary. Never instantiate even
+    # a partially functional financial API without private storage, valid
+    # migration ledger, live ClamAV and verified isolated Docling subprocess.
+    from ..runtime import verify_runtime
+    verify_runtime(service_factory=lambda: service)
     store = PrivateAuditStore(registry=service.registry, source_root=root)
     upload_root = os.environ.get("LHFM_UPLOAD_ROOT")
     scanner_socket = os.environ.get("LHFM_CLAMD_UNIX_SOCKET")
