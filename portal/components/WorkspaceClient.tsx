@@ -99,6 +99,12 @@ export function WorkspaceClient(){
  const [caseReason,setCaseReason]=useState("");
  const [financeDecision,setFinanceDecision]=useState<"CONFIRM"|"REJECT">("CONFIRM");
  const [busy,setBusy]=useState(false),[message,setMessage]=useState("");
+ const resetScopedWorkspace=()=>{
+  setActor("");setSources({});setPreviews({});setMaps({transactions:{},settlements:{}});
+  setCandidateId("");setSegments([]);setBundle("");setAudit(null);setReport(null);
+  setLedger(null);setFinanceEvent("");
+  setReview({contract:false,mapping:false,tx:false,st:false,agreements:false});
+ };
  const scope={tenant_id:tenant.trim(),legal_entity_id:entity.trim()};
  const qs=new URLSearchParams(scope).toString();
  const run=async(task:()=>Promise<string>)=>{
@@ -135,7 +141,8 @@ export function WorkspaceClient(){
   if(!co.name.toLowerCase().endsWith(".pdf"))throw new Error("VERTRAG_NUR_PDF");
   const c=await upload(co,"CONTRACT_PDF");
   setSources({transactions:a,settlements:b,contract:c});
-  setBundle("");setAudit(null);setLedger(null);setPreviews({});
+  setBundle("");setAudit(null);setReport(null);setLedger(null);setPreviews({});
+  setFinanceEvent("");
   setCandidateId("");setSegments([]);setRule(v=>({...v,evidence:""}));
   return "Die drei Quelldateien sind geprüft und gespeichert. Fachfreigabe steht aus.";
  });
@@ -203,7 +210,8 @@ export function WorkspaceClient(){
   const response=await call<{bundle_id:string}>("bundles",jsonBody({
    ...payload,candidate_id:candidateId,
   }));
-  setBundle(response.bundle_id);setAudit(null);setLedger(null);
+  setBundle(response.bundle_id);setAudit(null);setReport(null);setLedger(null);
+  setFinanceEvent("");
   return "Quellen und Vertragsregel signiert registriert: "+response.bundle_id;
  });
  const calculate=()=>run(async()=>{
@@ -276,8 +284,8 @@ export function WorkspaceClient(){
   {message&&<p role="status" className="workspace-notice">{message}</p>}
   <fieldset disabled={busy}><legend>1 · Unternehmen und Berechtigung</legend>
    <div className="workspace-grid">
-    <label>Mandant-ID<input value={tenant} onChange={e=>{setTenant(e.target.value);setActor("");}}/></label>
-    <label>Gesellschafts-ID<input value={entity} onChange={e=>{setEntity(e.target.value);setActor("");}}/></label>
+    <label>Mandant-ID<input value={tenant} onChange={e=>{setTenant(e.target.value);resetScopedWorkspace();}}/></label>
+    <label>Gesellschafts-ID<input value={entity} onChange={e=>{setEntity(e.target.value);resetScopedWorkspace();}}/></label>
    </div>
    <button className="button-secondary" type="button" onClick={authorize}>Berechtigung prüfen</button>
    {actor&&<p>Angemeldet als berechtigter Reviewer: {actor}</p>}
