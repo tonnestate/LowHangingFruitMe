@@ -130,3 +130,8 @@ keine neue öffentliche HTTP-Route. Der Operator muss erst die
 Vorschau prüfen und dann beide Apply-Freigaben vorhalten. Die
 Datensätze und Prüfschritte sind im
 `docs/UPLOAD_HOUSEKEEPING.md` dokumentiert.
+
+
+## Abgesicherte BFF-Antworten und Docling-Zeitbudget (04.11.2026)
+
+Die Next.js-BFF-Grenze begrenzt eingehende Backend-Antworten während des Streamings auf 4 MiB statt erst nach vollständiger Pufferung. Ein zu großes oder ungültiges Content-Length sowie ein überlaufender Chunk-Stream werden mit HTTP 502 abgelehnt; binäre Report-Bytes bleiben unverändert. Für POST /v1/contract-candidates gelten 135 Sekunden BFF-Timeout wegen des 120-Sekunden-Docling-Workerlimits. Die Apache-VirtualHost-Vorlage platziert daher /api/finance/ mit 150 Sekunden vor dem allgemeinen 45-Sekunden-Website-Proxy. Der Runtime-Host muss diese Template-Reihenfolge und die tatsächlichen Netzwerk-/Proxy-Zeitlimits separat prüfen. Eine synchrone HTTP-Langzeitverarbeitung ist keine persistente Jobqueue; Neustart-, Wiederaufnahme- und Lasttests auf dem VPS bleiben offen.

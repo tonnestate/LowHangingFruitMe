@@ -3,6 +3,8 @@ import { getToken, encode } from "next-auth/jwt";
 import {authCookieName, sessionCookieNames, clearAuthCookies,
         rotateAuthCookies, renewApiCredential} from "../../../../lib/oidc-renewal.mjs";
 import { sameOrigin, trustedApiOrigin, verifiedApiPath } from "../../../../lib/private-api.mjs";
+import {readBoundedResponse,UpstreamLimitError,upstreamTimeoutMs}
+ from "../../../../lib/limited-response.mjs";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -128,15 +130,20 @@ async function forward(request:NextRequest,ctx:Context){
   try{
     const upstream=await fetch(url,{
       method,headers,body:body?Buffer.from(body):undefined,
-      cache:"no-store",signal:AbortSignal.timeout(45000),
+      cache:"no-store",signal:AbortSignal.timeout(upstreamTimeoutMs(method,apiPath)),
       redirect:"error",
     });
 
-    if(/\/report\.(pdf|xlsx|json)$/.test(apiPath) && upstream.ok){
-      const size=Number(upstream.headers.get("content-length")||"0");
-      if(size>4*1024*1024)return fail(502,"REPORT_TOO_LARGE");
-      const bytes=await upstream.arrayBuffer();
-      if(bytes.byteLength>4*1024*1024)return fail(502,"REPORT_TOO_LARGE");
+    const report=/\/report\.(pdf|xlsx|json)$/.test(apiPath) && upstream.ok;
+    let bytes:ArrayBuffer;
+    try{
+      bytes=await readBoundedResponse(upstream,4*1024*1024);
+    }catch(error){
+      if(error instanceof UpstreamLimitError)
+        return fail(502,report?"REPORT_TOO_LARGE":"UPSTREAM_RESPONSE_TOO_LARGE");
+      throw error;
+    }
+    if(report){
       const fmt=apiPath.split(".").at(-1);
       const kind=fmt==="pdf"?"application/pdf":
        fmt==="xlsx"?"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
@@ -149,9 +156,7 @@ async function forward(request:NextRequest,ctx:Context){
         "Content-Disposition":'attachment; filename="lhfm-'+match[1]+"."+fmt+'"',
       }}),rotatedCookies);
     }
-    const result=await upstream.text();
-    if(result.length>4*1024*1024)return fail(502,"UPSTREAM_RESPONSE_TOO_LARGE");
-    return withSessionCookies(new Response(result,{
+    return withSessionCookies(new Response(bytes,{
       status:upstream.status,
       headers:{"Content-Type":"application/json; charset=utf-8",
                "Cache-Control":"no-store",
