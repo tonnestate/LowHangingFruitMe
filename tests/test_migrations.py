@@ -81,7 +81,7 @@ class MigrationSafetyUnitTests(unittest.TestCase):
             verify_history([{
                 "migration_id": i, "checksum_sha256": "0" * 64,
                 "state": "APPLIED",
-            } for i in range(1, 12)], scripts)
+            } for i in range(1, len(scripts) + 2)], scripts)
 
 
 @unittest.skipUnless(bool(os.environ.get("LHFM_DB_HOST")), "MariaDB CI required")
