@@ -5,7 +5,10 @@ export const oidcConfigured = Boolean(
   process.env.AUTH_OIDC_ISSUER &&
   process.env.AUTH_OIDC_CLIENT_ID &&
   process.env.AUTH_OIDC_CLIENT_SECRET &&
-  process.env.AUTH_OIDC_SCOPES
+  process.env.AUTH_OIDC_SCOPES &&
+  process.env.AUTH_OIDC_TOKEN_ENDPOINT &&
+  process.env.AUTH_URL &&
+  process.env.AUTH_URL.startsWith("https://")
 );
 
 const providers = oidcConfigured ? [{
@@ -25,9 +28,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   callbacks: {
     async jwt({ token, account }) {
       if (account) {
-        // Stored ONLY in Auth.js encrypted JWT cookie, never in session JSON.
-        token.apiAccessToken = account.access_token ?? undefined;
-        token.apiExpiresAt = account.expires_at ?? 0;
+        // A real, renewable confidential-client credential is mandatory.
+        if (!account.access_token || !account.expires_at || !account.refresh_token) {
+          throw new TypeError("OIDC provider must return renewable API credentials");
+        }
+        // All three values stay inside the encrypted HttpOnly Auth.js cookie.
+        // Never include them in the browser-visible session callback.
+        token.apiAccessToken = account.access_token;
+        token.apiExpiresAt = account.expires_at;
+        token.apiRefreshToken = account.refresh_token;
       }
       return token;
     },
