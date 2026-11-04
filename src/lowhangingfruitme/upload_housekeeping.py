@@ -145,8 +145,9 @@ def prune_stale_uploads(
                     )
                     if cursor.rowcount != 1:
                         raise HousekeepingBlocked("stale upload state changed during cleanup")
-                    # Revalidate no path was swapped after the earlier lstat;
-                    # the operator must have stopped API uploads entirely.
+                    # Validate every inode BEFORE unlinking either name:
+                    # legitimate .part/.inspect names are hard links, and the
+                    # link count changes as soon as one of them is removed.
                     for path, before in files:
                         info = path.lstat()
                         if (not stat.S_ISREG(info.st_mode)
@@ -159,6 +160,7 @@ def prune_stale_uploads(
                                     before.st_mtime_ns)
                                 or info.st_mtime_ns >= int(cutoff_ns)):
                             raise HousekeepingBlocked("partial upload mutated during cleanup")
+                    for path, _before in files:
                         path.unlink()
                     cursor.execute(
                         "INSERT INTO lhfm_upload_housekeeping_events "
