@@ -79,7 +79,7 @@ class AuditReconciliationTests(unittest.TestCase):
         self.ids.append(audit_id)
         return audit_id
 
-    def run(self,audit_id,*,apply=False,approvals=None,entity=ENTITY,
+    def reconcile(self,audit_id,*,apply=False,approvals=None,entity=ENTITY,
             incident_ref="INC-SYN-123"):
         return reconcile_abandoned_audit(
             connect=self.connect,audit_id=audit_id,tenant_id=TENANT,
@@ -115,7 +115,7 @@ class AuditReconciliationTests(unittest.TestCase):
 
     def test_dry_run_never_changes_state_or_event(self):
         audit_id=self.reservation()
-        result=self.run(audit_id)
+        result=self.reconcile(audit_id)
         self.assertEqual(result["mode"],"dry_run")
         self.assertTrue(result["eligible_after_worker_shutdown"])
         self.assertEqual(self.state(audit_id)["status"],"PROCESSING")
@@ -128,13 +128,13 @@ class AuditReconciliationTests(unittest.TestCase):
                           {"LHFM_AUDIT_WORKERS_STOPPED":"YES"}):
             with self.subTest(approvals=approvals):
                 with self.assertRaisesRegex(AuditReconciliationBlocked,"approval"):
-                    self.run(audit_id,apply=True,approvals=approvals)
+                    self.reconcile(audit_id,apply=True,approvals=approvals)
         self.assertEqual(self.state(audit_id)["status"],"PROCESSING")
 
     def test_abandoned_run_is_failed_once_with_immutable_event(self):
         audit_id=self.reservation()
         old=self.state(audit_id)["idempotency_key"]
-        result=self.run(audit_id,apply=True,approvals=APPROVED)
+        result=self.reconcile(audit_id,apply=True,approvals=APPROVED)
         self.assertEqual(result["resulting_state"],"FAILED")
         self.assertFalse(result["retry_automatic"])
         self.assertEqual(self.state(audit_id)["idempotency_key"],old)
@@ -143,14 +143,14 @@ class AuditReconciliationTests(unittest.TestCase):
                          [{"operator_id":OPERATOR,"incident_ref":"INC-SYN-123",
                            "prior_state":"PROCESSING"}])
         with self.assertRaisesRegex(AuditReconciliationBlocked,"only unfinished"):
-            self.run(audit_id,apply=True,approvals=APPROVED)
+            self.reconcile(audit_id,apply=True,approvals=APPROVED)
         self.assertEqual(len(self.events(audit_id)),1)
 
     def test_recent_processing_cannot_be_failed(self):
         audit_id=self.reservation(minutes=1)
-        self.assertFalse(self.run(audit_id)["eligible_after_worker_shutdown"])
+        self.assertFalse(self.reconcile(audit_id)["eligible_after_worker_shutdown"])
         with self.assertRaisesRegex(AuditReconciliationBlocked,"too recent"):
-            self.run(audit_id,apply=True,approvals=APPROVED)
+            self.reconcile(audit_id,apply=True,approvals=APPROVED)
         self.assertEqual(self.state(audit_id)["status"],"PROCESSING")
 
     def test_completed_reviewed_failed_and_ambiguous_rows_rejected(self):
@@ -165,17 +165,17 @@ class AuditReconciliationTests(unittest.TestCase):
             with self.subTest(data=data):
                 audit_id=self.reservation(**data)
                 with self.assertRaisesRegex(AuditReconciliationBlocked,"only unfinished"):
-                    self.run(audit_id,apply=True,approvals=APPROVED)
+                    self.reconcile(audit_id,apply=True,approvals=APPROVED)
                 self.assertEqual(self.events(audit_id),[])
 
     def test_scope_and_input_validation_fails_closed(self):
         audit_id=self.reservation()
         with self.assertRaisesRegex(AuditReconciliationBlocked,"not found"):
-            self.run(audit_id,apply=True,approvals=APPROVED,entity="OTHER-ENTITY")
+            self.reconcile(audit_id,apply=True,approvals=APPROVED,entity="OTHER-ENTITY")
         with self.assertRaisesRegex(AuditReconciliationBlocked,"invalid"):
-            self.run("../../../etc/passwd")
+            self.reconcile("../../../etc/passwd")
         with self.assertRaisesRegex(AuditReconciliationBlocked,"incident"):
-            self.run(audit_id,incident_ref="\nINVALID")
+            self.reconcile(audit_id,incident_ref="\nINVALID")
         self.assertEqual(self.state(audit_id)["status"],"PROCESSING")
 
 
