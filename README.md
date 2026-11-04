@@ -277,3 +277,16 @@ Kunden-API nicht. Eine getrennte systemd-Vorlage bindet die API nur an
 `127.0.0.1:8127`; Apache sieht ausschließlich das bereits vorhandene
 Next.js-Portal. Die ausführbaren Operatorchecks und die noch offenen
 realen VPS-Abnahmen stehen unter [Runtime-Deployment](docs/RUNTIME_DEPLOYMENT.md).
+
+
+### Verwaiste Uploads ohne Kundendatenlöschung (v0.18)
+
+Mit `lhfm-upload-housekeeping` gibt es nun einen standardmäßig
+schreibgeschützten Betreiberlauf, der nach einer 24-stündigen
+Sicherheitsfrist ausschließlich unvollständige `PENDING`- und
+`RECEIVING`-Uploads kontrolliert in `REJECTED` überführen kann.
+Abgebrochene technische `.part`- und `.inspect`-Dateien werden nur
+unter einem ausdrücklich bestätigten Wartungsstopp und nach
+Dateisicherheitsprüfungen entfernt; ein eigener SQL-011-Audit-Eintrag
+pro Fall bleibt bestehen. Fertige `CLEAN`-Dateien, Audits und
+Finanzbelege sind ausgeschlossen. [Runbook](docs/UPLOAD_HOUSEKEEPING.md).

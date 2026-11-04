@@ -134,3 +134,15 @@ innerhalb des eingespielten Snapshot-Verzeichnisses liegen.
 Diese Regeln verhindern das versehentliche Einschließen eigener
 Trust-Anker und die Verifikation gegen einen vom Backup selbst
 mitgelieferten Public Key.
+
+
+## Bezug zum neuen technischen Upload-Housekeeping (v0.18)
+
+Das neue `lhfm-upload-housekeeping` entfernt ausschließlich
+technische, nie erfolgreich abgeschlossene Uploadfragmente nach
+geprüftem Betreiber-Wartungsstopp. Es bearbeitet **keine**
+CLEAN-Dateien oder Belege. Das DR-Backup muss weiterhin die
+vollständige MariaDB und beide privaten Datenbäume erfassen,
+insbesondere die historischen `lhfm_upload_housekeeping_events`
+seit SQL-Migration 011. Weitere Voraussetzungen unter
+`docs/UPLOAD_HOUSEKEEPING.md`.

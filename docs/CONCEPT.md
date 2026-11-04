@@ -292,3 +292,20 @@ Der öffentliche Webserver proxyiert nur das Portal; die Finanz-API
 bindet ausschließlich loopback. Diese Betriebsgrenzen sind im Code
 und als sicherheitsorientierte Templates vorhanden, jedoch ohne
 VPS-Installation weiterhin nicht extern abgenommen.
+
+
+## v0.18 – Lebenszyklus abgebrochener Uploads (04.11.2026)
+
+Ein abgebrochener HTTP-Upload kann nach einer bereits reservierten
+Datenbanktransition `RECEIVING` zurücklassen, auch wenn kein
+Scanner-Urteil oder endgültiges Kundenobjekt existiert. Ein separater
+Wartungsprozess bearbeitet ausschließlich solche unvollständigen
+`PENDING`-/`RECEIVING`-Uploads nach Ablauf der definierten
+Staging-Frist plus 24 Stunden. Die Datenbanktransition auf
+`REJECTED` erhält einen eigenständigen Audit-Eintrag mit
+vorherigem Zustand und Anzahl der bereinigten technischen
+Dateinamen. Die drei relevanten Trust-Boundaries bleiben getrennt:
+noch nicht fertiggestellter Intake, erfolgreich geprüfter Upload und
+rechts-/finanzrelevante freigegebene Evidenz. Für letztere findet
+**keine** automatische Löschung statt; ein spätere juristisch
+freigegebener Retention-/Löschprozess ist ein separates Produktgate.

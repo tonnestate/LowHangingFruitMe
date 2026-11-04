@@ -207,3 +207,17 @@ VPS-Installation und realer End-to-End-Betrieb bleiben offen.
 
 
 **CI-Abnahme:** [Python Actions 41866179166](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41866179166) ist **completed/success** mit 443 Tests unter Python 3.11 und 443 unter 3.12. Enthalten sind Negativprüfungen für root-UID, DB-Rootuser, fremde/systeminterne Datenbanken, nichtlokale DB, Symlink-/Rechtefehler, überlappende Verzeichnisse, fehlende ClamAV-/Docling-Konfiguration und die zwingende Laufzeitprüfung der echten FastAPI-Factory. Der installierte CLI-Befehl lehnt die synthetische CI-Umgebung erwartungsgemäß mit Exit-Code 2 ab. Paket-Build und Wheel-Smoke bestanden. Der [synthetische DR-Lauf 41864436497](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41864436497) ist ebenfalls erfolgreich. Reale VPS-Installation/IdP/Docling/ClamAV/End-to-End-Probe bleibt offen.
+
+
+### v0.18 – abgebrochene Upload-Intents und temporäre Dateien (04.11.2026 – CI ausstehend)
+
+Implementiert ist ein ausdrücklich operator-only und grundsätzlich
+schreibgeschützter Prozess zur zeitverzögerten Bereinigung alter
+`PENDING`-/`RECEIVING`-Intents. SQL-011 ergänzt den selektiven
+State/Expiry-Index sowie einen pro Upload eindeutigen,
+fortdauernden Bereinigungs-Audit-Eintrag. Ein aktiver Wartungsstopp
+muss ausdrücklich bestätigt werden. Final-Dateien und geschützte
+`CLEAN`-/Finanzakten bleiben unverändert, auch bei abgelaufener
+Uploadfrist. Die technischen Negativ- und MariaDB-Tests laufen
+separat; ein realer VPS-Test oder ein vollständiger
+DSGVO-Retention-/Erasure-Prozess wird nicht behauptet.

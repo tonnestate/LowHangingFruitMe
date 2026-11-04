@@ -24,7 +24,7 @@ Echte Buchungs-/Bank-/Verrechnungsbelege unabhängig prüfen, Teilrealisierung, 
 
 ## G5 – Release und Observability: OPEN
 
-Python-/Browser-/Sicherheits-/Lasttests, reproduzierbare dependency locks/SBOM, Schema-Migration 001..010 mit Prüfsummen und tatsächlich wiederhergestelltem Backup, Release-Rollback, Monitoring/Alerting, Fehlerbehandlung, Secrets- und Schlüsselrotation, DSGVO-Datenlöschung und Incident-Runbook auf dem vorgesehenen VPS abnehmen. Vorher `PUBLIC_LAUNCH_APPROVED=false` belassen.
+Python-/Browser-/Sicherheits-/Lasttests, reproduzierbare dependency locks/SBOM, Schema-Migration 001..011 mit Prüfsummen und tatsächlich wiederhergestelltem Backup, Release-Rollback, Monitoring/Alerting, Fehlerbehandlung, Secrets- und Schlüsselrotation, DSGVO-Datenlöschung und Incident-Runbook auf dem vorgesehenen VPS abnehmen. Vorher `PUBLIC_LAUNCH_APPROVED=false` belassen.
 
 **Vollständige Produktivfreigabe:** Erst wenn für G0–G5 konkrete externe Belege, zuständige Entscheider und Abnahmedaten vorliegen. Keine Behauptung einer erfolgten Freigabe aus CI allein.
 
@@ -73,3 +73,15 @@ fehlende ClamAV-/Docling-Bereitschaft und SQL-Drift. **G5 ist weiterhin
 OFFEN**, bis die systemd-Units und HTTPS-/Apache-/OIDC-/Document-Pfade
 auf dem tatsächlichen Betreiber-VPS überprüft und vom Betreiber
 abgenommen sind. Siehe `docs/RUNTIME_DEPLOYMENT.md`.
+
+
+### G1/G5 – kein Leck durch abgebrochene technische Uploads (v0.18)
+
+Mit SQL-011 und `lhfm-upload-housekeeping` wird eine bisher fehlende
+technische Aufräumstrecke für überfällige, niemals erfolgreich
+abgeschlossene Upload-Intents ergänzt. Sie ist standardmäßig
+read-only, zeitlich um 24 Stunden verzögert und nur bei bestätigtem
+Wartungs-/Schreibstopp ausführbar. Final-Dateien, CLEAN-Uploads,
+Audits, Verträge und Recovery-Billing-Evidenz sind ausgenommen.
+**Offen bleiben die echte Betreiberabnahme und ein rechtlich
+freigegebener Kunden-Datenretention-/Löschprozess.**

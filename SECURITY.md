@@ -68,3 +68,8 @@ The customer-facing contract parser requires a root-owned executable launcher an
 ## Commercial fee handoff access boundary
 
 Billing operators require cryptographically verified API scopes AND separately maintained active MariaDB grants. A customer reviewer cannot create billable authority. Commercial fee terms are provisioned out of band, no HTTP client can assert legal clearance. The service requires separate preparer/releaser identities, revalidates the complete linked recovery event record under the locked case row, refuses ambiguous/reversed/bounded recovery data and exposes stale packets for documented manual correction. This software never becomes the sole bank evidence, legally accepted customer engagement or actual invoice issuer. A `RELEASED` packet has `invoice_created=false` by design.
+
+
+## Unfinished upload housekeeping – technical-only retention boundary (v0.18)
+
+The application never deletes CLEAN customer documents during housekeeping. Only abandoned PENDING/RECEIVING intents whose 15-minute lease expired at least 24 hours earlier are conditionally marked REJECTED, after explicit offline writer shutdown and operator confirmation. Partial-file removal is limited to canonical UUID .part and .inspect paths, private 0700 storage, verified ownership/inode/age and absence of any final completed filename. Immutable MariaDB event rows record the action. Default mode is nonmutating dry-run; apply cannot run without two explicit approval environment variables. Full customer data retention and GDPR deletion are independent, unimplemented, legally controlled workflows.

@@ -141,3 +141,15 @@ Kompatibilität, Scanner-PING und Docling-Netzwerk-Sandbox werden im
 separaten CLI `lhfm-runtime-check` geprüft, dessen Exitcode den
 systemd-Start blockiert. Die API-Vorlage bindet nur
 `127.0.0.1:8127` und nutzt eine eigene UID. **PASS – synthetische Python-CI:** [Actions 41866179166](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41866179166), 443 Tests auf Python 3.11 und 443 auf Python 3.12. Zusätzlich das installierte `lhfm-runtime-check` im ungeprüften CI-Environment ausdrücklich mit Exit 2 abgewiesen, sowie Build/Wheel-Smoke bestanden. VPS/TLS/IdP/ClamAV/Docling vollständig extern offen.
+
+
+### v0.18 – kontrollierte Bereinigung verwaister technischer Uploads (04.11.2026)
+
+Neu: SQL-011-Index und unveränderliche Cleanup-Ereignisse, `lhfm-upload-housekeeping`
+mit read-only Dry-run und durch Wartungsfreigaben gesichertem Apply;
+nur mehr als 24 Stunden überfällige PENDING/RECEIVING-Intents,
+maximal 100 pro Lauf. Abnahme verlangt reale MariaDB-Negativtests zu
+unvollständigen `.part`-/`.inspect`-Dateien, Hardlink-/Symlink-
+Ablehnung, frischer Datei-Mtime, vollständigen Kunden-CLEAN-Dateien,
+unklarem Final-File, Wiederholung und fehlenden Autorisierungen.
+**CI-Abnahme ausstehend;** kein Kunden-/VPS-/DSGVO-Retentionstest.

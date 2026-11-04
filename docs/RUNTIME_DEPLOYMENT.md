@@ -119,3 +119,14 @@ ERP data, legally approved client contract or operating-recovery RPO/RTO.
 No existing Apache vhost, customer database or document archive has been
 touched. Synthetic CI plus a service template is **not** production
 approval. See `docs/GO_LIVE_GATE.md` (G0–G5).
+
+
+## Offline-Wartungsbefehl für abgebrochene Uploads (v0.18)
+
+Nach genehmigtem Wartungsfenster und überprüftem Stopp sämtlicher
+API-/Upload-Worker ist `lhfm-upload-housekeeping` als separate
+unprivilegierte CLI installierbar; **kein automatischer Timer** und
+keine neue öffentliche HTTP-Route. Der Operator muss erst die
+Vorschau prüfen und dann beide Apply-Freigaben vorhalten. Die
+Datensätze und Prüfschritte sind im
+`docs/UPLOAD_HOUSEKEEPING.md` dokumentiert.

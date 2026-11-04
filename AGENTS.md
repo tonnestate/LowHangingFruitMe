@@ -114,3 +114,8 @@ in the snapshot may establish trust for restore verification.
 ## Production API runtime boundary (v0.17)
 
 The actual `create_app_from_environment` startup MUST invoke the same read-only `verify_runtime` gate as the systemd operator preflight. Reject root UID, remote MariaDB, nonprivate or overlapping upload/source trees, missing token configuration, unresponsive actual ClamAV and unisolated Docling. Neither the synthetic `create_app` test helper nor an alive HTTP response can substitute for a real boot. Bind the financial API strictly to loopback 127.0.0.1:8127, separate its UID and root-owned 0600 environment secrets from Next.js/Apache, and keep reviewed source promotion writable only to the dedicated API UID. No live server changes without target-host evidence. See `docs/RUNTIME_DEPLOYMENT.md`.
+
+
+## v0.18 – abandoned private upload housekeeping
+
+Never treat technical stale-upload cleanup as legal erasure. The operator-only `lhfm-upload-housekeeping` MUST default to dry-run. Apply only with explicit maintenance approval AND independently stopped API upload writers. Only expiry-aged (24h after intent expiration) PENDING/RECEIVING rows are eligible; never clean/rejected/evidenced customer files, final upload names, contracts or financial ledgers. Each conditional SQL transition writes a unique housekeeping event in the same transaction. Validate canonical UUID names, exact private file owner/mode/inodes, and abort on ambiguous completed files or unexpected hardlinks. No cron timer or HTTP endpoint may invoke housekeeping. Schema migration 011 is pinned, reviewed and cannot be applied at API startup.
