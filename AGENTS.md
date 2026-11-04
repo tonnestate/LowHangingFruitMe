@@ -102,3 +102,10 @@ Never infer commercial authorization from a synthetic bonus amount, a customer r
 ## Offline encrypted disaster recovery evidence – operational gate G5
 
 Backup must protect all three shared state surfaces: MariaDB plus private CLEAN-upload and audit/source roots. Never claim a DB-only dump is a complete recovery. The `lhfm-dr` operator CLI refuses unconfirmed maintenance, unencrypted intermediates, unsigned backup manifests, hardlink/symlink leakage, nonempty target databases or any restore database without the `lhfm_restore_` prefix. Only age-encrypted components with an independently pinned Ed25519 manifest verification key can be replayed into an empty disposable schema. Real VPS and full application stack recovery, RPO/RTO, key custody, restoration of production files and offsite retention still require external verification. See `docs/DISASTER_RECOVERY.md`.
+
+
+Backup trust anchors are always out-of-band: MariaDB client defaults,
+Ed25519 signing key, Ed25519 verifier and age identity must remain outside
+the archived file trees and backup directory; nested upload/source roots
+are not permitted. Neither a backup's own manifest nor a public key included
+in the snapshot may establish trust for restore verification.

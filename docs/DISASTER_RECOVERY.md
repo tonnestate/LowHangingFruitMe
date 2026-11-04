@@ -119,3 +119,18 @@ Backupbestand, verfälschte Signaturen und wiederholtes Einspielen
 müssen scheitern; entschlüsselte Dateien werden bytegenau verglichen.
 Dieser Test beweist **nicht** die Verfügbarkeit von echten Dokumenten,
 Dateisystem-Snapshots, Offsite-Disaster-Recovery oder juristischer Freigabe.
+
+
+## Zusätzliche Schlüssel-/Verzeichnisgrenzen
+
+Der Sicherungslauf lehnt **verschachtelte private Quellverzeichnisse** ab:
+Upload- und Audit-Snapshot-Ablagen müssen physisch disjunkt sein.
+Sowohl der MariaDB-Client-Credential-Satz als auch der Ed25519-
+Signaturschlüssel müssen vollständig **außerhalb** dieser beiden
+Quellverzeichnisse und außerhalb des neuen Backup-Ziels liegen.
+Während des Restore darf weder die age-Entschlüsselungsidentität noch
+der separat gepinnte Ed25519-Public-Key oder der DB-Credential-Satz
+innerhalb des eingespielten Snapshot-Verzeichnisses liegen.
+Diese Regeln verhindern das versehentliche Einschließen eigener
+Trust-Anker und die Verifikation gegen einen vom Backup selbst
+mitgelieferten Public Key.

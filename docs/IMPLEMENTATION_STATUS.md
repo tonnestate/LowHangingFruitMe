@@ -181,3 +181,10 @@ Abnahme fehlen weiterhin.
 
 
 Die isolierte DR-Abnahme ist über [Actions 41855424879](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41855424879) mit tatsächlichem MariaDB-11.4-Dump/Import, age-Verschlüsselung, Ed25519-Signatur, Leer-Datenbank-Gate, privatem Original-Dateivergleich und Ablehnung von Replay/Fälschung **erfolgreich**. Die [Python-Gesamtsuite 41855296597](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41855296597) ist unter 3.11/3.12 mit je **430 bestandenen Tests** erfolgreich. Keine produktiven Kundenfiles oder VPS-Restore wurden verwendet.
+
+
+Die abschließende DR-Härtung erzwingt physisch getrennte Upload-/
+Audit-Quellbäume und hält MariaDB-Credentials, Ed25519-Signaturschlüssel,
+Verifikationsschlüssel sowie age-Identität aus Snapshot- bzw.
+Backup-Verzeichnissen heraus. Ein zusätzlicher Negativtest schützt
+diese Grenze. Bestehende Betriebs-Gates bleiben offen.
