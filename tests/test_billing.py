@@ -266,3 +266,29 @@ class BillingHandoffTests(RecoveryPipelineTests):
         self.assertTrue(detail.json()["stale"])
         self.assertTrue(detail.json()["requires_external_correction"])
         self.assertEqual(self.prepare(audit).status_code,409)
+
+    def test_historical_three_percent_fee_case_remains_at_three_percent(self):
+        audit=self.audit_id()
+        event,_=self.add_event(audit,"1000.00")
+        self.assertEqual(self.review(event.json()["event_id"]).status_code,200)
+        db=self.registry._connect()
+        try:
+            with db.cursor() as cur:
+                cur.execute(
+                    """UPDATE lhfm_recovery_cases SET fee_rate_bps=300
+                       WHERE audit_id=%s AND tenant_id=%s AND legal_entity_id=%s""",
+                    (audit,self.tenant,self.entity),
+                )
+            db.commit()
+        finally:
+            db.close()
+        self.provision_terms(fee_rate_bps=300)
+        proposal=self.prepare(audit)
+        self.assertEqual(proposal.status_code,201,proposal.text)
+        pid=proposal.json()["packet_id"]
+        self.assertEqual(self.packet(pid).json()["fee_rate_bps"],300)
+        self.assertEqual(self.packet(pid).json()["fee_net"],"30.00")
+        result=self.release(pid)
+        self.assertEqual(result.status_code,200,result.text)
+        self.assertEqual(result.json()["fee_net"],"30.00")
+        self.assertFalse(result.json()["invoice_created"])
