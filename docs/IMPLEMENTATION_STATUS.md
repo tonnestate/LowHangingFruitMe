@@ -209,7 +209,7 @@ VPS-Installation und realer End-to-End-Betrieb bleiben offen.
 **CI-Abnahme:** [Python Actions 41866179166](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41866179166) ist **completed/success** mit 443 Tests unter Python 3.11 und 443 unter 3.12. Enthalten sind Negativprüfungen für root-UID, DB-Rootuser, fremde/systeminterne Datenbanken, nichtlokale DB, Symlink-/Rechtefehler, überlappende Verzeichnisse, fehlende ClamAV-/Docling-Konfiguration und die zwingende Laufzeitprüfung der echten FastAPI-Factory. Der installierte CLI-Befehl lehnt die synthetische CI-Umgebung erwartungsgemäß mit Exit-Code 2 ab. Paket-Build und Wheel-Smoke bestanden. Der [synthetische DR-Lauf 41864436497](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41864436497) ist ebenfalls erfolgreich. Reale VPS-Installation/IdP/Docling/ClamAV/End-to-End-Probe bleibt offen.
 
 
-### v0.18 – abgebrochene Upload-Intents und temporäre Dateien (04.11.2026 – CI ausstehend)
+### v0.18 – abgebrochene Upload-Intents und temporäre Dateien (04.11.2026 – synthetische CI bestanden)
 
 Implementiert ist ein ausdrücklich operator-only und grundsätzlich
 schreibgeschützter Prozess zur zeitverzögerten Bereinigung alter
@@ -221,3 +221,6 @@ muss ausdrücklich bestätigt werden. Final-Dateien und geschützte
 Uploadfrist. Die technischen Negativ- und MariaDB-Tests laufen
 separat; ein realer VPS-Test oder ein vollständiger
 DSGVO-Retention-/Erasure-Prozess wird nicht behauptet.
+
+
+**Abnahme v0.18:** [GitHub Actions 41892137248](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41892137248) **completed/success** mit je 452 Python-Tests auf 3.11 und 3.12, Paket- und Wheel-Smoke. Die Operator-CLI wurde innerhalb der CI mit `--apply` ohne Freigabe aufgerufen und musste mit Exit 2 scheitern. Reale MariaDB-Tests decken Dry-run, abgelaufene PENDING/RECEIVING-Intents, Audit-Ereignisse, Batch-Limit, Wiederholung, Symlinks/Hardlinks, frische Dateizeitstempel und Schutz vollständiger CLEAN-Dokumente ab. [DR-CI 41892137388](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41892137388) ebenfalls **completed/success** mit vollständiger Datenbankmigration 001–011. Kein echter VPS-/DSGVO-Löschtest.

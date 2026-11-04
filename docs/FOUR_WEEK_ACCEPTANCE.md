@@ -152,4 +152,4 @@ maximal 100 pro Lauf. Abnahme verlangt reale MariaDB-Negativtests zu
 unvollständigen `.part`-/`.inspect`-Dateien, Hardlink-/Symlink-
 Ablehnung, frischer Datei-Mtime, vollständigen Kunden-CLEAN-Dateien,
 unklarem Final-File, Wiederholung und fehlenden Autorisierungen.
-**CI-Abnahme ausstehend;** kein Kunden-/VPS-/DSGVO-Retentionstest.
+**PASS – synthetische Gesamtsuite:** [GitHub Actions 41892137248](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41892137248), 452/452 Tests unter Python 3.11 und 452/452 unter Python 3.12; der unautorisierte `lhfm-upload-housekeeping --apply` endete jeweils wie gefordert mit Exit 2. **PASS – MariaDB-DR:** [Actions 41892137388](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41892137388), inklusive Migration 011. Kein Kunden-/VPS-/DSGVO-Retentionstest.

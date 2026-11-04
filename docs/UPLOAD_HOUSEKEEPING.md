@@ -93,3 +93,8 @@ Datenträger-Verschlüsselung und keine produktiv erprobte
 Systemwartung. Für vollständige Kundendaten-Retention, Sperr-/Lösch-
 anforderungen, Backups und rechtliche Nachweispflichten bleiben
 G1/G5 bis zur externen Prüfung offen.
+
+
+## Testnachweis
+
+[Actions 41892137248](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41892137248) (452 Python-Tests je Version unter 3.11 und 3.12) und [Actions 41892137388](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41892137388) (signierte verschlüsselte MariaDB-11.4-Wiederherstellung mit Migration 011) sind erfolgreich. Das sind **synthetische Integrationsnachweise**, keine echte Betriebsabnahme oder juristische Datenlöschfreigabe.
