@@ -23,6 +23,7 @@ from .promotion import ReviewedBundleService, ReviewRequired, RuleSemanticReview
 from .candidates import (ContractCandidateService, CandidateNotFound,
                          CandidateConflict, CandidateDuplicate, CandidateUnavailable)
 from .recovery import RecoveryLedger, CaseConflict
+from .billing import BillingHandoffService
 from .reports import customer_case, render_export, ReportNotReady
 from .uploads import (ClamAVScanner, MAX_UPLOAD, ScannerUnavailable,
                       UploadRejected, UploadService)
@@ -108,12 +109,30 @@ class CaseStatusRequest(BaseModel):
     reason: str = Field(min_length=1,max_length=200)
 
 
+
+
+class BillingScopeRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    tenant_id: str = Field(min_length=1,max_length=128,pattern=r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
+    legal_entity_id: str = Field(min_length=1,max_length=128,pattern=r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
+
+
+class BillingReleaseRequest(BillingScopeRequest):
+    confirm_commercial_terms_review: Literal[True]
+
+
+class BillingVoidRequest(BillingScopeRequest):
+    reason: str = Field(min_length=1,max_length=200)
+    external_correction_ref: str = Field(min_length=1,max_length=200)
+
+
 def create_app(*, service: AuthenticatedApprovalService,
                store: PrivateAuditStore,
                uploads: UploadService | None = None,
                promotion: ReviewedBundleService | None = None,
                recovery: RecoveryLedger | None = None,
-               candidates: ContractCandidateService | None = None) -> FastAPI:
+               candidates: ContractCandidateService | None = None,
+               billing: BillingHandoffService | None = None) -> FastAPI:
     """Dependencies injected by a trusted bootstrap, never from HTTP input."""
     app = FastAPI(
         title="LowHangingFruitMe Audit API", version="0.12.0",
@@ -439,6 +458,109 @@ def create_app(*, service: AuthenticatedApprovalService,
         except PermissionError as exc:
             raise HTTPException(status_code=403, detail={"code":"NOT_AUTHORIZED"}) from exc
 
+
+    def billing_actor(token: str, *, tenant_id: str, legal_entity_id: str,
+                      permission: str) -> str:
+        """Never infer billing authority from customer reviewer scope."""
+        try:
+            principal=service.verifier.verify(token)
+            principal.require_scope(permission)
+        except (PermissionError,ValueError) as exc:
+            raise HTTPException(status_code=401,detail={"code":"INVALID_BILLING_TOKEN"}) from exc
+        return principal.subject
+
+    @app.post("/v1/audits/{audit_id}/billing-packets",status_code=201)
+    def prepare_billing_packet(
+        audit_id: UUID,body: BillingScopeRequest,token: str = Depends(access_token),
+    ):
+        if billing is None:
+            raise HTTPException(status_code=503,detail={"code":"BILLING_UNAVAILABLE"})
+        actor=billing_actor(token,tenant_id=body.tenant_id,
+                             legal_entity_id=body.legal_entity_id,
+                             permission="lhfm:billing:prepare")
+        try:
+            return billing.prepare(
+                audit_id=str(audit_id),tenant_id=body.tenant_id,
+                legal_entity_id=body.legal_entity_id,actor_id=actor,
+            )
+        except BundleNotFound as exc:
+            raise HTTPException(status_code=404,detail={"code":"BILLING_CASE_NOT_FOUND"}) from exc
+        except PermissionError as exc:
+            raise HTTPException(status_code=403,detail={"code":"BILLING_NOT_AUTHORIZED"}) from exc
+        except CaseConflict as exc:
+            raise HTTPException(status_code=409,detail={"code":"BILLING_NOT_READY"}) from exc
+
+    @app.post("/v1/billing-packets/{packet_id}/release")
+    def release_billing_packet(
+        packet_id: UUID,body: BillingReleaseRequest,
+        token: str = Depends(access_token),
+    ):
+        if billing is None:
+            raise HTTPException(status_code=503,detail={"code":"BILLING_UNAVAILABLE"})
+        actor=billing_actor(token,tenant_id=body.tenant_id,
+                            legal_entity_id=body.legal_entity_id,
+                            permission="lhfm:billing:release")
+        try:
+            return billing.release(
+                packet_id=str(packet_id),tenant_id=body.tenant_id,
+                legal_entity_id=body.legal_entity_id,actor_id=actor,
+            )
+        except BundleNotFound as exc:
+            raise HTTPException(status_code=404,detail={"code":"BILLING_PACKET_NOT_FOUND"}) from exc
+        except PermissionError as exc:
+            raise HTTPException(status_code=403,detail={"code":"BILLING_NOT_AUTHORIZED"}) from exc
+        except CaseConflict as exc:
+            raise HTTPException(status_code=409,detail={"code":"BILLING_RELEASE_CONFLICT"}) from exc
+
+    @app.post("/v1/billing-packets/{packet_id}/void")
+    def void_billing_packet(
+        packet_id: UUID,body: BillingVoidRequest,
+        token: str = Depends(access_token),
+    ):
+        if billing is None:
+            raise HTTPException(status_code=503,detail={"code":"BILLING_UNAVAILABLE"})
+        actor=billing_actor(token,tenant_id=body.tenant_id,
+                            legal_entity_id=body.legal_entity_id,
+                            permission="lhfm:billing:void")
+        try:
+            return billing.void(
+                packet_id=str(packet_id),tenant_id=body.tenant_id,
+                legal_entity_id=body.legal_entity_id,actor_id=actor,
+                reason=body.reason,
+                external_correction_ref=body.external_correction_ref,
+            )
+        except BundleNotFound as exc:
+            raise HTTPException(status_code=404,detail={"code":"BILLING_PACKET_NOT_FOUND"}) from exc
+        except PermissionError as exc:
+            raise HTTPException(status_code=403,detail={"code":"BILLING_NOT_AUTHORIZED"}) from exc
+        except CaseConflict as exc:
+            raise HTTPException(status_code=409,detail={"code":"BILLING_VOID_CONFLICT"}) from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=422,detail={"code":"INVALID_BILLING_CORRECTION"}) from exc
+
+    @app.get("/v1/billing-packets/{packet_id}")
+    def read_billing_packet(
+        packet_id: UUID,
+        tenant_id: Annotated[str,Query(min_length=1,max_length=128,
+            pattern=r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")],
+        legal_entity_id: Annotated[str,Query(min_length=1,max_length=128,
+            pattern=r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")],
+        token: str = Depends(access_token),
+    ):
+        if billing is None:
+            raise HTTPException(status_code=503,detail={"code":"BILLING_UNAVAILABLE"})
+        actor=billing_actor(token,tenant_id=tenant_id,legal_entity_id=legal_entity_id,
+                            permission="lhfm:billing:read")
+        try:
+            return billing.get(
+                packet_id=str(packet_id),tenant_id=tenant_id,
+                legal_entity_id=legal_entity_id,actor_id=actor,
+            )
+        except BundleNotFound as exc:
+            raise HTTPException(status_code=404,detail={"code":"BILLING_PACKET_NOT_FOUND"}) from exc
+        except PermissionError as exc:
+            raise HTTPException(status_code=403,detail={"code":"BILLING_NOT_AUTHORIZED"}) from exc
+
     @app.post("/v1/audits/{audit_id}/recovery-events",status_code=201)
     def record_recovery(
         audit_id: UUID, body: RecoveryEventRequest,
@@ -750,6 +872,9 @@ def create_app_from_environment() -> FastAPI:
         RecoveryLedger(registry=service.registry,store=store,uploads=upload_service)
         if upload_service is not None else None
     )
+    billing_service=(BillingHandoffService(connect=service.registry._connect)
+                     if recovery_service is not None else None)
     return create_app(service=service, store=store,
                       uploads=upload_service,promotion=promotion_service,
-                      recovery=recovery_service,candidates=candidate_service)
+                      recovery=recovery_service,candidates=candidate_service,
+                      billing=billing_service)
