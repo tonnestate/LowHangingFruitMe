@@ -1,0 +1,58 @@
+name: Encrypted disaster recovery rehearsal
+on:
+  push:
+    branches: [main, "feat/**"]
+    paths:
+      - "src/lowhangingfruitme/dr.py"
+      - "src/lowhangingfruitme/schema.py"
+      - "src/lowhangingfruitme/migrations.py"
+      - "sql/**"
+      - "tests/scripts/ci_dr_rehearsal.sh"
+      - ".github/workflows/dr.yml"
+      - "pyproject.toml"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  synthetic-restore:
+    name: MariaDB 11.4 + encrypted private files
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      mariadb:
+        image: mariadb:11.4
+        env:
+          MARIADB_ROOT_PASSWORD: testing-root-only
+          MARIADB_DATABASE: lhfm_test
+          MARIADB_USER: lhfm
+          MARIADB_PASSWORD: testing-user-only
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "healthcheck.sh --connect --innodb_initialized"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      LHFM_DB_HOST: 127.0.0.1
+      LHFM_DB_PORT: "3306"
+      LHFM_DB_USER: lhfm
+      LHFM_DB_PASSWORD: testing-user-only
+      LHFM_DB_NAME: lhfm_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install isolated tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends age mariadb-client
+          python -m pip install -e ".[registry,auth,api]"
+      - name: Migrate synthetic test schema 001..010
+        run: python tests/scripts/setup_approval_registry.py
+      - name: Encrypted backup, isolated restore, replay and corruption refusal
+        run: bash tests/scripts/ci_dr_rehearsal.sh

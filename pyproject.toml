@@ -23,6 +23,7 @@ lhfm = "lowhangingfruitme.intake_cli:main"
 lhfm-schema-check = "lowhangingfruitme.schema:main"
 lhfm-migrate = "lowhangingfruitme.migrations:main"
 lhfm-docling-check = "lowhangingfruitme.docling_subprocess:main"
+lhfm-dr = "lowhangingfruitme.dr:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
