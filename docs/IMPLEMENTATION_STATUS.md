@@ -188,3 +188,6 @@ Audit-Quellbäume und hält MariaDB-Credentials, Ed25519-Signaturschlüssel,
 Verifikationsschlüssel sowie age-Identität aus Snapshot- bzw.
 Backup-Verzeichnissen heraus. Ein zusätzlicher Negativtest schützt
 diese Grenze. Bestehende Betriebs-Gates bleiben offen.
+
+
+**Letzte Härtungsabnahme:** [Python Actions 41857045105](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41857045105), 431/431 Tests unter 3.11 und nochmals 431/431 unter 3.12; [DR Actions 41856986225](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41856986225), kompletter verschlüsselter Restore mit Ed25519-Integritätsprüfung und privaten File-Hashes erfolgreich. Diese Nachweise sind ausschließlich synthetische CI, keine Hostabnahme.

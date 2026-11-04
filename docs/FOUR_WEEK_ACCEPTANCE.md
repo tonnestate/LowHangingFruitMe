@@ -124,4 +124,7 @@ separater GitHub-Actions-Lauf mit age + MariaDB-11.4-Dump und tatsächlichem
 isoliertem Einspielen von SQL sowie privaten Daten. Signed/encrypted
 Manifest, SHA-256-Ciphertext/Dateien, Original-Dateivergleich,
 Rollback-Sicherheit durch leere Restore-Namensräume, Replay- und
-Manipulationsabwehr sind zwingende Testkriterien. **PASS – synthetische DR-CI:** [Actions 41855424879](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41855424879) mit echter MariaDB 11.4, age, Ed25519-Signatur, einer getrennten Ziel-DB und zwei entschlüsselten Dateibäumen. **PASS – Python-CI:** [Actions 41855296597](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41855296597) mit je 430/430 Tests unter Python 3.11 und 3.12. Externe Betriebserprobung bleibt **OFFEN**.
+Manipulationsabwehr sind zwingende Testkriterien. **PASS – synthetische DR-CI:** [Actions 41855424879](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41855424879) mit echter MariaDB 11.4, age, Ed25519-Signatur, einer getrennten Ziel-DB und zwei entschlüsselten Dateibäumen. **PASS – Python-CI:** [Actions 41855296597](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41855296597) mit je 430/430 Tests unter Python 3.11 und 3.12 (damaliger Code-Stand). Externe Betriebserprobung bleibt **OFFEN**.
+
+
+**Erweiterte abschließende CI:** [Python Actions 41857045105](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41857045105) **431/431 Tests je Python 3.11/3.12**, einschließlich Ausschluss von Operator-Trust-Keys aus den Sicherungswurzeln; [DR Actions 41856986225](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41856986225) **success** nach der technischen Sperre überlappender Quellverzeichnisse. Reale VPS-/DR-Abnahme weiterhin offen.
