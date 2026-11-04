@@ -85,3 +85,8 @@ Wartungs-/Schreibstopp ausführbar. Final-Dateien, CLEAN-Uploads,
 Audits, Verträge und Recovery-Billing-Evidenz sind ausgenommen.
 **Offen bleiben die echte Betreiberabnahme und ein rechtlich
 freigegebener Kunden-Datenretention-/Löschprozess.**
+
+
+### G5 – unterbrochene Audits (v0.19)
+
+SQL-012 und die unprivilegierte Offline-CLI `lhfm-audit-reconcile` erlauben nach echtem Worker-Stopp und dokumentiertem Incident die einzeln protokollierte Überführung eines seit mindestens 60 Minuten unbearbeiteten, ergebnislosen `PROCESSING`-Audits nach `FAILED`. Der ursprüngliche Idempotency-Key wird nicht wiederverwendet, Finanzberichte werden nicht verändert. Dies ist **keine** automatische Job-Wiederaufnahme, kein Ersatz für VPS-Betriebsproben und kein geschlossener G5-Nachweis. Siehe `docs/AUDIT_RECONCILIATION.md`.
