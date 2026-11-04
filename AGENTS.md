@@ -82,3 +82,8 @@ From version 0.13.1 onward, only newly opened Recovery Cases receive a stored 50
 ## Contract revision head – v0.14 development
 
 After controlled SQL migration `008_rule_revisions.sql`, the existing `ApprovalRegistry.register()` atomically advances a tenant/entity/agreement/rule-specific revision head. `guard()` takes a head row lock **before** the signed approval lock, so supersession cannot commit while an earlier audit runs. Explicit revocation remains effective, and old successful audit snapshots are retained. Approvals lacking migrated rule-lineage metadata are NOT silently grandfathered: require new verified approval. Do not interpret this as complete EXTRACTED/NEEDS_CONFIRMATION candidate lifecycle, a real document clause review, or customer contract authorization. Synthetic CI must pass before v0.14 acceptance.
+
+
+## Source-bound contract candidate gate – v0.14 development
+
+The real bootstrap MUST instantiate `ReviewedBundleService(require_candidate=True)` and a scoped `ContractCandidateService`. The only permitted sign transition in the customer path is scanned PDF → extracted, hash-bound Docling evidence → JWT/DB-authorized human selection and confirmation → `NEEDS_CONFIRMATION` → HMAC receipt inside `ApprovalRegistry.register` → atomic `APPROVED`. Superseded or revoked approvals propagate into candidate state within the same DB transaction. `require_candidate=False` is allowed only in explicitly declared legacy synthetic test construction, never production. Proof of a hash-bound clause does not independently prove its legal interpretation. Python subprocess resource caps are not a network sandbox; external egress restriction and actual PDF acceptance remain mandatory.

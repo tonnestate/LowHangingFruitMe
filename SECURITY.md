@@ -53,3 +53,8 @@ Upload API validates signed JWT and database grant, accepts only a server-assign
 ### Trusted public JWKS rotation
 
 The resource-server verifier can now reload an atomically replaced local public JWKS file before each verification, rejecting symlinks, absent or malformed files and removing retired keys after a valid replacement. No dynamic IdP URL or token-supplied key location is ever used. Production must still provide authorized key publication, real external IdP testing, revocation/offboarding and operational monitoring.
+
+
+## v0.14 contract candidate trust boundary
+
+The customer HTTP signing path now requires a reviewer-scoped extracted contract candidate. The candidate's verified upload hash, source revision, agreement/rule/revision IDs and canonical rule checksum are checked again under the current MariaDB lineage lock during HMAC approval. Replays, cross-tenant references and arbitrary manually typed evidence references cannot authorize signing. A separate subprocess bounds Docling memory, CPU, wall time and result size; **it does not establish network isolation or a secure sandbox**. Actual deployment must enforce worker egress denial, low privileges, immutable local models, private document storage and independent PDF exploitation tests before accepting customer documents. Do not deploy an in-process fake extractor or a `require_candidate=False` bundle service.

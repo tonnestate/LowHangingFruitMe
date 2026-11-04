@@ -163,3 +163,8 @@ Kein Kunde, kein echtes ERP-Login, keine validierte Forderungsrealisierung und k
 ## v0.14 – verpflichtende Folgerichtigkeit bei Vertragsnachträgen
 
 Zuerst eine atomare, mandantengetrennte aktuelle Regelrevision im bestehenden signierten MariaDB-Auditpfad. Ein alter HMAC-Beleg darf nach Ersatz nicht als aktuelle Vertragslage gelten. Kein Überschreiben bereits abgeschlossener Audits. Anschließend eine echte EXTRACTED/NEEDS_CONFIRMATION-Queue mit vom authentifizierten Reviewer bestätigter Fundstelle und gültiger Dokument-/Nachtragskette. Diese Queue darf weder eigenständig Geldbeträge freigeben noch den aktuellen Head durch einen Modellvorschlag ersetzen. Reales fachliches Vertragsbenchmarking und der produktive Security-/IdP-/RDG-Gate bleiben außerhalb des synthetischen Codebelegs.
+
+
+## v0.14 Vertragskandidaten-Pflichtstrecke (04.11.2026 – vor CI)
+
+Implementiert auf dem Feature-Branch: geprüfter Upload → Docling-Subprozess → Dokumenthash-Fundstellen → persistierter Kandidat → explizite menschliche Bestätigung → gesperrte HMAC-Regelrevision mit atomarer Kandidatenfreigabe → bestehende deterministische Bonusberechnung. Der Produktionspfad verweigert alte Freitextquellen ohne Kandidat; der Browser zeigt Fundstellen statt unsichere automatische Akzeptanz. Noch abzusichern sind echte Originaldokumente, OS-Prozessnetzwerkisolation, Lizenz-/Supply-Chain-Review, echte Identity-Lifecycle- und Honorarfreigabe sowie unabhängiger Goldstandard.

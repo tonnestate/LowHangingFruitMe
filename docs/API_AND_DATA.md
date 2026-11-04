@@ -163,3 +163,13 @@ Eine Änderung an Daten, Klausel oder Berechnung erzeugt einen **neuen AuditRun*
 - https://docs.frappe.io/cloud/marketplace/publishing-an-app-to-marketplace
 
 **Implementierungsstatus:** null Endpunkte, null produktive Connectoren und null Test-Ergebnisse in LowHangingFruitMe zum 02.11.2026.
+
+
+## v0.14 private Vertragsprüf-API
+
+- `POST /v1/contract-candidates`: verifizierten Vertrag aus CLEAN-PDF über `contract_upload_id`, Mandant/Gesellschaft, konkrete Agreement-/Rule-/Dokumentrevision im begrenzten Docling-Worker extrahieren. Ergebnis `EXTRACTED`, inklusive SHA-256-fundierter Fundstellen; niemals automatisch freigeben.
+- `GET /v1/contract-candidates/{id}`: Fundstellen und Status nur für identischen authentifizierten Reviewer und dessen aktive DB-Mandantenfreigabe.
+- `POST /v1/contract-candidates/{id}/review`: geprüfte Regel plus exakte extrahierte Fundstellen und `confirm_clause_review=true` ablegen (`NEEDS_CONFIRMATION`). Keine Geldberechnung.
+- `POST /v1/bundles` mit `candidate_id`: nur bei passendem SHA-256-Dokument, Rule-Hash, Revisionsschlüssel, gültigem Reviewer und aktivem Kandidaten. Der eigentliche Übergang `APPROVED` wird atomar mit dem HMAC-Freigabebeleg und dem aktuellen Regelkopf durchgeführt. Replay führt zu Ablehnung; historische Audits bleiben historisch.
+
+Die Testkompatibilität mit ungebundenen Regelbelegen ist **kein** öffentlich aktivierter API-Pfad; der Runtime-Factory-Pfad erzwingt die Kandidatenakte. Echte Parser-/IAM-/Mandanten-Sicherheitsabnahmen bleiben offen.

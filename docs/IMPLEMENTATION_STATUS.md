@@ -135,3 +135,8 @@ Die geprüfte lokale JWKS-Datei wird bei jeder API-Tokenprüfung anhand SHA-256 
 ### SQL-Migrations-Prüfsummen gegen Release-Baseline (04.11.2026 – Test ausstehend)
 
 Die API prüft für die Migrationen 001–008 nun gegen fest im Anwendungscode verankerte SHA256-Release-Prüfsummen (nicht nur das 64-stellige Format), und der Wartungs-Runner verweigert veränderte historische SQL-Dateien schon vor DDL. Ergänzte Negativtests für manipulierte Ledger-Zeilen und SQL-Dateien. CI und produktive Upgrade-Abnahme sind getrennt.
+
+
+### v0.14 dokumentengebundener Regelkandidat (Implementierung vom 04.11.2026, CI noch offen)
+
+Neues SQL 009 mit `lhfm_contract_candidates` und append-only Ereignissen, API für Kandidatenextraktion, Lesezugriff und Human-Review, synchronisierter SQL-009-Schema-/Prüfsummencheck, HTML-Kundenprozess mit ausdrücklich gewählter PDF-Fundstelle und im Regelfall zwingender Kandidatenbindung beim Erstellen des signierten Bundles. Die DB-Revisionstransaktion schreibt in derselben Transaktion `APPROVED` und propagiert `SUPERSEDED`/`REVOKED`. Für bestehende synthetische Tests bleibt `require_candidate=False` explizit gesetzt. Noch **kein** Nachweis von echtem OCR-/Docling-Parsing auf dem Zielhost, Modellassets, Netzsperre, rechtlichem Vertragsbezug, realem Anbieterlogin oder öffentlicher Releasefähigkeit. Vor Freigabe Python- und Portal-CI abwarten.

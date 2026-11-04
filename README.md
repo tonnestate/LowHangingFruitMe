@@ -208,3 +208,23 @@ bereits vor Ausführung die Verwendung veränderter historischer SQL-Dateien.
 Bei neuen Migrationen werden ausschließlich neue Versionsnummern ergänzt;
 bestehende Hashes dürfen nicht automatisch neu berechnet werden. Das ist
 kein Ersatz für Git-Signaturen, Datenbank-Backup und kontrollierten Restore.
+
+
+### v0.14 – dokumentengebundene Vertragsfreigabe (Pilotcode)
+
+Der geschützte Kundenpfad benötigt für neue Audit-Bundles einen unveränderlich
+referenzierten Vertragskandidaten. Ein bereits ClamAV-geprüftes PDF wird mit
+Docling im getrennten, ressourcenbegrenzten Python-Unterprozess ausgelesen.
+Die extrahierten Originalfundstellen werden mit dem SHA-256-Hash des
+hochgeladenen Dokuments und einem Mandanten-/Gesellschafts-/Reviewerbezug
+registriert. Der Prüfer muss die konkrete Klausel auswählen und die abgeleitete
+Regel bestätigen. Erst die bestehende signierte MariaDB-Regeltransaktion darf
+`NEEDS_CONFIRMATION → APPROVED` umstellen; Nachträge ersetzen ältere
+Freigaben, Widerrufe bleiben nachvollziehbar.
+
+SQL-Migration `009_contract_candidates.sql` gehört zur kontrollierten,
+prüfsummengebundenen Releasefolge. Direkte Alt-Testfreigaben ohne Kandidat
+bleiben **ausschließlich in als synthetisch markierten Tests** möglich.
+Die tatsächliche Docling-Modellinstallation und vom Netz getrennte
+Parser-Ausführung sowie authentifizierte Unternehmenszugänge sind vor
+Produktivstart zu verifizieren. Siehe `docs/GO_LIVE_GATE.md`.

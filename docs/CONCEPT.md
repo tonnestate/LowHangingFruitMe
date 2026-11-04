@@ -226,3 +226,10 @@ Revoke, Supersede und Audit-Guard müssen sämtliche konkurrierenden Sperren in 
 ### Kontrolliertes Datenbank-Rollout (04.11.2026)
 
 Migrationen werden ausschließlich als expliziter, autorisierter Wartungsvorgang ausgeführt. Die eigentliche API führt keine DDL aus. Ein MariaDB-Advisory-Lock schützt parallele Installer, jede bekannte Migration wird mit SHA-256 und einem vor Ausführung persistierten IN_PROGRESS-Marker registriert, ein partiell angewendetes DDL blockiert weitere Automatik. Altbestände ohne signierte Migrationshistorie werden weder stillschweigend übernommen noch rückwirkend neu bewertet. Für reale Altbestände bleiben Backup-/Restore-Probe, Schema-Reconciliation und kontrolliertes Go/No-Go verpflichtend.
+
+
+## v0.14 – EXTRACTED bis APPROVED im realen Auditpfad (Implementierung, CI folgt)
+
+Ein mandanten- und gesellschaftsgebundener Vertragskandidat wird aus der bereits ClamAV-geprüften Vertrags-PDF unter exakter SHA-256-Bindung erzeugt (`EXTRACTED`). Der separate authentifizierte Prüferprozess legt nur die tatsächlich vom Parser gelisteten dokumentinternen `evidence_ref`-Fundstellen zur expliziten Bestätigung vor (`NEEDS_CONFIRMATION`). Ein Freitextbeleg, ein LLM-Entwurf oder ein `approved=true` ohne den aktuellen Kandidaten darf den signierten Bundle-Pfad nicht mehr erreichen. `ApprovalRegistry.register` revalidiert Dokumentdigest, Regelhash, Prüfer, Dokumentrevision und Vertrags-/Regelrevision innerhalb derselben Transaktion, die den aktuellen Regelkopf setzt, und schreibt das Kandidatenereignis `APPROVED`. `SUPERSEDED`/`REVOKED` folgen unter derselben Revisionssperre; Alt-Audits bleiben historisch lesbar. Alte direkte Signiervorgänge sind nur im ausdrücklich isolierten Testpfad aktiv.
+
+Der Einstieg ist absichtlich nur PDF; DOCX wird nicht ohne Extraktionsbenchmark als gleichwertige Vertragsquelle ausgegeben. Docling arbeitet im ressourcenbegrenzten Subprozess, nicht mehr im Webprozess, doch ein separater OS-/Firewall-Sandboxnachweis und echte Vertragsprüfung fehlen weiterhin. Keine automatische Feststellung eines Anspruchs oder rechtsgeschäftliche Unterschrift.

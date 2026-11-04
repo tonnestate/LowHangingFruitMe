@@ -89,3 +89,8 @@ Der Release benötigt den getrennten Schema-Migrationsrunner mit lesendem Plan, 
 ### Externes Betriebs-Readiness-Gate (04.11.2026)
 
 `GET /readyz` trennt ClamAV-Protokollantwort, Finanzdienst-Konfiguration und MariaDB-Migrationserfolg von reiner Liveness. **PASS – synthetischer CI-Test**: [Actions 41829742266](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41829742266), 336 Python-Tests je 3.11/3.12, inklusive echter isolierter MariaDB und simuliertem ClamAV-PING-/Ausfallpfad. Unabhängig davon bleibt ein realer VPS-ClamAV mit aktuellen Signaturen, überprüfter Parserisolation, IdP- und Mandantenabnahme verpflichtend.
+
+
+### v0.14 dokumentengebundene Kandidatenprüfung (04.11.2026)
+
+Die SQL-009-Kandidatenakte und Ereignisse, hash- und mandantenbezogene Parserfundstellen, getrennte `EXTRACTED/NEEDS_CONFIRMATION`-Stufen und die atomare `APPROVED/SUPERSEDED/REVOKED`-Übernahme in die bestehende HMAC-Auditstrecke sind auf `feat/contract-review-gate` implementiert. Neue Negativ- und End-to-End-Tests prüfen eine falsche Dokumenthashangabe, nicht extrahierte Klausel, fehlenden Kandidaten, doppelte Bestätigung, fachliche Freigabe, Widerruf und vollständige synthetische Auditausführung. **Status bis zur Prüfung beider CI-Workflows: NICHT ABGENOMMEN.** Echte Docling-PDF-Benchmarks, Netzwerkisolation, unabhängige kaufmännische Prüfung, Live-IdP und externer Rechtsreview bleiben separat OFFEN.
