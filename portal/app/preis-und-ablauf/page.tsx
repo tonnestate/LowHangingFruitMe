@@ -12,5 +12,5 @@ export default function Price(){return <><PageIntro eyebrow="Geplantes Pilotange
 ["03","Realisierung","Zusätzliche Zahlung oder wirksame Verrechnung eindeutig nachweisen."],
 ["04","Abrechnung","Nur die zurechenbare Netto-Realisierung als Grundlage der 5 % prüfen."]
 ].map(([n,t,d])=><article className="step-card" key={n}><span className="step-num">{n}</span><h3>{t}</h3><p>{d}</p></article>)}</div>
-<p className="note">Das Erfolgsmodell befindet sich in der vertraglichen/rechtlichen Ausarbeitung. Es sind noch keine Kundenrechnung und kein Recovery-Ledger implementiert.</p>
+<p className="note">Das Recovery-Ledger und eine interne, zweistufig freizugebende Honorarakte sind technisch implementiert und synthetisch getestet. Die Software erstellt keine Rechnung und bestätigt keinen Bankeingang. Kundenverträge, steuerliche Prüfung und Rechtsfreigabe müssen vor einer kommerziellen Nutzung extern abgenommen werden.</p>
 </section><ConversionCTA/></>}
