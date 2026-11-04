@@ -89,6 +89,7 @@ export function WorkspaceClient(){
  const [review,setReview]=useState({contract:false,mapping:false,tx:false,st:false,agreements:false});
  const [bundle,setBundle]=useState("");
  const [audit,setAudit]=useState<Audit|null>(null);
+ const [priorAuditId,setPriorAuditId]=useState("");
  const [report,setReport]=useState<Record<string,unknown>|null>(null);
  const [ledger,setLedger]=useState<Ledger|null>(null);
  const [recoveryAmount,setRecoveryAmount]=useState("");
@@ -102,6 +103,7 @@ export function WorkspaceClient(){
  const resetScopedWorkspace=()=>{
   setActor("");setSources({});setPreviews({});setMaps({transactions:{},settlements:{}});
   setCandidateId("");setSegments([]);setBundle("");setAudit(null);setReport(null);
+  setPriorAuditId("");
   setLedger(null);setFinanceEvent("");
   setReview({contract:false,mapping:false,tx:false,st:false,agreements:false});
  };
@@ -130,7 +132,22 @@ export function WorkspaceClient(){
  const authorize=()=>run(async()=>{
   if(!scope.tenant_id||!scope.legal_entity_id)throw new Error("MANDANT_FEHLT");
   const r=await call<{subject:string}>("me?"+qs);
+  if(actor&&r.subject!==actor)resetScopedWorkspace();
   setActor(r.subject);return "Verifizierter Prüfer: "+r.subject;
+ });
+ const resumeAudit=()=>run(async()=>{
+  if(!actor)throw new Error("BERECHTIGTER_REVIEWER_ERFORDERLICH");
+  const id=priorAuditId.trim().toLowerCase();
+  if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(id))
+   throw new Error("GUELTIGE_AUDIT_ID_ERFORDERLICH");
+  const detail=await call<Audit&{report:Record<string,unknown>|null}>(
+   "audits/"+id+"?"+qs);
+  setAudit({audit_id:detail.audit_id,status:detail.status,
+    audit_executed:detail.audit_executed});
+  setReport(detail.report??null);setBundle("");setLedger(null);setFinanceEvent("");
+  setPriorAuditId(detail.audit_id);
+  return "Gespeicherten Audit geladen: "+detail.status+
+   ". Realisierung und Honorar bitte gesondert erneut abrufen.";
  });
  const ingest=()=>run(async()=>{
   if(!actor)throw new Error("BERECHTIGUNG_ERFORDERLICH");
@@ -142,7 +159,7 @@ export function WorkspaceClient(){
   const c=await upload(co,"CONTRACT_PDF");
   setSources({transactions:a,settlements:b,contract:c});
   setBundle("");setAudit(null);setReport(null);setLedger(null);setPreviews({});
-  setFinanceEvent("");
+  setFinanceEvent("");setPriorAuditId("");
   setCandidateId("");setSegments([]);setRule(v=>({...v,evidence:""}));
   return "Die drei Quelldateien sind geprüft und gespeichert. Fachfreigabe steht aus.";
  });
@@ -290,6 +307,17 @@ export function WorkspaceClient(){
    <button className="button-secondary" type="button" onClick={authorize}>Berechtigung prüfen</button>
    {actor&&<p>Angemeldet als berechtigter Reviewer: {actor}</p>}
   </fieldset>
+  <fieldset disabled={busy||!actor}><legend>Gespeicherten Audit fortsetzen</legend>
+   <label>Audit-ID der bereits ausgeführten Prüfung
+    <input value={priorAuditId} onChange={e=>setPriorAuditId(e.target.value)}/>
+   </label>
+   <button className="button-secondary" type="button" onClick={resumeAudit}>
+    Gespeicherte Prüfung und Bericht laden
+   </button>
+   <p className="note">Nur die ursprüngliche, weiterhin berechtigte
+    Reviewer-Identität kann einen Audit desselben Mandanten und derselben
+    Gesellschaft erneut lesen. Der Audit wird nicht erneut berechnet.</p>
+  </fieldset>
   <fieldset disabled={busy||!actor}><legend>2 · Daten und Vertragsdokument</legend>
    <div className="workspace-grid">
     {([["transactions","Einkaufsbuchungen · CSV/XLSX",".csv,.xlsx"],
@@ -380,8 +408,8 @@ export function WorkspaceClient(){
    </button>
    {bundle&&<p>Datenpaket: <code>{bundle}</code></p>}
   </fieldset>
-  <fieldset disabled={busy||!bundle}><legend>5 · Bonusprüfung ausführen</legend>
-   <button className="button-primary" type="button" onClick={calculate}>Audit berechnen</button>
+  <fieldset disabled={busy||(!bundle&&!audit)}><legend>5 · Bonusprüfung ausführen</legend>
+   <button className="button-primary" type="button" disabled={!bundle} onClick={calculate}>Audit berechnen</button>
    {audit&&audit.status==="COMPLETED"&&<div className="workspace-grid">
     <button type="button" className="button-secondary" onClick={()=>downloadReport("pdf")}>
      Kundenbericht PDF
