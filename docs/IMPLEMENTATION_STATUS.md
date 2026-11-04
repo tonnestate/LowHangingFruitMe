@@ -224,3 +224,10 @@ DSGVO-Retention-/Erasure-Prozess wird nicht behauptet.
 
 
 **Abnahme v0.18:** [GitHub Actions 41892137248](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41892137248) **completed/success** mit je 452 Python-Tests auf 3.11 und 3.12, Paket- und Wheel-Smoke. Die Operator-CLI wurde innerhalb der CI mit `--apply` ohne Freigabe aufgerufen und musste mit Exit 2 scheitern. Reale MariaDB-Tests decken Dry-run, abgelaufene PENDING/RECEIVING-Intents, Audit-Ereignisse, Batch-Limit, Wiederholung, Symlinks/Hardlinks, frische Dateizeitstempel und Schutz vollständiger CLEAN-Dokumente ab. [DR-CI 41892137388](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41892137388) ebenfalls **completed/success** mit vollständiger Datenbankmigration 001–011. Kein echter VPS-/DSGVO-Löschtest.
+
+
+### Billing-Arbeitsbereich im Portal (04.11.2026 – Entwicklung)
+
+Die bestehende React-Arbeitsoberfläche bietet jetzt Bedienung für die bereits implementierte Billing-API: PREPARED erstellen, Akten lesen, durch eine getrennt berechtigte Person RELEASED setzen und mit externem Korrekturbeleg VOIDED dokumentieren. Der Zugriff erfolgt über bestehende JWT-Billing-Scopes und MariaDB-Grants; eine Upload-Reviewerrolle wird dem zweiten Billing-Bearbeiter nicht abverlangt. Angezeigt werden Rate, Realisierungsbetrag, Honorar, Status, Staleness, Historie und externe Rechnungspflicht. Mandant-/Gesellschaftswechsel verwirft frühere lokale Audit- und Finanzzustände. Die öffentliche Preisseite wurde um den tatsächlichen Recovery-Ledger-Stand berichtigt.
+
+Kein echtes IdP, keine reale Rechnungsstellung, keine kaufmännische Fremdabnahme und keine Produktionsinstallation. Der Frontend-Quellstand ist nur nach bestandener CI als buildgeprüft zu bezeichnen.
