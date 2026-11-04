@@ -236,3 +236,9 @@ Kein echtes IdP, keine reale Rechnungsstellung, keine kaufmännische Fremdabnahm
 ### Audit-Wiederaufnahme im geschützten Arbeitsbereich (04.11.2026 – Entwicklungsstand)
 
 Die vorhandene geschützte `GET /v1/audits/{audit_id}`-Schnittstelle ist jetzt über ein Feld für die gespeicherte Audit-ID erreichbar. Nach einer neuen Browser-Sitzung kann derselbe weiterhin berechtigte Reviewer unter exakt demselben Mandanten und derselben Gesellschaft einen gespeicherten Prüfstatus und Bericht laden, ohne den Bonus erneut zu berechnen. Die vorhandenen Berichtsexporte und der Recovery-Ledger-Leseweg bleiben bei einem abgeschlossenen Audit bedienbar, auch wenn kein neues Quellenbundle in der aktuellen Browsersitzung erzeugt wurde. Backend-Zugriffskontrolle bleibt unverändert. Unberechtigte Wiederaufnahme wird im BFF-Testpfad abgewiesen; ein echter zwei-Sitzungen-IdP-Browsertest und realer VPS-Zugriff bleiben offen.
+
+### Deterministischer Audit-Key im Browser (04.11.2026)
+
+Der geschützte React-Arbeitsbereich verwendet für die initiale Audit-Ausführung und alle Wiederholungsversuche die unveränderliche, vom Backend erzeugte Bundle-UUID als `Idempotency-Key`. Dadurch erzeugt ein Timeout, Browser-Retry oder paralleler Tab für dasselbe freigegebene Datenpaket keinen neuen Audit. Der Backend-Unique-Index schützt weiterhin nach Mandant, Gesellschaft und Reviewer, einschließlich Request-Digest. Fehlende oder nicht kanonische Bundle-UUIDs werden vor dem API-Aufruf abgelehnt. `PROCESSING` wird ausdrücklich als laufender Vorgang statt als fachliches Prüfergebnis dargestellt.
+
+Dies löst ausschließlich doppelte Audit-Ausführung **pro signiertem Bundle**. Es ersetzt weder eine persistente Hintergrund-Jobqueue noch die kontrollierte Reconciliation von abgebrochenen Workern aus SQL-012.
