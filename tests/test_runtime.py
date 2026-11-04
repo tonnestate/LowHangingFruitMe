@@ -139,6 +139,35 @@ class RuntimeConfigTests(unittest.TestCase):
                 self.assertEqual(main(), 2)
         self.assertEqual(captured.getvalue().strip(), "LHFM_RUNTIME_NOT_READY")
 
+    def test_real_api_factory_refuses_startup_when_runtime_gate_fails(self):
+        from lowhangingfruitme.api.http import create_app_from_environment
+        fake_service = SimpleNamespace(
+            registry=SimpleNamespace(_connect=lambda: None),
+        )
+        with patch.dict(os.environ, {"LHFM_API_SOURCE_ROOT": "/not-used"}, clear=True):
+            with patch(
+                "lowhangingfruitme.api.http.AuthenticatedApprovalService.from_environment",
+                return_value=fake_service,
+            ):
+                with patch(
+                    "lowhangingfruitme.runtime.verify_runtime",
+                    side_effect=RuntimeNotReady("CLAMAV_NOT_RESPONDING"),
+                ) as preflight:
+                    with self.assertRaisesRegex(RuntimeNotReady, "CLAMAV"):
+                        create_app_from_environment()
+                    preflight.assert_called_once()
+
+    def test_python_server_supports_required_safe_proxy_flags(self):
+        import subprocess
+        import sys
+        status = subprocess.run(
+            [sys.executable, "-m", "uvicorn", "--help"],
+            capture_output=True, text=True, timeout=15,
+        )
+        self.assertEqual(status.returncode, 0, status.stderr)
+        for flag in ("--factory", "--no-proxy-headers", "--no-access-log"):
+            self.assertIn(flag, status.stdout)
+
     def test_checked_systemd_boundary_does_not_expose_financial_api(self):
         path = Path(__file__).resolve().parents[1] / "deploy"
         api = (path / "lowhangingfruitme-api.service.example").read_text()
