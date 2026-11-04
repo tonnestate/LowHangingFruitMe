@@ -205,3 +205,13 @@ All figures are synthetic. No automatic real recovery, finance invoice issuance,
 - The rule-head row lock stops a concurrent supersession from committing during an active guarded calculation. Signed old receipt replays are not accepted as current. Provenance remains approval/document hash and source-revision bound.
 - **Intermediate checks:** initial [41696678709](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41696678709) failed on an outdated negative assertion for the old error text; [41696905481](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41696905481) failed because the service correctly returned non-final `NEEDS_REVIEW` instead of HTTP 503. Both assertions were updated to the actual safe API contract and all 310 tests subsequently passed.
 - **Remaining open:** This is only the current-head/supersession layer of v0.14. No full EXTRACTED/NEEDS_CONFIRMATION proposal state machine, real Docling clause review, migration against existing production DB, IdP/VPS secure runtime, independent commercial legal sign-off or verified real cash recovery. SQL 008 requires controlled manual migration, and pre-migration approvals without lineage require reviewed re-approval. Do not call the entire v0.14 release complete.
+
+
+## Read-only MariaDB compatibility startup gate (04.11.2026)
+
+**Verified source commit:** [6300564787c623e6eed3779e581de39ad70670fe](https://github.com/tonnestate/LowHangingFruitMe/commit/6300564787c623e6eed3779e581de39ad70670fe).
+
+- [GitHub Actions 41826517951](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41826517951) — **completed/success** for both Python **3.11 and 3.12**.
+- **319 tests passed per runner** including actual isolated MariaDB 11.4, missing SQL 007/008 objects, non-InnoDB schema, missing constraints, wrong historical 3%-default and a successful read-only preflight of the freshly migrated CI database.
+- The installed `lhfm-schema-check` command and `create_app_from_environment` share the metadata preflight. API startup fails closed before serving endpoints against an incompatible schema. No migrations or data updates occur at HTTP startup.
+- **Not proven:** real existing production schema, production migration from an older release, SQL schema version ledger/checksum runner, restored backup, real IdP, secured VPS or real customer data. SQL 008 still requires explicit operator-controlled migration and legacy approval re-review.

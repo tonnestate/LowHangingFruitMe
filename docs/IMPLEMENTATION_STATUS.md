@@ -100,14 +100,13 @@ Umgesetzt im **Entwicklungscode**: SQL 008 ergänzt Revisionsmetadaten, einen ei
 **Weiter offen:** Statusstufen EXTRACTED und NEEDS_CONFIRMATION als eigener an Vertragsdokumente gekoppelter, sicherer Draft-/Review-Lifecycle; echte aus Docling stammende fundstellenbezogene Änderungsprüfung; produktiver Migrationsnachweis, unabhängiger fachlicher Pilot. Einzel-Abnahme des Head-/Supersession-Pfads: **PASS in synthetischer MariaDB-CI** (310 Python-Tests je Version 3.11/3.12, Actions 41697334882). Die vollständige v0.14-Freigabe einschließlich Vorschlags-Lifecycle und realer Vertrags-/Kundenprüfung bleibt **OFFEN**.
 
 
-## Nachtrag: SQL-Schema-Startgate (Implementierung, CI-Nachweis separat prüfen)
+## Nachtrag: SQL-Schema-Startgate (synthetische CI-Abnahme bestanden)
 
 `lhfm-schema-check` und `require_operational_schema` prüfen die tatsächlich
 benötigten MariaDB-Strukturen aus SQL 001–008 rein lesend. Die FastAPI-Factory
 verweigert bei Drift/fehlender Migration den Start. Negative Unit-Tests decken
 fehlende 007/008-Felder und -Tabellen, fehlende Constraints, ungeeignete
 Tabellenengine und den falschen 3%-Default ab; ein echter isolierter MariaDB-
-Integrationstest ist im CI-Suite enthalten. Erst nach erfolgreichem Actions-
-Nachweis als bestanden kennzeichnen. Noch **kein** eigenständiger SQL-Runner,
+Integrationstest ist im CI-Suite enthalten. **Nachgewiesen:** GitHub Actions [41826517951](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41826517951), Commit `6300564787c623e6eed3779e581de39ad70670fe`, 319 Python-Tests je Runner (3.11 und 3.12), einschließlich isolierter echter MariaDB und negativer Schema-Gates; beide Jobs erfolgreich. Noch **kein** eigenständiger SQL-Runner,
 keine automatischen oder produktiven Migrationen; erforderliche v0.14-
 Bestandsfreigaben bleiben offen.
