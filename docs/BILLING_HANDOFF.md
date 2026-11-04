@@ -88,3 +88,8 @@ Handoffs darf nicht als fällige Rechnung oder Zahlung behauptet werden.
 SQL-Migration: `sql/010_billing_handoff.sql`, ausschließlich
 nach freigegebener Sicherung durch das prüfsummengebundene
 Wartungstool, niemals vom Webprozess ausgeführt.
+
+
+## Testevidenz (synthetisch, 04.11.2026)
+
+[Python Actions 41848863107](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41848863107) erfolgreich mit **423 Tests je Python 3.11 und 3.12**, darunter Storno, Vertragsannahme-Revision, Legal-/Terms-Entzug und Zweitfreigabe. [Portal Actions 41848399198](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41848399198) Build, Typenprüfung und Browsertests grün. Keine echten Bank-, Mandanten-, Rechnungs- oder Rechtsdaten verarbeitet.

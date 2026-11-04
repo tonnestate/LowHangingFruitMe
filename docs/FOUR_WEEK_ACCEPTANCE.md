@@ -114,5 +114,4 @@ vereinbarte Vergütungsbedingungen → zweifach autorisierte
 `PREPARED/RELEASED`-Akte → ggf. Stale-/Void-/neuer Packetstand.
 Negativtests: fehlende Terms, falscher Satz, unerlaubte Identität,
 unreviewte Quelle, Doppelfreigabe, Storno vor und nach Freigabe und
-Dokumentationspflicht für externe Korrektur. CI bis erfolgreichem
-Abschluss offen. Realer Bank-/Rechnungs- und Rechtsnachweis separat OFFEN.
+Dokumentationspflicht für externe Korrektur. **PASS – isolierte MariaDB-CI:** [Actions 41848863107](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41848863107), 423 bestandene Tests je Python-Version. [Portal CI 41848399198](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41848399198) ebenfalls grün. Änderungen der Terms-/Legalprüf-Hashes erfordern eine neue Akte; Widerruf aktiver Bedingungen markiert RELEASED-Stände als stale. Realer Bank-/Rechnungs- und Rechtsnachweis separat OFFEN.

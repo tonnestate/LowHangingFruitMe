@@ -152,7 +152,7 @@ Der dokumentenverarbeitende Unterprozess wurde auf inkrementell begrenzten stdou
 Im BFF implementiert: gleichursprünglich gepinnter HTTPS-Token-Endpoint, Client-Credentials-Refresh mit Timeout und 16-KiB-Limit, prozesslokales Singleflight, erfolgreiche Access-/Refresh-Rotation mit Auth.js-JWE-Encode und Auth.js-kompatibler Cookie-Bereinigung; Fehler führt zur erneuten Anmeldung ohne Credentials an den Browser. **CI bestanden:** [Actions 41842914601](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41842914601), 16 Node-Unit-Tests, Next.js-Build, TypeScript und Playwright erfolgreich. Keine reale IdP-/MFA-/Multi-Worker-/VPS-Abnahme.
 
 
-### v0.15 – Billing-Handoff statt theoretischer Honorarrechnung (04.11.2026 – CI ausstehend)
+### v0.15 – Billing-Handoff statt theoretischer Honorarrechnung (04.11.2026 – synthetische CI bestanden)
 
 Neue SQL-010-Tabellen `lhfm_commercial_terms`, `lhfm_billing_grants`,
 `lhfm_billing_packets` und Append-only-Ereignisse. Auf aktive
@@ -160,6 +160,6 @@ Kundenannahme-/Legal-Prüf-Referenzen aus der separat verwalteten
 Datenbank gebundene Zweipersonenfreigabe, erneut gesperrter
 Recovery-Stand beim endgültigen Handoff, historische 3%/neue 5%,
 Stale-/Reversal-/Correction-Prüfung und abgegrenzte BFF-Routen.
-Synthetische E2E-/Negativtests werden über MariaDB-CI geprüft;
+**CI bestanden:** [Actions 41848863107](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41848863107), 423/423 Python-Tests auf 3.11 und 3.12. Zusätzlich [Portal Actions 41848399198](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41848399198), Build/Typecheck/Browser erfolgreich. Tests schließen Vertragsrevision, Entzug der kommerziellen Freigabe, unterschiedliche Vertragsraten, unabhängige Zweitfreigabe, Reversal, Void und falsche Mandanten ein;
 **eine produktive Rechnung, Bankverifikation und externe Rechtsfreigabe
 sind NICHT nachgewiesen**.
