@@ -14,6 +14,10 @@
     ProxyPreserveHost On
     ProxyRequests Off
     RequestHeader set X-Forwarded-Proto "https"
+    # The isolated Docling worker may run for 120s; BFF caps at 135s.
+    # Keep this specific path ahead of the general 45s website proxy.
+    ProxyPass /api/finance/ http://127.0.0.1:3107/api/finance/ connectiontimeout=5 timeout=150
+    ProxyPassReverse /api/finance/ http://127.0.0.1:3107/api/finance/
     ProxyPass / http://127.0.0.1:3107/ connectiontimeout=5 timeout=45
     ProxyPassReverse / http://127.0.0.1:3107/
 
