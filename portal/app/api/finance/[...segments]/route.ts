@@ -1,5 +1,7 @@
 import type { NextRequest } from "next/server";
-import { getToken } from "next-auth/jwt";
+import { getToken, encode } from "next-auth/jwt";
+import {authCookieName, sessionCookieNames, clearAuthCookies,
+        rotateAuthCookies, renewApiCredential} from "../../../../lib/oidc-renewal.mjs";
 import { sameOrigin, trustedApiOrigin, verifiedApiPath } from "../../../../lib/private-api.mjs";
 
 export const runtime = "nodejs";
@@ -11,6 +13,11 @@ const json = (code:number, error:string) => Response.json(
 );
 const MAX_FILE = 16 * 1024 * 1024;
 const MAX_JSON = 128 * 1024;
+
+function withSessionCookies(response:Response,cookies:string[]):Response{
+  for(const cookie of cookies)response.headers.append("Set-Cookie",cookie);
+  return response;
+}
 
 async function limitedBody(request:NextRequest,limit:number):Promise<Uint8Array|null>{
   const reader=request.body?.getReader();
@@ -39,21 +46,58 @@ async function forward(request:NextRequest,ctx:Context){
   if(!apiPath)return json(404,"UNKNOWN_PRIVATE_ROUTE");
   const configured=trustedApiOrigin(process.env.LHFM_API_INTERNAL_URL);
   if(!configured)return json(503,"BACKEND_NOT_CONFIGURED");
-  if(!process.env.AUTH_SECRET || !process.env.AUTH_OIDC_ISSUER)return json(503,"OIDC_NOT_CONFIGURED");
+  const secret=process.env.AUTH_SECRET;
+  const publicUrl=process.env.AUTH_URL;
+  if(!secret||Buffer.byteLength(secret,"utf8")<32||
+     !process.env.AUTH_OIDC_ISSUER||!process.env.AUTH_OIDC_TOKEN_ENDPOINT||
+     !process.env.AUTH_OIDC_CLIENT_ID||!process.env.AUTH_OIDC_CLIENT_SECRET||
+     !publicUrl?.startsWith("https://")){
+    return json(503,"OIDC_NOT_CONFIGURED");
+  }
   if(method!=="GET"&&!sameOrigin(request.url,request.headers.get("origin")))
     return json(403,"ORIGIN_FORBIDDEN");
 
+  // Auth.js v5 uses Secure-prefixed cookies for the public HTTPS origin.
+  // Do not infer this from request.nextUrl (Apache may proxy over HTTP).
+  const secureCookie=true;
+  const existingCookies=request.cookies.getAll();
+  const existingSession=sessionCookieNames(existingCookies,secureCookie);
+  if(!existingSession.length)return json(401,"AUTH_REQUIRED");
+
   let bearer:string|undefined;
+  let rotatedCookies:string[]=[];
   try{
-    const token=await getToken({req:request,secret:process.env.AUTH_SECRET,
-      secureCookie:request.nextUrl.protocol==="https:"});
-    if(token && typeof token.apiAccessToken==="string" &&
-       typeof token.apiExpiresAt==="number" &&
-       token.apiExpiresAt>Math.floor(Date.now()/1000)+10){
+    const token=await getToken({req:request,secret,secureCookie});
+    if(!token)throw new Error("AUTH_REQUIRED");
+    const expires=token.apiExpiresAt;
+    if(typeof token.apiAccessToken==="string" && token.apiAccessToken &&
+       typeof expires==="number" && expires>Math.floor(Date.now()/1000)+45){
       bearer=token.apiAccessToken;
+    }else{
+      if(typeof token.apiRefreshToken!=="string"||!token.apiRefreshToken){
+        throw new Error("SESSION_REAUTH_REQUIRED");
+      }
+      const renewed=await renewApiCredential({
+        issuer:process.env.AUTH_OIDC_ISSUER,
+        tokenEndpoint:process.env.AUTH_OIDC_TOKEN_ENDPOINT,
+        clientId:process.env.AUTH_OIDC_CLIENT_ID,
+        clientSecret:process.env.AUTH_OIDC_CLIENT_SECRET,
+        refreshToken:token.apiRefreshToken,
+      });
+      const updated={...token,
+        apiAccessToken:renewed.accessToken,
+        apiExpiresAt:renewed.expiresAt,
+        apiRefreshToken:renewed.refreshToken,
+      };
+      // Auth.js JWE with the exact cookie-name salt used by getToken().
+      const name=authCookieName(secureCookie);
+      const encrypted=await encode({token:updated,secret,salt:name,maxAge:3600});
+      rotatedCookies=rotateAuthCookies(encrypted,existingCookies,secureCookie);
+      bearer=renewed.accessToken;
     }
   }catch{
-    return json(401,"AUTH_REQUIRED");
+    return withSessionCookies(json(401,"SESSION_REAUTH_REQUIRED"),
+                              clearAuthCookies(existingCookies,secureCookie));
   }
   if(!bearer)return json(401,"AUTH_REQUIRED");
   const url=new URL(apiPath,configured);
@@ -98,21 +142,21 @@ async function forward(request:NextRequest,ctx:Context){
        "application/json; charset=utf-8";
       const match=/\/audits\/([0-9a-f-]{36})\/report\./.exec(apiPath);
       if(!match)return json(502,"INVALID_REPORT_RESPONSE");
-      return new Response(bytes,{status:upstream.status,headers:{
+      return withSessionCookies(new Response(bytes,{status:upstream.status,headers:{
         "Content-Type":kind,"Cache-Control":"no-store",
         "X-Content-Type-Options":"nosniff",
         "Content-Disposition":'attachment; filename="lhfm-'+match[1]+"."+fmt+'"',
-      }});
+      }}),rotatedCookies);
     }
     const result=await upstream.text();
     if(result.length>4*1024*1024)return json(502,"UPSTREAM_RESPONSE_TOO_LARGE");
-    return new Response(result,{
+    return withSessionCookies(new Response(result,{
       status:upstream.status,
       headers:{"Content-Type":"application/json; charset=utf-8",
                "Cache-Control":"no-store",
                "X-Content-Type-Options":"nosniff"},
-    });
-  }catch{return json(503,"BACKEND_UNAVAILABLE");}
+    }),rotatedCookies);
+  }catch{return withSessionCookies(json(503,"BACKEND_UNAVAILABLE"),rotatedCookies);}
 }
 export async function GET(req:NextRequest,ctx:Context){return forward(req,ctx);}
 export async function POST(req:NextRequest,ctx:Context){return forward(req,ctx);}
