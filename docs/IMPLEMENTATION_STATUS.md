@@ -193,7 +193,7 @@ diese Grenze. Bestehende Betriebs-Gates bleiben offen.
 **Letzte Härtungsabnahme:** [Python Actions 41857045105](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41857045105), 431/431 Tests unter 3.11 und nochmals 431/431 unter 3.12; [DR Actions 41856986225](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41856986225), kompletter verschlüsselter Restore mit Ed25519-Integritätsprüfung und privaten File-Hashes erfolgreich. Diese Nachweise sind ausschließlich synthetische CI, keine Hostabnahme.
 
 
-### v0.17 – zwingende lokale Runtime-Abnahme vor API-Boot (04.11.2026, CI ausstehend)
+### v0.17 – zwingende lokale Runtime-Abnahme vor API-Boot (04.11.2026, synthetische CI bestanden)
 
 Neues `lhfm-runtime-check` mit root-UID-Sperre, zwingendem MariaDB-
 Loopback, privatem 0700-Upload- und 0700-Audit-/Source-Root
@@ -204,3 +204,6 @@ Separates API-systemd-Template für UID `lhfm-api`, Loopback-Port
 8127, Betriebshärtung und root-owned EnvironmentFile; bestehende
 Portal-Unit erhält das separate root-owned OIDC-EnvironmentFile.
 VPS-Installation und realer End-to-End-Betrieb bleiben offen.
+
+
+**CI-Abnahme:** [Python Actions 41866179166](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41866179166) ist **completed/success** mit 443 Tests unter Python 3.11 und 443 unter 3.12. Enthalten sind Negativprüfungen für root-UID, DB-Rootuser, fremde/systeminterne Datenbanken, nichtlokale DB, Symlink-/Rechtefehler, überlappende Verzeichnisse, fehlende ClamAV-/Docling-Konfiguration und die zwingende Laufzeitprüfung der echten FastAPI-Factory. Der installierte CLI-Befehl lehnt die synthetische CI-Umgebung erwartungsgemäß mit Exit-Code 2 ab. Paket-Build und Wheel-Smoke bestanden. Der [synthetische DR-Lauf 41864436497](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41864436497) ist ebenfalls erfolgreich. Reale VPS-Installation/IdP/Docling/ClamAV/End-to-End-Probe bleibt offen.

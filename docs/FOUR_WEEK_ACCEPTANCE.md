@@ -140,5 +140,4 @@ Socket und Docling-Launcher führen zur Ablehnung. Reale MariaDB-
 Kompatibilität, Scanner-PING und Docling-Netzwerk-Sandbox werden im
 separaten CLI `lhfm-runtime-check` geprüft, dessen Exitcode den
 systemd-Start blockiert. Die API-Vorlage bindet nur
-`127.0.0.1:8127` und nutzt eine eigene UID. **CI noch zu prüfen;**
-VPS/TLS/IdP/ClamAV/Docling vollständig extern offen.
+`127.0.0.1:8127` und nutzt eine eigene UID. **PASS – synthetische Python-CI:** [Actions 41866179166](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41866179166), 443 Tests auf Python 3.11 und 443 auf Python 3.12. Zusätzlich das installierte `lhfm-runtime-check` im ungeprüften CI-Environment ausdrücklich mit Exit 2 abgewiesen, sowie Build/Wheel-Smoke bestanden. VPS/TLS/IdP/ClamAV/Docling vollständig extern offen.
