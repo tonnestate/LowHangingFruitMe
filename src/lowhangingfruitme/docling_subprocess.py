@@ -27,11 +27,15 @@ def _trusted_launcher(raw: str | None) -> Path:
     path = Path(raw)
     # Check each parent to prevent a root-owned file in a user-writable tree
     # being swapped out between permission validation and launch.
-    for part in (path, *path.parents):
-        metadata = part.lstat()
-        if stat.S_ISLNK(metadata.st_mode) or metadata.st_uid != 0 or metadata.st_mode & 0o022:
-            raise RuntimeError("document sandbox launcher path is not root-controlled")
-    metadata = path.stat()
+    try:
+        for part in (path, *path.parents):
+            metadata = part.lstat()
+            if (stat.S_ISLNK(metadata.st_mode) or metadata.st_uid != 0
+                    or metadata.st_mode & 0o022):
+                raise RuntimeError("document sandbox launcher path is not root-controlled")
+        metadata = path.stat()
+    except OSError as exc:
+        raise RuntimeError("document sandbox launcher does not exist or is unreadable") from exc
     if not stat.S_ISREG(metadata.st_mode) or not (metadata.st_mode & 0o111):
         raise RuntimeError("document sandbox launcher must be an executable regular file")
     return path
