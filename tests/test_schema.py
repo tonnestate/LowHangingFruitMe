@@ -92,7 +92,7 @@ class SchemaCompatibilityUnitTests(unittest.TestCase):
     def test_schema_ledger_rejects_missing_and_incomplete_migrations(self):
         rows = [
             {"migration_id": n, "checksum_sha256": PINNED_SQL_SHA256[n - 1], "state": "APPLIED"}
-            for n in range(1, 10)
+            for n in range(1, 11)
         ]
         self.assertEqual(find_migration_ledger_mismatches(rows), [])
         self.assertTrue(find_migration_ledger_mismatches(rows[:-1]))

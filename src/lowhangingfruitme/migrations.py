@@ -25,6 +25,7 @@ SQL_FILES = (
     "007_recovery_fee_policy.sql",
     "008_rule_revisions.sql",
     "009_contract_candidates.sql",
+    "010_billing_handoff.sql",
 )
 # Immutable release baseline: SHA-256 of the exact, reviewed UTF-8 SQL source.
 # New migrations must be appended and explicitly reviewed; historical hashes
@@ -39,6 +40,7 @@ PINNED_SQL_SHA256 = (
     "d37ee6752e286674ac5d1d0f31bbc28d5641f3f5dd8755844f5cc29d3cfb6fee",
     "bfdf71d88f5908a9492aab1edaee16799c486cbcdb9635c2e17d2685bcd8a036",
     "912cb1b4e3037c008d4a17b32c5e01a81a7a36262f835485024403fb0256d640",
+    "bc2655786a1f8ac5ca513322eca7dd52cf8091f6422233b6fed1b1850cd4eae1",
 )
 
 TRACKING_DDL = """
