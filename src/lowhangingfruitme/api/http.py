@@ -134,6 +134,21 @@ def create_app(*, service: AuthenticatedApprovalService,
     def health():
         return {"status":"alive"}
 
+    @app.get("/readyz", include_in_schema=False)
+    def readiness():
+        """Operational check. Liveness is never proof of audit/upload readiness."""
+        if (uploads is None or promotion is None or recovery is None
+                or not isinstance(uploads.scanner, ClamAVScanner)):
+            raise HTTPException(status_code=503, detail={"code": "NOT_READY"})
+        try:
+            from ..schema import require_operational_schema
+            require_operational_schema(service.registry._connect)
+            uploads.scanner.ping()
+        except Exception as exc:
+            # Do not expose DB structure, credentials or socket paths.
+            raise HTTPException(status_code=503, detail={"code": "NOT_READY"}) from exc
+        return {"status": "ready"}
+
     def configured_uploads() -> UploadService:
         if uploads is None:
             raise HTTPException(status_code=503, detail={"code":"UPLOAD_NOT_CONFIGURED"})

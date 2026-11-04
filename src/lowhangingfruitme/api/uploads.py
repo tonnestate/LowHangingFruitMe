@@ -57,6 +57,19 @@ class ClamAVScanner:
         self.unix_socket = str(p)
         self.timeout = timeout
 
+    def ping(self) -> None:
+        """Verify the actual local daemon protocol, not just socket existence."""
+        try:
+            with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as sock:
+                sock.settimeout(min(self.timeout, 3.0))
+                sock.connect(self.unix_socket)
+                sock.sendall(b"zPING\0")
+                reply = sock.recv(64)
+        except (OSError, TimeoutError) as exc:
+            raise ScannerUnavailable("malware scanner ping unavailable") from exc
+        if reply.split(b"\0", 1)[0] != b"PONG":
+            raise ScannerUnavailable("malware scanner ping invalid")
+
     def scan(self, path: Path) -> bool:
         try:
             with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as sock:

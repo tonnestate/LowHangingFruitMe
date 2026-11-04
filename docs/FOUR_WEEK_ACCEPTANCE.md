@@ -84,3 +84,8 @@ Ein isolierter echter MariaDB-Test muss beweisen, dass eine Widerrufstransaktion
 ### Migrations-Prozess-Gate (04.11.2026)
 
 Der Release benötigt den getrennten Schema-Migrationsrunner mit lesendem Plan, überprüften Prüfsummen, Lock, Status IN_PROGRESS/APPLIED, Abbruch bei Drift, korrekter Historisierung von 007/008 sowie verweigerter API-Ausführung bei fehlendem Ledger. CI-Fresh-DB und wiederholter No-Op müssen getestet sein. **PASS – synthetische MariaDB-CI** ([Actions 41828849927](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41828849927)): 330 Python-Tests auf 3.11 und 3.12, inklusive produktionsidentischer Test-Schema-Initialisierung und No-Op-Nachprüfung. Keine VPS-/Backup-Restore-Abnahme. Realer Restore-Test auf dem VPS bleibt separat OFFEN.
+
+
+### Externes Betriebs-Readiness-Gate (04.11.2026)
+
+`GET /readyz` trennt ClamAV-Protokollantwort, Finanzdienst-Konfiguration und MariaDB-Migrationserfolg von reiner Liveness. **CI-Test ausstehend**. Unabhängig davon bleibt ein realer VPS-ClamAV mit aktuellen Signaturen, überprüfter Parserisolation, IdP- und Mandantenabnahme verpflichtend.

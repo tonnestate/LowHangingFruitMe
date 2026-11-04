@@ -176,3 +176,14 @@ Kein automatisches Upgrade fremder oder bereits ungeprüft manuell migrierter
 Produktivbestände. Die isolierte CI-Testdatenbank wird durch denselben Runner
 initialisiert. Die Dokumentation behauptet weiterhin **keine** reale
 VPS-Migration oder Kundenfreigabe.
+
+
+### Laufzeit-Gate vor Load-Balancer-Freigabe
+
+`GET /healthz` bestätigt ausschließlich einen lebenden API-Prozess. Das neue
+`GET /readyz` liefert nur dann HTTP 200, wenn Finanzdienste und MariaDB-Schema
+verfügbar sind und ClamAV über seinen lokalen UNIX-Socket ein korrektes
+`zPING`/`PONG`-Protokoll beantwortet. Fehlende/gestörte Komponenten liefern
+HTTP 503, ohne interne Pfade offenzulegen. Ein Ping bestätigt **nicht** die
+Aktualität der Virensignaturen oder die Betriebssicherheit der PDF-Parser;
+diese Punkte bleiben separate Go-Live-Kontrollen.

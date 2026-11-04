@@ -5,10 +5,15 @@ Synthetic reviewers and PDF evidence; no assertion of real bank reconciliation.
 from __future__ import annotations
 
 from uuid import uuid4
+from pathlib import Path
+from tempfile import TemporaryDirectory
+import socket
+import threading
 from fastapi.testclient import TestClient
 
 from test_promotion import ReviewedPipelineTests
 from lowhangingfruitme.api.http import create_app
+from lowhangingfruitme.api.uploads import ClamAVScanner
 from lowhangingfruitme.api.recovery import RecoveryLedger, _cents, _fee_proposal
 
 
@@ -16,6 +21,35 @@ PDF=lambda label: (b"%PDF-1.7\n% synthetic finance proof label: " + label.encode
 
 
 class RecoveryPipelineTests(ReviewedPipelineTests):
+    def test_readyz_checks_real_socket_protocol_and_schema(self):
+        with TemporaryDirectory() as temp:
+            path = Path(temp) / "clamd.sock"
+            server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            server.bind(str(path))
+            server.listen(1)
+            observed = []
+
+            def serve():
+                try:
+                    conn, _ = server.accept()
+                    with conn:
+                        observed.append(conn.recv(64))
+                        conn.sendall(b"PONG\0")
+                finally:
+                    server.close()
+
+            thread = threading.Thread(target=serve, daemon=True)
+            thread.start()
+            self.uploads.scanner = ClamAVScanner(path, timeout=2)
+            response = self.client.get("/readyz")
+            thread.join(timeout=2)
+            self.assertEqual(response.status_code, 200, response.text)
+            self.assertEqual(response.json(), {"status": "ready"})
+            self.assertEqual(observed, [b"zPING\0"])
+        response = self.client.get("/readyz")
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.json()["detail"]["code"], "NOT_READY")
+
     def scope(self):
         return {"tenant_id": self.tenant, "legal_entity_id": self.entity}
 

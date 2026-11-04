@@ -302,6 +302,12 @@ class UploadApiTests(unittest.TestCase):
         )
         self.assertEqual(result.status_code,404)
 
+    def test_readiness_rejects_synthetic_scanner_and_missing_services(self):
+        result = self.client.get("/readyz")
+        self.assertEqual(result.status_code, 503)
+        self.assertEqual(result.json()["detail"]["code"], "NOT_READY")
+        self.assertEqual(self.client.get("/healthz").status_code, 200)
+
     def test_unconfigured_upload_gate_fails_closed(self):
         client=TestClient(create_app(service=self.service,store=self.store))
         self.addCleanup(client.close)
@@ -318,6 +324,51 @@ class ClamAVProtocolTests(unittest.TestCase):
             f.write_bytes(b"a,b\n1,2\n")
             with self.assertRaises(ScannerUnavailable):
                 ClamAVScanner(str(Path(temp)/"missing.sock"),timeout=1).scan(f)
+
+    def test_local_clamd_ping_requires_exact_pong(self):
+        with TemporaryDirectory() as temp:
+            path = Path(temp) / "ping.sock"
+            server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            server.bind(str(path))
+            server.listen(1)
+            observed = []
+
+            def serve():
+                try:
+                    conn, _ = server.accept()
+                    with conn:
+                        observed.append(conn.recv(64))
+                        conn.sendall(b"PONG\0")
+                finally:
+                    server.close()
+
+            thread = threading.Thread(target=serve, daemon=True)
+            thread.start()
+            ClamAVScanner(path, timeout=2).ping()
+            thread.join(timeout=2)
+            self.assertEqual(observed, [b"zPING\0"])
+
+    def test_local_clamd_ping_rejects_incorrect_reply(self):
+        with TemporaryDirectory() as temp:
+            path = Path(temp) / "bad-ping.sock"
+            server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            server.bind(str(path))
+            server.listen(1)
+
+            def serve():
+                try:
+                    conn, _ = server.accept()
+                    with conn:
+                        conn.recv(64)
+                        conn.sendall(b"UNKNOWN\0")
+                finally:
+                    server.close()
+
+            thread = threading.Thread(target=serve, daemon=True)
+            thread.start()
+            with self.assertRaises(ScannerUnavailable):
+                ClamAVScanner(path, timeout=2).ping()
+            thread.join(timeout=2)
 
     def test_local_clamd_instream_framing_and_clean_response(self):
         with TemporaryDirectory() as temp:

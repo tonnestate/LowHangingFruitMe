@@ -43,3 +43,8 @@ FastAPI accepts only Bearer access JWT, opaque bundle UUID, tenant/legal entity 
 ## v0.9 – private staging uploads, not public customer intake
 
 Upload API validates signed JWT and database grant, accepts only a server-assigned UUID / exact size + SHA256 / fixed format kind, enforces single-writer SQL state and at most 16MiB raw streamed content. The OS staging area requires mode 0700, exclusive 0600 file creation, post-scan type checks and non-overwriting promotion by hardlink. A real clamd daemon must explicitly report `stream: OK` via trusted local UNIX socket; infection or ambiguous/unavailable result fails closed, with bytes deleted. Exposed GET returns metadata only. **The CI scanner is a test double, not evidence of actual malware protection.** CLEAN uploads do not enter audit calculations and must be independently authorized, normalized and provenance-bound. Before any public launch add quota/rate limiting, genuine identity lifecycle and offboarding, encrypted per-tenant storage, scanning operations/signature update, retention/erasure, revalidation, backup, secure reverse proxy and actual DPA/legal/security approvals.
+
+
+### Operational readiness
+
+`/healthz` is a liveness endpoint, not a health certificate. `/readyz` denies readiness (503) unless the runtime has the configured upload/promotion/recovery services, compatible MariaDB migration ledger and a **real ClamAVScanner adapter receiving an explicit clamd PONG** on its local UNIX socket. This is not evidence of current malware signatures, adequate PDF process isolation, operational recovery policies or a deployed IdP. A synthetic ClamAV socket in CI only verifies the protocol and gate.
