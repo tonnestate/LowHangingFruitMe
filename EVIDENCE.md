@@ -215,3 +215,12 @@ All figures are synthetic. No automatic real recovery, finance invoice issuance,
 - **319 tests passed per runner** including actual isolated MariaDB 11.4, missing SQL 007/008 objects, non-InnoDB schema, missing constraints, wrong historical 3%-default and a successful read-only preflight of the freshly migrated CI database.
 - The installed `lhfm-schema-check` command and `create_app_from_environment` share the metadata preflight. API startup fails closed before serving endpoints against an incompatible schema. No migrations or data updates occur at HTTP startup.
 - **Not proven:** real existing production schema, production migration from an older release, SQL schema version ledger/checksum runner, restored backup, real IdP, secured VPS or real customer data. SQL 008 still requires explicit operator-controlled migration and legacy approval re-review.
+
+
+## v0.14 InnoDB revision-lock ordering / MariaDB migration control (04.11.2026)
+
+**Deadlock prevention:** [commit eb6e6839aa4a5bc917e9ec964bb2d7a83694ee95](https://github.com/tonnestate/LowHangingFruitMe/commit/eb6e6839aa4a5bc917e9ec964bb2d7a83694ee95), [Actions 41827901269](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41827901269), completed/success, both Python 3.11 and 3.12. Revoke now locks revision head before approval and reviewer grant; isolated MariaDB test holds head alone to prove revoke blocks until release.
+
+**Tracked migrations:** [commit 83d45d50a7921be9218ec8eada80ed795c683470](https://github.com/tonnestate/LowHangingFruitMe/commit/83d45d50a7921be9218ec8eada80ed795c683470), [Actions 41828849927](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41828849927), completed/success: **330 Python tests passed on 3.11 and 330 on 3.12**. CI initialized a real MariaDB 11.4 test schema through `lhfm-migrate`'s underlying controlled runner; passed no-op plan, missing/in-progress/modified-checksum negative cases and startup schema validation. `lhfm-migrate --apply` requires deliberate operator environment flag and backup confirmation outside CI, and cannot silently adopt untracked preexisting LHFM tables.
+
+**Not tested or claimed:** migration of a customer/legacy VPS database, actual disaster recovery from a partial DDL, a working live ClamAV/IdP, completed proposal-state lifecycle, real ERP audit, legal contract acceptance or fee collection. A successful isolated CI job does not authorize production deployment.

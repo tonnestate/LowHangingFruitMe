@@ -112,11 +112,11 @@ keine automatischen oder produktiven Migrationen; erforderliche v0.14-
 Bestandsfreigaben bleiben offen.
 
 
-### v0.14-Deadlock-Prävention (04.11.2026)
+### v0.14-Deadlock-Prävention (04.11.2026 – CI bestanden)
 
-Widerruf übernimmt jetzt dieselbe Reihenfolge von InnoDB-Row-Locks wie Audit-Guard und signierte Supersession (Head → Approval → Reviewer). Der neue CI-MariaDB-Test hält ausschließlich den Head-Lock und kontrolliert, dass Revoke nicht vorzeitig committen kann. Bis zum dazugehörigen GitHub-Actions-Erfolg nur als **implementiert, noch nicht CI-bestätigt** werten.
+Widerruf übernimmt jetzt dieselbe Reihenfolge von InnoDB-Row-Locks wie Audit-Guard und signierte Supersession (Head → Approval → Reviewer). Der neue CI-MariaDB-Test hält ausschließlich den Head-Lock und kontrolliert, dass Revoke nicht vorzeitig committen kann. **CI bestanden:** [Actions 41827901269](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41827901269), Python 3.11/3.12; ohne produktive Konkurrenzlastabnahme.
 
 
-### Revisionssichere SQL-Migrationshistorie (04.11.2026 – CI noch nicht bestätigt)
+### Revisionssichere SQL-Migrationshistorie (04.11.2026 – synthetische CI bestanden)
 
-Der neue CLI-Befehl `lhfm-migrate` ist unabhängig vom API-Start. Er unterstützt schreibfreien Plan, operatorbestätigte DDL-Installation, SHA256-Checksums, MariaDB Advisory Lock und vor DDL persistierte IN_PROGRESS-Marker. API-Start validiert jetzt auch die lückenlose Versionierung 001–008. CI-Setup nutzt denselben Runner auf leerer Testdatenbank. Echte Bestandsmigration, Wiederherstellungstest, Livebetrieb und kundenbezogene Vertrags-/Honorarfreigaben sind weiterhin offen.
+Der neue CLI-Befehl `lhfm-migrate` ist unabhängig vom API-Start. Er unterstützt schreibfreien Plan, operatorbestätigte DDL-Installation, SHA256-Checksums, MariaDB Advisory Lock und vor DDL persistierte IN_PROGRESS-Marker. API-Start validiert jetzt auch die lückenlose Versionierung 001–008. CI-Setup nutzt denselben Runner auf leerer Testdatenbank. **CI bestanden:** [Actions 41828849927](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41828849927): 330 Python-Tests je Version 3.11/3.12, inklusive frisch angewandter 001–008-Migrationen, Ledger-No-Op-Test und Schema-Gate. Echte Bestandsmigration, Wiederherstellungstest, Livebetrieb und kundenbezogene Vertrags-/Honorarfreigaben sind weiterhin offen.
