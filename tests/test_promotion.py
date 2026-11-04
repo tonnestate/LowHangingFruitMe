@@ -25,6 +25,7 @@ from lowhangingfruitme.api.http import create_app
 from lowhangingfruitme.api.store import PrivateAuditStore
 from lowhangingfruitme.api.uploads import UploadService, UploadRejected
 from lowhangingfruitme.api.promotion import ReviewedBundleService
+from lowhangingfruitme.api.candidates import ContractCandidateService
 
 BASE=Path(__file__).parent/"fixtures"
 TENANT, ENTITY, ACTOR="T-SYN-1","LE-SYN-1","REVIEWER-SYN-1"
@@ -164,6 +165,140 @@ class ReviewedPipelineTests(unittest.TestCase):
     def post(self,body,**token_overrides):
         return self.client.post("/v1/bundles",json=body,
                                 headers=self.headers(**token_overrides))
+
+    def test_contract_candidate_is_required_before_signing_and_audit(self):
+        tx, st, co = self.inputs()
+        document_sha = sha256(CONTRACT).hexdigest()
+        cite = "sha256:" + document_sha + "#item=0&pages=1"
+        segment = {"evidence_ref": cite,
+                   "text": "Vertragsklausel: 2 Prozent auf Nettobuchungen.",
+                   "pages": [1]}
+        candidates = ContractCandidateService(
+            service=self.service, uploads=self.uploads,
+            extractor=lambda path: {
+                "file_sha256": sha256(path.read_bytes()).hexdigest(),
+                "segments": [segment],
+            },
+        )
+        guarded = ReviewedBundleService(
+            service=self.service, uploads=self.uploads, store=self.store,
+            candidates=candidates, require_candidate=True,
+        )
+        with TestClient(create_app(
+            service=self.service, store=self.store, uploads=self.uploads,
+            promotion=guarded, candidates=candidates,
+        )) as client:
+            payload = self.body(tx, st, co)
+            self.assertEqual(
+                client.post("/v1/bundles", json=payload,
+                            headers=self.headers()).status_code, 422,
+            )
+            candidate = client.post("/v1/contract-candidates", json={
+                **self.scope(), "contract_upload_id": co,
+                "agreement_id": self.rule["agreement_id"],
+                "rule_id": self.rule["rule_id"],
+                "rule_revision": self.rule["revision"],
+                "source_revision_id": payload["source_revision_id"],
+            }, headers=self.headers())
+            self.assertEqual(candidate.status_code, 201, candidate.text)
+            self.assertEqual(candidate.json()["state"], "EXTRACTED")
+            cid = candidate.json()["candidate_id"]
+            self.assertEqual(candidate.json()["segments"][0]["evidence_ref"], cite)
+            detail = client.get(
+                "/v1/contract-candidates/" + cid,
+                params=self.scope(), headers=self.headers(),
+            )
+            self.assertEqual(detail.status_code, 200, detail.text)
+            self.assertEqual(detail.json()["state"], "EXTRACTED")
+            payload["candidate_id"] = cid
+            payload["rule"] = {**self.rule, "evidence_refs": [cite]}
+            self.assertEqual(
+                client.post("/v1/bundles", json=payload,
+                            headers=self.headers()).status_code, 422,
+            )
+            invalid_rule = {**payload["rule"],
+                            "evidence_refs": ["fabricated-contract-clause"]}
+            invalid = client.post(
+                "/v1/contract-candidates/" + cid + "/review",
+                json={**self.scope(), "rule":invalid_rule,
+                      "confirm_clause_review":True},
+                headers=self.headers(),
+            )
+            self.assertEqual(invalid.status_code, 409, invalid.text)
+            self.assertEqual(
+                client.get("/v1/contract-candidates/" + cid,
+                           params=self.scope(), headers=self.headers(
+                               sub="IMPERSONATOR")).status_code, 403,
+            )
+            approved = client.post(
+                "/v1/contract-candidates/" + cid + "/review",
+                json={**self.scope(), "rule":payload["rule"],
+                      "confirm_clause_review":True},
+                headers=self.headers(),
+            )
+            self.assertEqual(approved.status_code, 200, approved.text)
+            self.assertEqual(approved.json()["state"], "NEEDS_CONFIRMATION")
+            self.assertEqual(
+                client.post("/v1/contract-candidates/" + cid + "/review",
+                            json={**self.scope(), "rule":payload["rule"],
+                                  "confirm_clause_review":True},
+                            headers=self.headers()).status_code, 409,
+            )
+            final = client.post(
+                "/v1/bundles", json=payload, headers=self.headers(),
+            )
+            self.assertEqual(final.status_code, 201, final.text)
+            after = client.get(
+                "/v1/contract-candidates/" + cid,
+                params=self.scope(), headers=self.headers(),
+            )
+            self.assertEqual(after.json()["state"], "APPROVED")
+            self.assertEqual(after.json()["approval_id"],
+                             final.json()["approval_id"])
+            self.assertEqual(
+                client.post("/v1/bundles", json=payload,
+                            headers=self.headers()).status_code, 422,
+            )
+            audit = client.post(
+                "/v1/audits", json={
+                    **self.scope(), "bundle_id":final.json()["bundle_id"]},
+                headers={**self.headers(),
+                         "Idempotency-Key":str(uuid4())},
+            )
+            self.assertEqual(audit.status_code, 201, audit.text)
+            self.assertEqual(audit.json()["status"], "COMPLETED")
+            self.service.revoke(
+                self.token(scope="lhfm:approval:revoke"),
+                approval_id=final.json()["approval_id"],
+                **self.scope(),
+            )
+            revoked = client.get(
+                "/v1/contract-candidates/" + cid,
+                params=self.scope(), headers=self.headers(),
+            )
+            self.assertEqual(revoked.json()["state"], "REVOKED")
+
+    def test_candidate_extraction_rejects_wrong_original_hash(self):
+        _tx, _st, co = self.inputs()
+        candidates = ContractCandidateService(
+            service=self.service, uploads=self.uploads,
+            extractor=lambda path: {
+                "file_sha256": "0" * 64, "segments": [{
+                    "evidence_ref":"fake", "text":"untrusted","pages":[1]}],
+            },
+        )
+        with TestClient(create_app(
+            service=self.service, store=self.store, uploads=self.uploads,
+            candidates=candidates,
+        )) as client:
+            created = client.post("/v1/contract-candidates", json={
+                **self.scope(), "contract_upload_id":co,
+                "agreement_id":self.rule["agreement_id"],
+                "rule_id":self.rule["rule_id"],
+                "rule_revision":self.rule["revision"],
+                "source_revision_id":"REV-UNTRUSTED",
+            }, headers=self.headers())
+            self.assertEqual(created.status_code, 422, created.text)
 
     def test_full_reviewed_upload_to_evidenced_report(self):
         tx,se,co=self.inputs()
