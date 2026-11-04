@@ -60,3 +60,16 @@ VPS, eine durch den Betreiber erzwungene Wartungs-/Schreibsperre,
 Offsite-Backup und Löschfristen, unabhängige Schlüsselaufbewahrung,
 RPO/RTO oder der Vollwiederanlauf von Apache, OIDC, ClamAV und Docling.
 G5 bleibt daher **OFFEN**. Siehe `docs/DISASTER_RECOVERY.md`.
+
+
+### G5 – lokaler FastAPI-/Portal-Dienststart (v0.17, 04.11.2026)
+
+Ein konkreter Runtime-Bootcheck und ein privater systemd-Dienst für die
+Finanzengine ersetzen die bisher fehlende API-Servicevorlage. Beide
+Dienste sind mit getrennten Serviceaccounts, vertraulichen
+EnvironmentFiles und ausschließlich Loopback-Bindung spezifiziert.
+Runtime verweigert nichtprivate Audit-/Upload-Stores, remote MariaDB,
+fehlende ClamAV-/Docling-Bereitschaft und SQL-Drift. **G5 ist weiterhin
+OFFEN**, bis die systemd-Units und HTTPS-/Apache-/OIDC-/Document-Pfade
+auf dem tatsächlichen Betreiber-VPS überprüft und vom Betreiber
+abgenommen sind. Siehe `docs/RUNTIME_DEPLOYMENT.md`.

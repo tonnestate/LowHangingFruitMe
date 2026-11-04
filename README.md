@@ -265,3 +265,15 @@ ist nur in eine leere, separat angelegte `lhfm_restore_*`-Datenbank und
 private Prüfordner zulässig. Enthält **keinen** automatischen
 Produktiv-Cutover. Voraussetzungen, exakte Operator-Aufrufe und die
 externen Abnahmen: [Disaster-Recovery-Runbook](docs/DISASTER_RECOVERY.md).
+
+
+### Verbindlicher privater API-Dienststart (v0.17)
+
+Die echte FastAPI-Factory prüft nun **vor** dem Start die schreibgeschützte
+SQL-Migrationshistorie, den lokal erreichbaren ClamAV-Daemon, die
+Netzwerk-Sandbox von Docling und die Zugriffsrechte/Trennung der privaten
+Audit-/Upload-Verzeichnisse. Bei fehlender Voraussetzung startet die
+Kunden-API nicht. Eine getrennte systemd-Vorlage bindet die API nur an
+`127.0.0.1:8127`; Apache sieht ausschließlich das bereits vorhandene
+Next.js-Portal. Die ausführbaren Operatorchecks und die noch offenen
+realen VPS-Abnahmen stehen unter [Runtime-Deployment](docs/RUNTIME_DEPLOYMENT.md).

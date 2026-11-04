@@ -275,3 +275,20 @@ Verifikationen der Original-Dateihashes, Anwendungs-Migrationshistorie
 und Tabellenzeilen sind technische Teilnachweise, **keine**
 freigegebenen Buchhaltungs- oder Kundenstammdaten. Externe Wiederanlauf-
 und RPO/RTO-Abnahmen bleiben notwendig.
+
+
+## v0.17 – durchgängiger lokaler Laufzeit- und Betreiberpfad
+
+Die FastAPI-Finanzengine darf nicht nur synthetisch testbar sein, sondern
+muss in einem eigenständigen unprivilegierten Systemprozess vor dem ersten
+HTTP-Request sämtliche lokalen Vertrauensvoraussetzungen prüfen.
+Der tatsächliche Anwendungsstart und der separate Systemd-Preflight
+verweigern fehlende SQL-Revisionshistorie, eine nicht erreichbare
+ClamAV-Prüfung, unbestätigte Docling-Netzisolation, fremde/unsichere
+private Quell-/Upload-Verzeichnisse oder nichtlokales MariaDB.
+Das Apache-/Next.js-Portal und die Finanz-API bleiben durch
+verschiedene Service-UIDs und separate geheime EnvironmentFiles getrennt.
+Der öffentliche Webserver proxyiert nur das Portal; die Finanz-API
+bindet ausschließlich loopback. Diese Betriebsgrenzen sind im Code
+und als sicherheitsorientierte Templates vorhanden, jedoch ohne
+VPS-Installation weiterhin nicht extern abgenommen.

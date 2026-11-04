@@ -128,3 +128,17 @@ Manipulationsabwehr sind zwingende Testkriterien. **PASS – synthetische DR-CI:
 
 
 **Erweiterte abschließende CI:** [Python Actions 41857045105](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41857045105) **431/431 Tests je Python 3.11/3.12**, einschließlich Ausschluss von Operator-Trust-Keys aus den Sicherungswurzeln; [DR Actions 41856986225](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41856986225) **success** nach der technischen Sperre überlappender Quellverzeichnisse. Reale VPS-/DR-Abnahme weiterhin offen.
+
+
+### v0.17 – sicherer API-Systemstart (04.11.2026)
+
+Zusätzlicher Testgegenstand: die echte API-Fabrik verweigert schon vor
+App-Konstruktion einen fehlgeschlagenen Laufzeitcheck; root UID,
+nichtlokaler Datenbankzugriff, zu breite/symbolische private
+Verzeichnisse, fehlende OIDC-Konfiguration, fehlender ClamAV-
+Socket und Docling-Launcher führen zur Ablehnung. Reale MariaDB-
+Kompatibilität, Scanner-PING und Docling-Netzwerk-Sandbox werden im
+separaten CLI `lhfm-runtime-check` geprüft, dessen Exitcode den
+systemd-Start blockiert. Die API-Vorlage bindet nur
+`127.0.0.1:8127` und nutzt eine eigene UID. **CI noch zu prüfen;**
+VPS/TLS/IdP/ClamAV/Docling vollständig extern offen.

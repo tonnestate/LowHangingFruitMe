@@ -109,3 +109,8 @@ Ed25519 signing key, Ed25519 verifier and age identity must remain outside
 the archived file trees and backup directory; nested upload/source roots
 are not permitted. Neither a backup's own manifest nor a public key included
 in the snapshot may establish trust for restore verification.
+
+
+## Production API runtime boundary (v0.17)
+
+The actual `create_app_from_environment` startup MUST invoke the same read-only `verify_runtime` gate as the systemd operator preflight. Reject root UID, remote MariaDB, nonprivate or overlapping upload/source trees, missing token configuration, unresponsive actual ClamAV and unisolated Docling. Neither the synthetic `create_app` test helper nor an alive HTTP response can substitute for a real boot. Bind the financial API strictly to loopback 127.0.0.1:8127, separate its UID and root-owned 0600 environment secrets from Next.js/Apache, and keep reviewed source promotion writable only to the dedicated API UID. No live server changes without target-host evidence. See `docs/RUNTIME_DEPLOYMENT.md`.
