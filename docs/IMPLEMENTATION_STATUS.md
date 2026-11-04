@@ -110,3 +110,8 @@ Tabellenengine und den falschen 3%-Default ab; ein echter isolierter MariaDB-
 Integrationstest ist im CI-Suite enthalten. **Nachgewiesen:** GitHub Actions [41826517951](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41826517951), Commit `6300564787c623e6eed3779e581de39ad70670fe`, 319 Python-Tests je Runner (3.11 und 3.12), einschließlich isolierter echter MariaDB und negativer Schema-Gates; beide Jobs erfolgreich. Noch **kein** eigenständiger SQL-Runner,
 keine automatischen oder produktiven Migrationen; erforderliche v0.14-
 Bestandsfreigaben bleiben offen.
+
+
+### v0.14-Deadlock-Prävention (04.11.2026)
+
+Widerruf übernimmt jetzt dieselbe Reihenfolge von InnoDB-Row-Locks wie Audit-Guard und signierte Supersession (Head → Approval → Reviewer). Der neue CI-MariaDB-Test hält ausschließlich den Head-Lock und kontrolliert, dass Revoke nicht vorzeitig committen kann. Bis zum dazugehörigen GitHub-Actions-Erfolg nur als **implementiert, noch nicht CI-bestätigt** werten.

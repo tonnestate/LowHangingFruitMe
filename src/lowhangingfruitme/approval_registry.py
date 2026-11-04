@@ -236,17 +236,46 @@ class ApprovalRegistry:
         connection = self._connect()
         try:
             with connection.cursor() as cursor:
-                # Approval row first, then reviewer grant: same lock order as
-                # audit guard. Reversing it would permit a real InnoDB deadlock.
+                # Resolve lineage without locking an approval row first.
+                # register() and guard() lock head -> approval -> reviewer.
+                # revoke() MUST use the identical order or a concurrent
+                # supersession can deadlock with a revocation transaction.
                 cursor.execute(
-                    """SELECT state FROM lhfm_approval_records
+                    """SELECT agreement_id, rule_id
+                       FROM lhfm_approval_records
+                       WHERE approval_id=%s AND tenant_id=%s
+                         AND legal_entity_id=%s""",
+                    (approval_id, tenant_id, legal_entity_id),
+                )
+                candidate = cursor.fetchone()
+                if candidate is None:
+                    raise ValueError("approval not found in authenticated scope")
+                if candidate["agreement_id"] and candidate["rule_id"]:
+                    cursor.execute(
+                        """SELECT current_approval_id FROM lhfm_rule_heads
+                           WHERE tenant_id=%s AND legal_entity_id=%s
+                             AND agreement_id=%s AND rule_id=%s FOR UPDATE""",
+                        (tenant_id, legal_entity_id,
+                         candidate["agreement_id"], candidate["rule_id"]),
+                    )
+                    head = cursor.fetchone()
+                    if head is None:
+                        raise RuntimeError("rule lineage head missing, manual recovery required")
+                # Legacy approvals without lineage have no head, and are
+                # rejected by guard() until explicitly reapproved.
+                cursor.execute(
+                    """SELECT state, agreement_id, rule_id
+                       FROM lhfm_approval_records
                        WHERE approval_id=%s AND tenant_id=%s AND legal_entity_id=%s
                        FOR UPDATE""",
                     (approval_id, tenant_id, legal_entity_id),
                 )
                 row = cursor.fetchone()
                 if row is None:
-                    raise ValueError("approval not found in authenticated scope")
+                    raise ValueError("approval disappeared in authenticated scope")
+                if ((row["agreement_id"], row["rule_id"]) !=
+                        (candidate["agreement_id"], candidate["rule_id"])):
+                    raise RuntimeError("rule lineage changed while revoking approval")
                 cursor.execute(
                     """SELECT role, active FROM lhfm_reviewer_grants
                        WHERE tenant_id=%s AND legal_entity_id=%s AND reviewer_id=%s

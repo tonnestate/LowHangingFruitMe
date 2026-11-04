@@ -177,6 +177,60 @@ class MariaDBRegistryTests(unittest.TestCase):
             with self.guard():
                 pass
 
+
+    def test_revoke_waits_for_lineage_head_lock(self):
+        """Revocation must not overtake a concurrent rule-head operation."""
+        self.register()
+        locked = threading.Event()
+        attempted = threading.Event()
+        finished = threading.Event()
+        errors = []
+        results = []
+
+        db = self.registry._connect()
+        def revoke_while_head_is_locked():
+            attempted.set()
+            try:
+                results.append(self.registry.revoke(
+                    self.receipt["approval_id"], **SCOPE,
+                    authenticated_actor_id="REVIEWER-SYN-1",
+                ))
+            except Exception as exc:
+                errors.append(exc)
+            finally:
+                finished.set()
+
+        try:
+            with db.cursor() as cur:
+                cur.execute(
+                    """SELECT current_approval_id FROM lhfm_rule_heads
+                       WHERE tenant_id=%s AND legal_entity_id=%s
+                         AND agreement_id=%s AND rule_id=%s FOR UPDATE""",
+                    (SCOPE["tenant_id"], SCOPE["legal_entity_id"],
+                     RULE["agreement_id"], RULE["rule_id"]),
+                )
+                self.assertEqual(
+                    cur.fetchone()["current_approval_id"],
+                    self.receipt["approval_id"],
+                )
+                locked.set()
+                thread = threading.Thread(
+                    target=revoke_while_head_is_locked, daemon=True,
+                )
+                thread.start()
+                self.assertTrue(attempted.wait(timeout=2))
+                # The approval row is not locked here: an implementation
+                # that wrongly starts with the approval lock would succeed.
+                self.assertFalse(finished.wait(timeout=0.3))
+            db.commit()
+            self.assertTrue(finished.wait(timeout=5), "possible lock deadlock")
+            thread.join(timeout=2)
+            self.assertEqual(errors, [])
+            self.assertEqual(results, [True])
+        finally:
+            db.rollback()
+            db.close()
+
     def test_concurrent_revoke_cannot_commit_during_guard(self):
         self.register()
         started = threading.Event()
