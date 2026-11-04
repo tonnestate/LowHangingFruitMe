@@ -1,6 +1,7 @@
 "use client";
 import {useState} from "react";
 import {BillingWorkspace} from "./BillingWorkspace";
+import {auditIdempotencyKey} from "../lib/audit-idempotency.mjs";
 
 type Dataset="transactions"|"settlements";
 type ContractSegment={evidence_ref:string;text:string;pages:number[]};
@@ -234,13 +235,17 @@ export function WorkspaceClient(){
   return "Quellen und Vertragsregel signiert registriert: "+response.bundle_id;
  });
  const calculate=()=>run(async()=>{
+  const key=auditIdempotencyKey(bundle);
   const result=await call<Audit>("audits",{
    ...jsonBody({...scope,bundle_id:bundle}),
-   headers:{"Content-Type":"application/json","Idempotency-Key":crypto.randomUUID()},
+   headers:{"Content-Type":"application/json","Idempotency-Key":key},
   });
   setAudit(result);
-  const detail=await call<{report:Record<string,unknown>}>("audits/"+result.audit_id+"?"+qs);
+  const detail=await call<{report:Record<string,unknown>|null}>("audits/"+result.audit_id+"?"+qs);
   setReport(detail.report);
+  if(result.status==="PROCESSING")
+   return "Audit bereits in Bearbeitung. Audit-ID: "+result.audit_id+
+    ". Bei einem Timeout denselben signierten Datenpaket-Schlüssel erneut verwenden.";
   return result.audit_executed?"Audit durchgeführt – noch keine wirtschaftliche Realisierung.":
    "Audit erfordert weitere Daten oder Freigaben.";
  });
