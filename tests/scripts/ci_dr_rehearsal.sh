@@ -52,11 +52,16 @@ LHFM_MAINTENANCE_CONFIRMED=YES python -m lowhangingfruitme.dr backup \
 test "$(find "$scratch/snapshot" -type f | wc -l)" -eq 5
 test "$(find "$scratch/snapshot" -type f ! -name '*.age' | wc -l)" -eq 1
 
+mkdir -m 700 "$scratch/restored-uploads" "$scratch/restored-sources"
 LHFM_RESTORE_REHEARSAL_APPROVED=YES python -m lowhangingfruitme.dr restore-verify \
   --defaults-file "$scratch/client.cnf" --backup-dir "$scratch/snapshot" \
   --age-identity "$scratch/identity" --target-database lhfm_restore_ci \
   --verification-key "$scratch/verify.pem" \
+  --restore-upload-root "$scratch/restored-uploads" \
+  --restore-source-root "$scratch/restored-sources" \
   > "$scratch/restore-result.json"
+cmp "$scratch/uploads/contract.pdf" "$scratch/restored-uploads/contract.pdf"
+cmp "$scratch/sources/case/audit.json" "$scratch/restored-sources/case/audit.json"
 python - "$scratch/restore-result.json" <<'PY'
 import json,sys
 result=json.load(open(sys.argv[1],encoding="utf-8"))
