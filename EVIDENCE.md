@@ -333,3 +333,27 @@ ClamAV and offline Docling host, independently reconciled ERP source completenes
 actual bank/contract/legal/tax/invoice evidence, reliable customer deletion,
 monitoring/alerting and VPS end-to-end acceptance. Green synthetic CI is not
 production release approval.
+
+
+## Audit crash recovery and retry safety (04.11.2026)
+
+**PR #6 – fenced operator reconciliation of stale PROCESSING audits.**
+[PR #6](https://github.com/tonnestate/LowHangingFruitMe/pull/6) was merged into main as
+[e8e4d791](https://github.com/tonnestate/LowHangingFruitMe/commit/e8e4d7918c543cf3765ee848814ded52c670b1d1).
+Its final PR head passed [portal Action 41930267872](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41930267872),
+[Python 3.11/3.12 + MariaDB Action 41930267842](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41930267842)
+and [encrypted DR Action 41930267911](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41930267911).
+SQL-012 is checksum-pinned and checked by runtime schema. Unit/DB integration tests cover read-only preview, the explicit two-flag maintenance gate, 60-minute minimum age, single-row and cross-tenant safety, repeated apply rejection and an immutable reconciliation event. A first test run failed because the test helper shadowed `unittest.TestCase.run`; it was corrected and all final checks passed. No actual production worker shutdown or VPS migration was performed.
+
+**PR #7 – stable financial idempotency under browser retries.**
+[PR #7](https://github.com/tonnestate/LowHangingFruitMe/pull/7) was merged as
+[2445c285](https://github.com/tonnestate/LowHangingFruitMe/commit/2445c2852801dcd72fe772311c76dd6cfd9ff9af).
+Its final PR head passed [portal Action 41931184848](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41931184848),
+[Python/MariaDB Action 41931184823](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41931184823)
+and [encrypted DR Action 41931184943](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41931184943).
+The reviewed bundle's canonical UUID now serves as the single audit Idempotency-Key; repeated requests no longer generate a new random key. A PROCESSING response is labeled as ongoing rather than a finalized audit. This proves stable per-bundle retries under synthetic tests, not cross-provider distributed queuing or live customer throughput.
+
+**Remaining operational/legal boundaries remain OPEN:** live customer OIDC with MFA,
+real offline Docling/ClamAV runtime, real ERP coverage reconciliation, commercial/legal
+contracts, bank and invoice workflow, GDPR retention/erasure, observability and actual
+VPS failover/rollback acceptance. No production readiness certification is claimed.
