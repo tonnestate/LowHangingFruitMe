@@ -27,6 +27,10 @@ class CandidateConflict(ValueError):
     pass
 
 
+class CandidateDuplicate(CandidateConflict):
+    """Duplicate persisted revision, not an invalid document citation."""
+
+
 class CandidateUnavailable(RuntimeError):
     pass
 
@@ -124,7 +128,7 @@ class ContractCandidateService:
             db.commit()
         except IntegrityError as exc:
             db.rollback()
-            raise CandidateConflict("candidate already exists for this document revision") from exc
+            raise CandidateDuplicate("candidate already exists for this document revision") from exc
         except Exception:
             db.rollback()
             raise

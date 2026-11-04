@@ -21,7 +21,7 @@ from ..invoices import extract_invoice_preview
 from .store import BundleNotFound, PrivateAuditStore, RunConflict
 from .promotion import ReviewedBundleService, ReviewRequired, RuleSemanticReviewRequired
 from .candidates import (ContractCandidateService, CandidateNotFound,
-                         CandidateConflict, CandidateUnavailable)
+                         CandidateConflict, CandidateDuplicate, CandidateUnavailable)
 from .recovery import RecoveryLedger, CaseConflict
 from .reports import customer_case, render_export, ReportNotReady
 from .uploads import (ClamAVScanner, MAX_UPLOAD, ScannerUnavailable,
@@ -348,9 +348,9 @@ def create_app(*, service: AuthenticatedApprovalService,
             raise HTTPException(status_code=503,detail={"code":"EXTRACTION_FAILED"}) from exc
         except BundleNotFound as exc:
             raise HTTPException(status_code=404,detail={"code":"CONTRACT_UPLOAD_NOT_FOUND"}) from exc
-        except CandidateConflict as exc:
-            raise HTTPException(status_code=409,detail={"code":"CANDIDATE_CONFLICT"}) from exc
-        except (UploadRejected,ValueError) as exc:
+        except CandidateDuplicate as exc:
+            raise HTTPException(status_code=409,detail={"code":"CANDIDATE_DUPLICATE"}) from exc
+        except (UploadRejected,CandidateConflict,ValueError) as exc:
             raise HTTPException(status_code=422,detail={"code":"CONTRACT_EVIDENCE_INVALID"}) from exc
 
     @app.get("/v1/contract-candidates/{candidate_id}")
