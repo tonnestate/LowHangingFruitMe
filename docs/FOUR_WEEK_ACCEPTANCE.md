@@ -88,4 +88,4 @@ Der Release benötigt den getrennten Schema-Migrationsrunner mit lesendem Plan, 
 
 ### Externes Betriebs-Readiness-Gate (04.11.2026)
 
-`GET /readyz` trennt ClamAV-Protokollantwort, Finanzdienst-Konfiguration und MariaDB-Migrationserfolg von reiner Liveness. **CI-Test ausstehend**. Unabhängig davon bleibt ein realer VPS-ClamAV mit aktuellen Signaturen, überprüfter Parserisolation, IdP- und Mandantenabnahme verpflichtend.
+`GET /readyz` trennt ClamAV-Protokollantwort, Finanzdienst-Konfiguration und MariaDB-Migrationserfolg von reiner Liveness. **PASS – synthetischer CI-Test**: [Actions 41829742266](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41829742266), 336 Python-Tests je 3.11/3.12, inklusive echter isolierter MariaDB und simuliertem ClamAV-PING-/Ausfallpfad. Unabhängig davon bleibt ein realer VPS-ClamAV mit aktuellen Signaturen, überprüfter Parserisolation, IdP- und Mandantenabnahme verpflichtend.
