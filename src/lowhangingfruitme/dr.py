@@ -64,6 +64,15 @@ def private_file(path):
     return path
 
 
+def require_key_outside(path, *restricted):
+    """A trust key must never be read from, or included within, a backup."""
+    candidate = Path(path).resolve(strict=True)
+    for root in restricted:
+        directory = Path(root).resolve(strict=False)
+        if candidate == directory or candidate.is_relative_to(directory):
+            raise DRError("operator credentials and signing keys must be outside backup data")
+
+
 def output(path):
     descriptor = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
     return os.fdopen(descriptor, "wb")
@@ -272,8 +281,13 @@ def create_backup(*, defaults_file, database, upload_root,
     uploads, sources = private_dir(upload_root), private_dir(source_root)
     destination = Path(destination)
     private_dir(destination.parent)
-    if uploads.resolve() == sources.resolve():
-        raise DRError("uploads and sources must be separate")
+    if (uploads.resolve() == sources.resolve()
+            or uploads.resolve().is_relative_to(sources.resolve())
+            or sources.resolve().is_relative_to(uploads.resolve())):
+        raise DRError("private file source trees must not overlap")
+    for sensitive in (defaults_file, signing_key):
+        private_file(sensitive)
+        require_key_outside(sensitive, uploads, sources, destination)
     if any(destination.is_relative_to(root) or root.is_relative_to(destination)
            for root in (uploads, sources)):
         raise DRError("backup cannot overlap private roots")
@@ -405,6 +419,9 @@ def verify_restore(*, defaults_file, backup_dir, identity, target_database, veri
     credentials = client_config(defaults_file)
     identity = private_file(identity)
     root = private_dir(backup_dir)
+    for sensitive in (defaults_file, identity, verification_key):
+        private_file(sensitive)
+        require_key_outside(sensitive, root)
     verify_signature(root / "manifest.json.age", root / "manifest.sig", verification_key)
     manifest = decrypt_manifest(root / "manifest.json.age", identity)
     if target_database == manifest["database"]:
