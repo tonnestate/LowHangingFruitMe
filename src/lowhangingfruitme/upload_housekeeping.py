@@ -49,7 +49,7 @@ def _private_root(root: Path) -> Path:
     return root.resolve(strict=True)
 
 
-def _candidate_paths(root: Path, row: dict[str, Any], cutoff_ns: int) -> tuple[Path, ...] | None:
+def _candidate_paths(root: Path, row: dict[str, Any], cutoff_ns: int) -> tuple[tuple[Path, os.stat_result], ...] | None:
     """Check inode/type/age before any status mutation. None = recent writer."""
     upload_id = row["upload_id"]
     try:
@@ -90,7 +90,7 @@ def _candidate_paths(root: Path, row: dict[str, Any], cutoff_ns: int) -> tuple[P
             raise HousekeepingBlocked("unaccounted hard link to staged content")
     if row["state"] == "PENDING" and existing:
         raise HousekeepingBlocked("pending upload unexpectedly contains partial data")
-    return tuple(path for path, _ in existing)
+    return tuple(existing)
 
 
 def prune_stale_uploads(
@@ -147,11 +147,16 @@ def prune_stale_uploads(
                         raise HousekeepingBlocked("stale upload state changed during cleanup")
                     # Revalidate no path was swapped after the earlier lstat;
                     # the operator must have stopped API uploads entirely.
-                    for path in files:
+                    for path, before in files:
                         info = path.lstat()
                         if (not stat.S_ISREG(info.st_mode)
                                 or info.st_uid != os.geteuid()
                                 or stat.S_IMODE(info.st_mode) & 0o077
+                                or (info.st_dev, info.st_ino, info.st_size,
+                                    info.st_nlink, info.st_mtime_ns)
+                                != (before.st_dev, before.st_ino,
+                                    before.st_size, before.st_nlink,
+                                    before.st_mtime_ns)
                                 or info.st_mtime_ns >= int(cutoff_ns)):
                             raise HousekeepingBlocked("partial upload mutated during cleanup")
                         path.unlink()
