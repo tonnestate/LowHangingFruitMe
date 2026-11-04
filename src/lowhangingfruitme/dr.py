@@ -462,7 +462,7 @@ def verify_restore(*, defaults_file, backup_dir, identity, target_database, veri
                     or target_sources.is_relative_to(root)
                     or root.is_relative_to(target_uploads)
                     or root.is_relative_to(target_sources)
-                    or any(target.iterdir() for target in
+                    or any(any(target.iterdir()) for target in
                            (target_uploads,target_sources))):
                 raise DRError("isolated restore directories must be empty and distinct")
         for name, component, target in (
