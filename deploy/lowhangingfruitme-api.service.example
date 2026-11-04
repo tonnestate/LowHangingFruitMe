@@ -27,8 +27,9 @@ NoNewPrivileges=true
 PrivateTmp=true
 ProtectHome=true
 ProtectSystem=strict
-ReadWritePaths=/var/lib/lowhangingfruitme/private-uploads
-ReadOnlyPaths=/var/lib/lowhangingfruitme/private-sources
+# The reviewed bundle promotion writes append-only source snapshots here.
+# Both roots must be 0700 and owned by lhfm-api; neither is served by Apache.
+ReadWritePaths=/var/lib/lowhangingfruitme/private-uploads /var/lib/lowhangingfruitme/private-sources
 ProtectKernelTunables=true
 ProtectKernelModules=true
 ProtectControlGroups=true
