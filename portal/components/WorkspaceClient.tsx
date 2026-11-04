@@ -2,6 +2,7 @@
 import {useState} from "react";
 
 type Dataset="transactions"|"settlements";
+type ContractSegment={evidence_ref:string;text:string;pages:number[]};
 type Preview={headers:string[];rows:number;source_sha256:string;
   proposed_mapping:Record<string,string[]>;options:Record<string,string>};
 type Uploaded={upload_id:string;kind:string;sha256:string;state:string};
@@ -70,6 +71,8 @@ export function WorkspaceClient(){
  const [files,setFiles]=useState<Record<string,File|null>>({
   transactions:null,settlements:null,contract:null,recovery:null});
  const [sources,setSources]=useState<Record<string,Uploaded>>({});
+ const [candidateId,setCandidateId]=useState("");
+ const [segments,setSegments]=useState<ContractSegment[]>([]);
  const [previews,setPreviews]=useState<Partial<Record<Dataset,Preview>>>({});
  const [maps,setMaps]=useState<Record<Dataset,Record<string,string>>>({
   transactions:{},settlements:{}});
@@ -126,9 +129,11 @@ export function WorkspaceClient(){
   if(!tx||!st||!co)throw new Error("DREI_QUELLDATEIEN_ERFORDERLICH");
   const a=await upload(tx,tx.name.toLowerCase().endsWith(".xlsx")?"ERP_XLSX":"ERP_CSV");
   const b=await upload(st,st.name.toLowerCase().endsWith(".xlsx")?"ERP_XLSX":"ERP_CSV");
-  const c=await upload(co,co.name.toLowerCase().endsWith(".docx")?"CONTRACT_DOCX":"CONTRACT_PDF");
+  if(!co.name.toLowerCase().endsWith(".pdf"))throw new Error("VERTRAG_NUR_PDF");
+  const c=await upload(co,"CONTRACT_PDF");
   setSources({transactions:a,settlements:b,contract:c});
   setBundle("");setAudit(null);setLedger(null);setPreviews({});
+  setCandidateId("");setSegments([]);setRule(v=>({...v,evidence:""}));
   return "Die drei Quelldateien sind geprüft und gespeichert. Fachfreigabe steht aus.";
  });
  const inspect=()=>run(async()=>{
@@ -148,7 +153,22 @@ export function WorkspaceClient(){
   setPreviews(next);
   return "Spaltenvorschläge erstellt. Bitte alle Zuordnungen prüfen.";
  });
+ const extractContract=()=>run(async()=>{
+  if(!actor||!sources.contract)throw new Error("VERTRAGSUPLOAD_ERFORDERLICH");
+  if(!rule.agreement_id||!rule.rule_id||!rule.revision||!rule.source_revision)
+   throw new Error("VERTRAGSIDENTITAET_ERFORDERLICH");
+  const result=await call<{candidate_id:string;segments:ContractSegment[];state:string}>(
+   "contract-candidates",jsonBody({
+     ...scope,contract_upload_id:sources.contract.upload_id,
+     agreement_id:rule.agreement_id,rule_id:rule.rule_id,
+     rule_revision:rule.revision,source_revision_id:rule.source_revision,
+   }));
+  setCandidateId(result.candidate_id);setSegments(result.segments);
+  setRule(v=>({...v,evidence:""}));
+  return "Vertragsfundstellen extrahiert. Bitte Dokument und konkrete Klausel manuell vergleichen.";
+ });
  const approve=()=>run(async()=>{
+  if(!candidateId)throw new Error("DOKUMENTENGEBUNDENER_KANDIDAT_FEHLT");
   if(!actor||!previews.transactions||!previews.settlements)
    throw new Error("DATENPRUEFUNG_FEHLT");
   if(Object.values(review).some(v=>!v))throw new Error("FACHLICHE_BESTAETIGUNG_FEHLT");
@@ -174,7 +194,12 @@ export function WorkspaceClient(){
    completeness:{transactions_complete:true,settlements_complete:true,agreements_complete:true},
    confirm_contract_review:true,confirm_mapping_review:true,
   };
-  const response=await call<{bundle_id:string}>("bundles",jsonBody(payload));
+  await call("contract-candidates/"+candidateId+"/review",jsonBody({
+   ...scope,rule:payload.rule,confirm_clause_review:true,
+  }));
+  const response=await call<{bundle_id:string}>("bundles",jsonBody({
+   ...payload,candidate_id:candidateId,
+  }));
   setBundle(response.bundle_id);setAudit(null);setLedger(null);
   return "Quellen und Vertragsregel signiert registriert: "+response.bundle_id;
  });
@@ -258,7 +283,7 @@ export function WorkspaceClient(){
    <div className="workspace-grid">
     {([["transactions","Einkaufsbuchungen · CSV/XLSX",".csv,.xlsx"],
        ["settlements","Gutschriften · CSV/XLSX",".csv,.xlsx"],
-       ["contract","Vereinbarung · PDF/DOCX",".pdf,.docx"]] as const).map(([role,label,accept])=>
+       ["contract","Vereinbarung · PDF",".pdf"]] as const).map(([role,label,accept])=>
      <label key={role}>{label}<input type="file" accept={accept}
        onChange={e=>setFiles(v=>({...v,[role]:e.target.files?.[0]??null}))}/></label>)}
    </div>
@@ -295,11 +320,30 @@ export function WorkspaceClient(){
      ["supplier_id","Lieferanten-ID"],["agreement_id","Vertrags-ID"],
      ["period_start","Periode von (JJJJ-MM-TT)"],["period_end","Periode bis (JJJJ-MM-TT)"],
      ["rate","Bonusprozentsatz als Faktor (z. B. 0.02)"],
-     ["evidence","Vertragsfundstelle (Seite, Klausel)"],
-     ["source_revision","Dokumentenrevision"]] as const).map(([key,label])=>
+          ["source_revision","Dokumentenrevision"]] as const).map(([key,label])=>
       <label key={key}>{label}<input value={rule[key]}
-       onChange={e=>setRule(v=>({...v,[key]:e.target.value}))}/></label>)}
+       onChange={e=>{
+        setRule(v=>({...v,[key]:e.target.value}));
+        if(key==="rule_id"||key==="revision"||key==="agreement_id"||key==="source_revision"){
+         setCandidateId("");setSegments([]);
+        }
+       }}/></label>)}
    </div>
+   <button className="button-secondary" type="button" onClick={extractContract}>
+    Vertragsfundstellen aus gescanntem PDF extrahieren
+   </button>
+   {candidateId&&<p>Dokumentkandidat: <code>{candidateId}</code>. Die
+    automatische Extraktion ist keine Vertragsfreigabe.</p>}
+   <label>Geprüfte Vertragsfundstelle
+    <select value={rule.evidence} onChange={e=>setRule(v=>({...v,evidence:e.target.value}))}>
+     <option value="">Belegstelle ausdrücklich auswählen</option>
+     {segments.map((part,i)=><option value={part.evidence_ref} key={part.evidence_ref}>
+      Seite {part.pages.join(",")||"?"} – Fundstelle {i+1}
+     </option>)}
+    </select>
+   </label>
+   {segments.filter(part=>part.evidence_ref===rule.evidence).map(part=>
+    <p key={part.evidence_ref} className="note">{part.text}</p>)}
    <h3>Unabhängige ERP-Kontrollwerte</h3>
    <p className="note">Kontrollsummen aus einem separat erzeugten ERP-Bericht,
     nicht aus dem importierten Datensatz selbst.</p>
@@ -321,7 +365,7 @@ export function WorkspaceClient(){
        onChange={e=>setReview(v=>({...v,[key]:e.target.checked}))}/>{label}</label>)}
    </div>
    <button className="button-primary" type="button" onClick={approve}>
-    Geprüfte Daten und Vertragsregel signiert registrieren
+    Dokumentfundstelle bestätigen und signierte Prüfung registrieren
    </button>
    {bundle&&<p>Datenpaket: <code>{bundle}</code></p>}
   </fieldset>
