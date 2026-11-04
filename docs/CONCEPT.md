@@ -309,3 +309,8 @@ noch nicht fertiggestellter Intake, erfolgreich geprüfter Upload und
 rechts-/finanzrelevante freigegebene Evidenz. Für letztere findet
 **keine** automatische Löschung statt; ein spätere juristisch
 freigegebener Retention-/Löschprozess ist ein separates Produktgate.
+
+
+### Browser-Kaufmannsprozess – getrennte Billing-Rollen (04.11.2026)
+
+Das Portal darf die bereits vorhandenen Billing-Endpunkte PREPARED, GET, RELEASED und VOIDED über das authentifizierte BFF bedienen. Die Prüfung der Honorarberechtigung, Zweipersonentrennung, Vertrags-/Legalreferenzen und der aktuellen Realisierung erfolgt jedoch unverändert serverseitig unter MariaDB-Sperren. Die UI darf niemals einen berechneten Bonus, ein bestätigtes Finanzereignis oder ein RELEASED-Paket als ausgestellte Rechnung darstellen. Billing-Bearbeiter verwenden eigene Billing-Scopes/Grants; sie werden nicht als Vertragsregel-Reviewer angenommen. Vor echtem Kundenbetrieb bleiben G0–G5 aus GO_LIVE_GATE.md verbindlich.
