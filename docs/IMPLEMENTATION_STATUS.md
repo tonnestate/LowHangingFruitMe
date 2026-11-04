@@ -160,6 +160,6 @@ Kundenannahme-/Legal-Prüf-Referenzen aus der separat verwalteten
 Datenbank gebundene Zweipersonenfreigabe, erneut gesperrter
 Recovery-Stand beim endgültigen Handoff, historische 3%/neue 5%,
 Stale-/Reversal-/Correction-Prüfung und abgegrenzte BFF-Routen.
-**CI bestanden:** [Actions 41848863107](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41848863107), 423/423 Python-Tests auf 3.11 und 3.12. Zusätzlich [Portal Actions 41848399198](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41848399198), Build/Typecheck/Browser erfolgreich. Tests schließen Vertragsrevision, Entzug der kommerziellen Freigabe, unterschiedliche Vertragsraten, unabhängige Zweitfreigabe, Reversal, Void und falsche Mandanten ein;
+**CI bestanden:** [Actions 41850007747](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41850007747), 424/424 Python-Tests auf 3.11 und 3.12. Zusätzlich [Portal Actions 41848399198](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41848399198), Build/Typecheck/Browser erfolgreich. Tests schließen Vertragsrevision, Entzug der kommerziellen Freigabe, unterschiedliche Vertragsraten, unabhängige Zweitfreigabe, Reversal, Void und falsche Mandanten ein;
 **eine produktive Rechnung, Bankverifikation und externe Rechtsfreigabe
 sind NICHT nachgewiesen**.
