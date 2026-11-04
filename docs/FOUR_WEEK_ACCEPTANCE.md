@@ -153,3 +153,8 @@ unvollständigen `.part`-/`.inspect`-Dateien, Hardlink-/Symlink-
 Ablehnung, frischer Datei-Mtime, vollständigen Kunden-CLEAN-Dateien,
 unklarem Final-File, Wiederholung und fehlenden Autorisierungen.
 **PASS – synthetische Gesamtsuite:** [GitHub Actions 41892137248](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41892137248), 452/452 Tests unter Python 3.11 und 452/452 unter Python 3.12; der unautorisierte `lhfm-upload-housekeeping --apply` endete jeweils wie gefordert mit Exit 2. **PASS – MariaDB-DR:** [Actions 41892137388](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41892137388), inklusive Migration 011. Kein Kunden-/VPS-/DSGVO-Retentionstest.
+
+
+### Portal-Billing-Handoff: technischer Ergänzungsstand (04.11.2026)
+
+Die bestehenden Billing-Routen für Vorbereitung, getrennter Freigabe, Lesen und belegbezogenen Widerruf sind im geschützten React-Arbeitsbereich erreichbar. Berechtigungen und Finanzregeln bleiben ausschließlich im Backend. Die Benutzeroberfläche warnt vor stale Akten, fordert ausdrückliche Vertragsprüfung vor Release und externe Korrekturreferenz für Void. Billing-Mitarbeiter benötigen eigene serverseitige Rollen statt einer künstlichen Upload-Reviewerrolle. Bei Scopewechsel wird alter Finanzzustand clientseitig verworfen. Noch offen: Browserabnahme mit realem IdP und zwei unabhängigen Bearbeitern, echte Buchhaltungs-/Rechnungsdaten, externer Legal-/Steuergate und VPS-Betrieb.

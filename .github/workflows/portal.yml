@@ -26,7 +26,7 @@ jobs:
           node-version: "22"
       - name: Install pinned dependencies
         run: npm install --no-audit --no-fund
-      - name: Unit tests – 3 percent and source PNG palette
+      - name: Unit tests – fee illustration and source PNG palette
         run: npm test
       - name: Verify legal staging gates and render Next standalone
         run: npm run build
