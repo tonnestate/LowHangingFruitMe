@@ -21,6 +21,13 @@ import tempfile
 
 import pymysql
 from pymysql.cursors import DictCursor
+from cryptography.exceptions import InvalidSignature
+from cryptography.hazmat.primitives.serialization import (
+    load_pem_private_key, load_pem_public_key,
+)
+from cryptography.hazmat.primitives.asymmetric.ed25519 import (
+    Ed25519PrivateKey, Ed25519PublicKey,
+)
 
 from .schema import require_operational_schema
 
@@ -222,8 +229,33 @@ def encrypt_manifest(payload, *, recipient, target):
         raise DRError("failed to encrypt backup manifest")
 
 
+def sign_manifest(ciphertext, signing_key, signature):
+    try:
+        private = load_pem_private_key(private_file(signing_key).read_bytes(),
+                                       password=None)
+    except (ValueError,TypeError) as exc:
+        raise DRError("invalid operator signing key") from exc
+    if not isinstance(private,Ed25519PrivateKey):
+        raise DRError("Ed25519 operator signing key required")
+    with output(signature) as result:
+        result.write(private.sign(private_file(ciphertext).read_bytes()))
+
+
+def verify_signature(ciphertext, signature, verification_key):
+    try:
+        public = load_pem_public_key(private_file(verification_key).read_bytes())
+        if not isinstance(public,Ed25519PublicKey):
+            raise DRError("Ed25519 verification key required")
+        raw = private_file(signature).read_bytes()
+        if len(raw) != 64:
+            raise DRError("invalid backup signature length")
+        public.verify(raw,private_file(ciphertext).read_bytes())
+    except (ValueError,TypeError,InvalidSignature) as exc:
+        raise DRError("backup signing authority verification failed") from exc
+
+
 def create_backup(*, defaults_file, database, upload_root,
-                  source_root, destination, recipient):
+                  source_root, destination, recipient, signing_key):
     if os.environ.get("LHFM_MAINTENANCE_CONFIRMED") != "YES":
         raise DRError("operator must confirm stopped writes and maintenance")
     if not NAME.fullmatch(database) or database.startswith("lhfm_restore_"):
@@ -270,6 +302,8 @@ def create_backup(*, defaults_file, database, upload_root,
             "tables": before, "files": {"uploads": uf, "sources": sf},
             "ciphertext_sha256": checks,
         }, recipient=recipient, target=destination / "manifest.json.age")
+        sign_manifest(destination / "manifest.json.age", signing_key,
+                      destination / "manifest.sig")
         return {"encrypted_backup_created": True, "tables": len(before),
                 "upload_files": len(uf), "source_files": len(sf)}
     except Exception:
@@ -356,7 +390,7 @@ def verify_tar(file, identity, expected, destination):
             process.stdout.close()
 
 
-def verify_restore(*, defaults_file, backup_dir, identity, target_database):
+def verify_restore(*, defaults_file, backup_dir, identity, target_database, verification_key):
     if os.environ.get("LHFM_RESTORE_REHEARSAL_APPROVED") != "YES":
         raise DRError("explicit isolated restore approval required")
     if not NAME.fullmatch(target_database) or not target_database.startswith("lhfm_restore_"):
@@ -366,6 +400,7 @@ def verify_restore(*, defaults_file, backup_dir, identity, target_database):
     credentials = client_config(defaults_file)
     identity = private_file(identity)
     root = private_dir(backup_dir)
+    verify_signature(root / "manifest.json.age", root / "manifest.sig", verification_key)
     manifest = decrypt_manifest(root / "manifest.json.age", identity)
     if target_database == manifest["database"]:
         raise DRError("cannot overwrite original database")
@@ -424,10 +459,10 @@ def main():
     actions = parser.add_subparsers(dest="action", required=True)
     a = actions.add_parser("backup")
     for field in ("defaults-file","database","upload-root","source-root",
-                  "destination","age-recipient"):
+                  "destination","age-recipient","signing-key"):
         a.add_argument("--"+field, required=True)
     b = actions.add_parser("restore-verify")
-    for field in ("defaults-file","backup-dir","age-identity","target-database"):
+    for field in ("defaults-file","backup-dir","age-identity","target-database","verification-key"):
         b.add_argument("--"+field, required=True)
     options = parser.parse_args()
     try:
@@ -435,12 +470,14 @@ def main():
             result = create_backup(
                 defaults_file=options.defaults_file,database=options.database,
                 upload_root=options.upload_root,source_root=options.source_root,
-                destination=options.destination,recipient=options.age_recipient)
+                destination=options.destination,recipient=options.age_recipient,
+                signing_key=options.signing_key)
         else:
             result = verify_restore(
                 defaults_file=options.defaults_file,
                 backup_dir=options.backup_dir,identity=options.age_identity,
-                target_database=options.target_database)
+                target_database=options.target_database,
+                verification_key=options.verification_key)
         print(json.dumps(result,sort_keys=True))
         return 0
     except Exception as exc:
