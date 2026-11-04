@@ -82,6 +82,7 @@ REQUIRED_CONSTRAINTS = frozenset({
     ("lhfm_billing_packets", "fk_billing_packet_creator"),
     ("lhfm_billing_packet_events", "fk_billing_event_packet"),
     ("lhfm_upload_housekeeping_events", "fk_housekeeping_upload"),
+    ("lhfm_upload_housekeeping_events", "uq_housekeeping_upload"),
     ("lhfm_upload_housekeeping_events", "chk_housekeeping_prior"),
     ("lhfm_upload_housekeeping_events", "chk_housekeeping_partials"),
 })

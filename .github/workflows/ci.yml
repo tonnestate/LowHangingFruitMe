@@ -56,6 +56,13 @@ jobs:
           code=$?
           set -e
           test "$code" -eq 2
+      - name: Stale upload cleanup must reject unapproved CI apply
+        run: |
+          set +e
+          lhfm-upload-housekeeping --apply --limit 100
+          code=$?
+          set -e
+          test "$code" -eq 2
       - name: Tests
         run: python -m unittest discover -s tests -v
       - name: Existing kernel CLI smoke (unapproved calculation preview)
