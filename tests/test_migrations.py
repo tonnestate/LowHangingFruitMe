@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from tempfile import TemporaryDirectory
+import shutil
 from pathlib import Path
 import os
 import unittest
@@ -19,6 +21,16 @@ class MigrationSafetyUnitTests(unittest.TestCase):
         migrations = load_migrations(SQL)
         self.assertEqual([x.number for x in migrations], list(range(1, 9)))
         self.assertTrue(all(x.statements for x in migrations))
+
+    def test_modified_local_sql_source_is_rejected_before_any_ddl(self):
+        with TemporaryDirectory() as directory:
+            destination = Path(directory)
+            for name in (x.name for x in load_migrations(SQL)):
+                shutil.copyfile(SQL / name, destination / name)
+            file = destination / "007_recovery_fee_policy.sql"
+            file.write_bytes(file.read_bytes() + b"\\n-- unexpected edit\\n")
+            with self.assertRaisesRegex(MigrationError, "migration source checksum drift"):
+                load_migrations(destination)
 
     def test_reject_non_ddl_statements(self):
         with self.assertRaisesRegex(MigrationError, "CREATE/ALTER"):

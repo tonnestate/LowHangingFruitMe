@@ -9,6 +9,7 @@ from __future__ import annotations
 import os
 import sys
 from typing import Any, Callable
+from .migrations import PINNED_SQL_SHA256
 
 # Required structures across sql/001 .. sql/008. These are the minimum
 # objects actually read or written by the current audit/upload/recovery paths.
@@ -108,17 +109,15 @@ def find_schema_mismatches(
 
 def find_migration_ledger_mismatches(rows: list[dict[str, Any]]) -> list[str]:
     """Reject gaps, unfinished DDL and unknown versions at API startup."""
-    if len(rows) != 8:
-        return ["migration ledger does not contain exactly versions 001..008"]
+    if len(rows) != len(PINNED_SQL_SHA256):
+        return ["migration ledger does not contain the complete release baseline"]
     errors = []
     for version, row in enumerate(rows, start=1):
         if row.get("migration_id") != version or row.get("state") != "APPLIED":
             errors.append("migration ledger has gap or unfinished version " + str(version))
         checksum = row.get("checksum_sha256")
-        if not isinstance(checksum, str) or len(checksum) != 64 or any(
-            c not in "0123456789abcdef" for c in checksum
-        ):
-            errors.append("migration ledger checksum malformed for " + str(version))
+        if checksum != PINNED_SQL_SHA256[version - 1]:
+            errors.append("migration ledger checksum mismatch for " + str(version))
     return errors
 
 

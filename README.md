@@ -197,3 +197,14 @@ Dateimanagement bleibt eine Betreiberaufgabe; defekte oder fehlende Schlüssel
 führen zu abgewiesener Authentifizierung, nicht zu einem unsicheren Fallback.
 Ein realer Identity Provider, die Refresh-Token-Verwaltung und das
 Benutzer-Offboarding sind weiterhin nicht abgenommen.
+
+
+### Unveränderliche SQL-Release-Prüfsummen
+
+Die API prüft nicht mehr nur das Schema und das Format der gespeicherten
+Migrationshistorie, sondern vergleicht jede eingetragene SHA-256-Prüfsumme mit
+der im Release **fest hinterlegten** SQL-Baseline. Der Installer verweigert
+bereits vor Ausführung die Verwendung veränderter historischer SQL-Dateien.
+Bei neuen Migrationen werden ausschließlich neue Versionsnummern ergänzt;
+bestehende Hashes dürfen nicht automatisch neu berechnet werden. Das ist
+kein Ersatz für Git-Signaturen, Datenbank-Backup und kontrollierten Restore.

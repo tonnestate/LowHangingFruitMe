@@ -25,6 +25,20 @@ SQL_FILES = (
     "007_recovery_fee_policy.sql",
     "008_rule_revisions.sql",
 )
+# Immutable release baseline: SHA-256 of the exact, reviewed UTF-8 SQL source.
+# New migrations must be appended and explicitly reviewed; historical hashes
+# must never be silently recomputed from a modified deployment directory.
+PINNED_SQL_SHA256 = (
+    "3cd76eff979feb1a21d1ad3fb516331cae808c85a6dfe8271d4c38685360d710",
+    "5841187eca693aead583ff90b508023633620d7f3da9034debffce055b024353",
+    "3544e9efa0a084e88069c670119785380fbbd963ed2eded2f5bfdc08e63e38b7",
+    "35693bd16a49c43ae14bd7e4b82408afa7047c066ff9e9cc5974f903cc25eeff",
+    "02376f8b658947ce1426908f3318491f87aa12457840debc54c28722899af1c6",
+    "fea50bcb403d3011f9915719c900e03497c7bbe13fa6343251ff33ae77007770",
+    "d37ee6752e286674ac5d1d0f31bbc28d5641f3f5dd8755844f5cc29d3cfb6fee",
+    "bfdf71d88f5908a9492aab1edaee16799c486cbcdb9635c2e17d2685bcd8a036",
+)
+
 TRACKING_DDL = """
 CREATE TABLE lhfm_schema_migrations (
   migration_id SMALLINT UNSIGNED NOT NULL,
@@ -68,7 +82,7 @@ def split_statements(content: str) -> tuple[str, ...]:
 
 
 def load_migrations(sql_dir: Path) -> tuple[Migration, ...]:
-    """Load exactly the pinned 001..008 filenames from an operator directory."""
+    """Load only immutable reviewed SQL; reject changed deployment scripts."""
     directory = Path(sql_dir)
     if directory.is_symlink() or not directory.is_dir():
         raise MigrationError("SQL source directory missing or symlinked")
@@ -82,7 +96,10 @@ def load_migrations(sql_dir: Path) -> tuple[Migration, ...]:
             content = raw.decode("utf-8")
         except UnicodeDecodeError as exc:
             raise MigrationError("migration must be UTF-8: " + name) from exc
-        result.append(Migration(number, name, sha256(raw).hexdigest(),
+        digest = sha256(raw).hexdigest()
+        if digest != PINNED_SQL_SHA256[number - 1]:
+            raise MigrationError("migration source checksum drift at " + name)
+        result.append(Migration(number, name, digest,
                                 split_statements(content)))
     return tuple(result)
 

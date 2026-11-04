@@ -130,3 +130,8 @@ Neben unverändertem `GET /healthz` (Prozess lebt) wurde `GET /readyz` eingefüh
 ### RS256-JWKS-Schlüsselwechsel ohne Dienstneustart (04.11.2026 – synthetische CI bestanden)
 
 Die geprüfte lokale JWKS-Datei wird bei jeder API-Tokenprüfung anhand SHA-256 neu validiert, bei Änderungen atomar ersetzt und bei ungültiger Datei fail-closed behandelt. Tests für Key-Rotation, alten KID, defekte JWKS-Datei und Wiederherstellung sind ergänzt und [Actions 41830627024](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41830627024) bestand mit 338 Tests unter Python 3.11/3.12. Die parallele Dateisnapshot-Race wurde durch eine einzige Lock-geschützte Lese-/Validierungs-/Swap-Sequenz behoben. Dies ist kein Live-IdP, keine Provider-Discovery, keine Session-Erneuerung und keine Rotation des HMAC-Vertragsfreigabeschlüssels.
+
+
+### SQL-Migrations-Prüfsummen gegen Release-Baseline (04.11.2026 – Test ausstehend)
+
+Die API prüft für die Migrationen 001–008 nun gegen fest im Anwendungscode verankerte SHA256-Release-Prüfsummen (nicht nur das 64-stellige Format), und der Wartungs-Runner verweigert veränderte historische SQL-Dateien schon vor DDL. Ergänzte Negativtests für manipulierte Ledger-Zeilen und SQL-Dateien. CI und produktive Upgrade-Abnahme sind getrennt.
