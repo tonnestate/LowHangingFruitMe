@@ -98,3 +98,16 @@ Reale synthetisch nachgebildete Exportvarianten je ERP und XRechnung/ZUGFeRD fac
 Umgesetzt im **Entwicklungscode**: SQL 008 ergänzt Revisionsmetadaten, einen eindeutigen aktuellen Regelkopf je Tenant/Gesellschaft/Vertrag/Regel, append-only APPROVED/SUPERSEDED/REVOKED-Ereignisse sowie transaktional geschützte Registrierung und Audit-Gates. Alte signierte Genehmigungen werden beim Nachtrags-Approval als superseded markiert und für neue Audits gesperrt. Historische abgeschlossene Berichte bleiben unverändert gespeichert. Das Upgrade erfordert eine kontrollierte Migration; bestehende Genehmigungsdatensätze mit nicht befüllten Revisionsfeldern werden **nicht** automatisch als aktuelle Revision vertraut. Die autorisierte Vorlage neuer HMAC-Receipts bleibt ausdrücklich manuell und extern authentifiziert.
 
 **Weiter offen:** Statusstufen EXTRACTED und NEEDS_CONFIRMATION als eigener an Vertragsdokumente gekoppelter, sicherer Draft-/Review-Lifecycle; echte aus Docling stammende fundstellenbezogene Änderungsprüfung; produktiver Migrationsnachweis, unabhängiger fachlicher Pilot. Einzel-Abnahme des Head-/Supersession-Pfads: **PASS in synthetischer MariaDB-CI** (310 Python-Tests je Version 3.11/3.12, Actions 41697334882). Die vollständige v0.14-Freigabe einschließlich Vorschlags-Lifecycle und realer Vertrags-/Kundenprüfung bleibt **OFFEN**.
+
+
+## Nachtrag: SQL-Schema-Startgate (Implementierung, CI-Nachweis separat prüfen)
+
+`lhfm-schema-check` und `require_operational_schema` prüfen die tatsächlich
+benötigten MariaDB-Strukturen aus SQL 001–008 rein lesend. Die FastAPI-Factory
+verweigert bei Drift/fehlender Migration den Start. Negative Unit-Tests decken
+fehlende 007/008-Felder und -Tabellen, fehlende Constraints, ungeeignete
+Tabellenengine und den falschen 3%-Default ab; ein echter isolierter MariaDB-
+Integrationstest ist im CI-Suite enthalten. Erst nach erfolgreichem Actions-
+Nachweis als bestanden kennzeichnen. Noch **kein** eigenständiger SQL-Runner,
+keine automatischen oder produktiven Migrationen; erforderliche v0.14-
+Bestandsfreigaben bleiben offen.

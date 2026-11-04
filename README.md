@@ -128,3 +128,23 @@ Das öffentliche Repo enthält ausschließlich eigene Implementierung und synthe
 ### Laufende Weiterentwicklung: sichere Vertragsregel-Revisionen (v0.14 in Arbeit)
 
 Der bestehende signierte MariaDB-Freigabepfad wurde um eine aktuelle Revision je Mandant, Gesellschaft, Vertragsnummer und Regel-ID erweitert. Eine neue fachlich signierte Freigabe sperrt die vorherige für **neue** Audits; historische, bereits abgeschlossene Auditberichte bleiben lesbar. Die Sperre wird durch eine Datenbanksperre auf den Revisionskopf gegen gleichzeitige Freigaben und Audit-Ausführung geschützt. Das Datenbank-Upgrade erfolgt ausschließlich kontrolliert mittels `sql/008_rule_revisions.sql`, nicht beim API-Start. Altbestände ohne Revisionszuordnung müssen sicher neu freigegeben werden. Vollständiger Vorschlags-Lifecycle (EXTRACTED/NEEDS_CONFIRMATION), reale Nachtragsannotation und Kundenpilot sind noch offen; der Produktrelease bleibt v0.13.1 bis zur Abnahme.
+
+
+### Verbindlicher MariaDB-Preflight (nicht migrationsausführend)
+
+Vor einem API-Start müssen die dedizierten MariaDB-Migrationen `sql/001` bis
+`sql/008` durch einen berechtigten Operator in kontrollierter Reihenfolge
+installiert werden. **Nie DDL auf einem API-Request oder automatisch beim Start.**
+Nach Backup und freigegebener Migration die vorhandenen DB-Umgebungsvariablen
+setzen und die ausschließlich lesende Prüfung ausführen:
+
+~~~bash
+lhfm-schema-check
+~~~
+
+Die FastAPI-Factory `create_app_from_environment()` führt dieselbe Prüfung
+verbindlich aus und verweigert den Start, wenn Tabellen, wesentliche Spalten,
+Constraints, InnoDB-Engine oder der historische 3%-Default fehlen. Dabei werden
+**keine** alten Freigaben stillschweigend auf v0.14 hochgezogen und keine
+Produktivdaten geändert. Der Check ersetzt keine Betreiberfreigabe, kein
+Datenbankbackup, keinen Migrations-Runner und keine reale Pilotabnahme.

@@ -20,6 +20,7 @@ all = ["frictionless>=5.0,<6", "docling>=2.70,<3", "PyMySQL>=1.1,<2", "PyJWT[cry
 
 [project.scripts]
 lhfm = "lowhangingfruitme.intake_cli:main"
+lhfm-schema-check = "lowhangingfruitme.schema:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
