@@ -125,3 +125,8 @@ Der neue CLI-Befehl `lhfm-migrate` ist unabhängig vom API-Start. Er unterstütz
 ### Betriebs-Readiness statt bloßer HTTP-Liveness (04.11.2026 – synthetische CI bestanden)
 
 Neben unverändertem `GET /healthz` (Prozess lebt) wurde `GET /readyz` eingeführt. Ready ist nur möglich, wenn Upload-, Bundle- und Recoverydienste konfiguriert sind, der MariaDB-Schema-/Migrations-Ledger-Preflight besteht und ein echter `ClamAVScanner` am lokalen UNIX-Socket auf `zPING` mit `PONG` reagiert. Test-Stubs signalisieren keine Produktionsbereitschaft. Fehler werden als unspezifisches 503 (`NOT_READY`) ausgegeben, nicht mit DB- oder Hostdetails. **CI bestanden:** [Actions 41829742266](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41829742266): 336 Tests je Python 3.11 und 3.12 einschließlich ClamAV-PING-Positiv/Negativ und `/readyz` bei Dienst-/Socket-Ausfall. Ein erfolgreicher Test mit einem simulierten Socket ist **kein** Live-Scanner-Nachweis.
+
+
+### RS256-JWKS-Schlüsselwechsel ohne Dienstneustart (04.11.2026 – CI ausstehend)
+
+Die geprüfte lokale JWKS-Datei wird bei jeder API-Tokenprüfung anhand SHA-256 neu validiert, bei Änderungen atomar ersetzt und bei ungültiger Datei fail-closed behandelt. Tests für Key-Rotation, alten KID, defekte JWKS-Datei und Wiederherstellung sind ergänzt. Dies ist kein Live-IdP, keine Provider-Discovery, keine Session-Erneuerung und keine Rotation des HMAC-Vertragsfreigabeschlüssels.

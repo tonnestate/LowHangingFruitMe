@@ -155,6 +155,59 @@ class JWTAccessTests(unittest.TestCase):
         with self.assertRaisesRegex(PermissionError, "token-directed"):
             self.factory.verifier().verify(token)
 
+    def test_trusted_jwks_atomically_rotates_and_retires_previous_key(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = root / "jwks.json"
+            path.write_text(json.dumps(self.factory.jwks), encoding="utf-8")
+            verifier = AccessTokenVerifier.from_trusted_file(
+                issuer=ISS, audience=AUD, jwks_path=path,
+                allowed_client_ids=(CLIENT,),
+            )
+            old = self.factory.token()
+            self.assertEqual(verifier.verify(old).subject, SUB)
+
+            replacement = TestTokenFactory()
+            replacement.jwks["keys"][0]["kid"] = "rotated-public-key"
+            token = jwt.encode(
+                {
+                    "iss": ISS, "aud": AUD, "sub": SUB, "client_id": CLIENT,
+                    "iat": int(datetime.now(timezone.utc).timestamp()),
+                    "nbf": int(datetime.now(timezone.utc).timestamp()),
+                    "exp": int(datetime.now(timezone.utc).timestamp()) + 600,
+                    "jti": uuid4().hex, "scope": "lhfm:audit:execute",
+                },
+                replacement.private, algorithm="RS256",
+                headers={"kid": "rotated-public-key", "typ": "at+jwt"},
+            )
+            staged = root / "next.json"
+            staged.write_text(json.dumps(replacement.jwks), encoding="utf-8")
+            staged.replace(path)
+            self.assertEqual(verifier.verify(token).subject, SUB)
+            with self.assertRaisesRegex(PermissionError, "unrecognized"):
+                verifier.verify(old)
+
+    def test_invalid_jwks_replacement_fails_closed_until_fixed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = root / "jwks.json"
+            path.write_text(json.dumps(self.factory.jwks), encoding="utf-8")
+            verifier = AccessTokenVerifier.from_trusted_file(
+                issuer=ISS, audience=AUD, jwks_path=path,
+                allowed_client_ids=(CLIENT,),
+            )
+            token = self.factory.token()
+            self.assertEqual(verifier.verify(token).subject, SUB)
+            staged = root / "broken.json"
+            staged.write_text('{"keys":[]}', encoding="utf-8")
+            staged.replace(path)
+            with self.assertRaisesRegex(PermissionError, "verification keys unavailable"):
+                verifier.verify(token)
+            restored = root / "fixed.json"
+            restored.write_text(json.dumps(self.factory.jwks), encoding="utf-8")
+            restored.replace(path)
+            self.assertEqual(verifier.verify(token).subject, SUB)
+
     def test_trusted_file_rejects_symlink(self):
         with tempfile.TemporaryDirectory() as d:
             path = Path(d) / "jwks.json"

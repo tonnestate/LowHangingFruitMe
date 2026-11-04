@@ -187,3 +187,13 @@ verfügbar sind und ClamAV über seinen lokalen UNIX-Socket ein korrektes
 HTTP 503, ohne interne Pfade offenzulegen. Ein Ping bestätigt **nicht** die
 Aktualität der Virensignaturen oder die Betriebssicherheit der PDF-Parser;
 diese Punkte bleiben separate Go-Live-Kontrollen.
+
+
+### JWT-Public-Key-Rotation
+
+Die vorhandene OIDC-Ressourcenserverprüfung lädt aktualisierte, vertrauenswürdig
+auf dem Host **atomar ersetzte** JWKS-Dateien ohne API-Neustart. Das
+Dateimanagement bleibt eine Betreiberaufgabe; defekte oder fehlende Schlüssel
+führen zu abgewiesener Authentifizierung, nicht zu einem unsicheren Fallback.
+Ein realer Identity Provider, die Refresh-Token-Verwaltung und das
+Benutzer-Offboarding sind weiterhin nicht abgenommen.

@@ -8,6 +8,10 @@ provision reviewers. Those remain external IdP/admin responsibilities.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from hashlib import sha256
+import os
+import stat
+import threading
 from datetime import datetime, timezone
 import json
 from pathlib import Path
@@ -55,6 +59,9 @@ class AccessTokenVerifier:
             raise ValueError("access-token lifetime policy must be 60..3600 seconds")
         if not isinstance(jwks, dict) or not isinstance(jwks.get("keys"), list):
             raise ValueError("trusted JWKS must contain keys")
+        self._key_lock = threading.RLock()
+        self._jwks_file: Path | None = None
+        self._jwks_digest: str | None = None
         self._keys: dict[str, Any] = {}
         for item in jwks["keys"]:
             if not isinstance(item, dict):
@@ -83,24 +90,76 @@ class AccessTokenVerifier:
         self.allowed_client_ids = frozenset(allowed_client_ids)
         self.max_lifetime_seconds = max_lifetime_seconds
 
+    @staticmethod
+    def _read_public_jwks_file(path: Path) -> bytes:
+        """Bounded, no-follow regular file read from trusted deployment storage."""
+        if not path.is_absolute() or path.is_symlink():
+            raise ValueError("trusted JWKS path must be absolute and not symlinked")
+        flags = os.O_RDONLY
+        if hasattr(os, "O_NOFOLLOW"):
+            flags |= os.O_NOFOLLOW
+        descriptor = os.open(path, flags)
+        try:
+            metadata = os.fstat(descriptor)
+            if (not stat.S_ISREG(metadata.st_mode)
+                    or not 0 < metadata.st_size <= 128 * 1024):
+                raise ValueError("trusted JWKS file missing or outside size bound")
+            with os.fdopen(descriptor, "rb", closefd=False) as stream:
+                raw = stream.read(128 * 1024 + 1)
+            if len(raw) > 128 * 1024:
+                raise ValueError("trusted JWKS file too large")
+            return raw
+        finally:
+            os.close(descriptor)
+
     @classmethod
     def from_trusted_file(
         cls, *, issuer: str, audience: str, jwks_path: str | Path,
         allowed_client_ids: tuple[str, ...],
     ) -> "AccessTokenVerifier":
-        """Load a pre-provisioned public JWKS file; no dynamic URL or SSRF."""
-        path = Path(jwks_path)
-        if path.is_symlink() or not path.is_file() or path.stat().st_size > 128 * 1024:
-            raise ValueError("trusted JWKS file is missing, symlinked or too large")
-        return cls(
+        """Use ONLY pinned operator-provisioned file; no URL/JWKS network fetch."""
+        path = Path(jwks_path).absolute()
+        raw = cls._read_public_jwks_file(path)
+        verifier = cls(
             issuer=issuer, audience=audience,
-            jwks=json.loads(path.read_text(encoding="utf-8")),
+            jwks=json.loads(raw.decode("utf-8")),
             allowed_client_ids=allowed_client_ids,
         )
+        verifier._jwks_file = path
+        verifier._jwks_digest = sha256(raw).hexdigest()
+        return verifier
+
+    def _refresh_trusted_public_keys(self) -> None:
+        """Read-before-verify; invalid/missing replacement always fails closed.
+
+        Public JWKS updates must be published atomically by a trusted operator.
+        A newly published valid file takes effect without a service restart.
+        """
+        if self._jwks_file is None:
+            return
+        try:
+            raw = self._read_public_jwks_file(self._jwks_file)
+            digest = sha256(raw).hexdigest()
+            with self._key_lock:
+                if digest == self._jwks_digest:
+                    return
+            candidate = AccessTokenVerifier(
+                issuer=self.issuer, audience=self.audience,
+                jwks=json.loads(raw.decode("utf-8")),
+                allowed_client_ids=tuple(sorted(self.allowed_client_ids)),
+                max_lifetime_seconds=self.max_lifetime_seconds,
+            )
+            with self._key_lock:
+                self._keys = candidate._keys
+                self._jwks_digest = digest
+        except (OSError, UnicodeError, ValueError, TypeError, KeyError,
+                json.JSONDecodeError) as exc:
+            raise PermissionError("trusted JWT verification keys unavailable") from exc
 
     def verify(self, raw_token: str) -> VerifiedPrincipal:
         if not isinstance(raw_token, str) or not 30 <= len(raw_token) <= 8192:
             raise PermissionError("invalid access token")
+        self._refresh_trusted_public_keys()
         try:
             header = jwt.get_unverified_header(raw_token)
             if header.get("typ") not in ("at+jwt", "application/at+jwt"):
@@ -108,10 +167,12 @@ class AccessTokenVerifier:
             if header.get("alg") != "RS256" or set(header) - {"typ", "alg", "kid"}:
                 raise PermissionError("unsupported or token-directed signature metadata")
             kid = header.get("kid")
-            if not isinstance(kid, str) or kid not in self._keys:
+            with self._key_lock:
+                key = self._keys.get(kid) if isinstance(kid, str) else None
+            if key is None:
                 raise PermissionError("unrecognized trusted signing key")
             claims = jwt.decode(
-                raw_token, key=self._keys[kid],
+                raw_token, key=key,
                 algorithms=["RS256"], audience=self.audience, issuer=self.issuer,
                 leeway=0,
                 options={

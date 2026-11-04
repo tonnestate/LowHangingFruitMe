@@ -55,3 +55,8 @@ Existing tests additionally verify DB row-lock behavior during concurrent revoca
 - Low-level `ApprovalRegistry` and `issue_approval()` remain Python internals for trusted code and offline tests; they **must not be exposed** as customer endpoints with caller-supplied actor strings.
 
 **Production release remains blocked** pending a real IdP tenant, hardened HTTP boundary, authentic provisioning, secure document registry, end-to-end and penetration tests, legal/compliance approval and recovery/billing implementation.
+
+
+## Vertrauenswürdige JWKS-Dateirotation (04.11.2026 – CI ausstehend)
+
+Der file-basierte `AccessTokenVerifier` prüft die öffentliche JWKS-Datei nun **vor jeder Token-Verifikation** erneut auf reguläre Datei, No-Follow, Maximalgröße und SHA-256-Änderung. Nur vollständig validierte RS256-RSA-Public-Keys werden unter einem Lock atomar ersetzt. Ungültige/fehlende Dateien führen bis zur Korrektur zu verweigerter Authentifizierung; zuvor akzeptierte Schlüssel werden nach gültiger Rotation nicht stillschweigend weiter angenommen. Ein direkter `AccessTokenVerifier` mit explizit übergebenen Testschlüsseln bleibt unverändert. Weder issuer-Discovery noch externe JWKS-Netzabfragen, IdP-Provisioning oder Token-Refresh sind dadurch geschaffen. Die Datei muss von einem vertrauenswürdigen Betreiber atomar veröffentlicht und auf dem echten Host getestet werden.

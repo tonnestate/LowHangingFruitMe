@@ -48,3 +48,8 @@ Upload API validates signed JWT and database grant, accepts only a server-assign
 ### Operational readiness
 
 `/healthz` is a liveness endpoint, not a health certificate. `/readyz` denies readiness (503) unless the runtime has the configured upload/promotion/recovery services, compatible MariaDB migration ledger and a **real ClamAVScanner adapter receiving an explicit clamd PONG** on its local UNIX socket. This is not evidence of current malware signatures, adequate PDF process isolation, operational recovery policies or a deployed IdP. A synthetic ClamAV socket in CI only verifies the protocol and gate.
+
+
+### Trusted public JWKS rotation
+
+The resource-server verifier can now reload an atomically replaced local public JWKS file before each verification, rejecting symlinks, absent or malformed files and removing retired keys after a valid replacement. No dynamic IdP URL or token-supplied key location is ever used. Production must still provide authorized key publication, real external IdP testing, revocation/offboarding and operational monitoring.
