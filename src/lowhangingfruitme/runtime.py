@@ -6,6 +6,7 @@ No migrations, writes, account provisioning, credential printing or HTTP bypass.
 from __future__ import annotations
 
 import os
+import re
 from pathlib import Path
 import stat
 import sys
@@ -51,7 +52,10 @@ def validate_runtime_config(
         raise RuntimeNotReady("DB_MUST_USE_LOOPBACK")
     if not env.get("LHFM_DB_USER") or not env.get("LHFM_DB_PASSWORD"):
         raise RuntimeNotReady("DB_CREDENTIALS_NOT_CONFIGURED")
-    if not env.get("LHFM_DB_NAME") or env["LHFM_DB_NAME"].startswith("lhfm_restore_"):
+    database = env.get("LHFM_DB_NAME", "")
+    if (not re.fullmatch(r"[A-Za-z][A-Za-z0-9_]{2,63}", database)
+            or database.lower() in ("mysql", "information_schema", "performance_schema", "sys")
+            or database.lower().startswith("lhfm_restore_")):
         raise RuntimeNotReady("INVALID_LIVE_DATABASE")
     try:
         port = int(env.get("LHFM_DB_PORT", "3306"))

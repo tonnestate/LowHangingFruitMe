@@ -49,6 +49,11 @@ class RuntimeConfigTests(unittest.TestCase):
         self.assertEqual(socket, "/run/clamav/clamd.ctl")
         self.assertEqual(launcher, "/usr/local/libexec/lhfm/docling")
 
+    @unittest.skipIf(os.geteuid() == 0, "CI positive preflight requires an unprivileged user")
+    def test_storage_owner_must_match_worker_uid(self):
+        with self.assertRaisesRegex(RuntimeNotReady, "OWNER_OR_MODE"):
+            validate_runtime_config(self.env, uid=self.uid + 1)
+
     def test_root_worker_is_never_allowed(self):
         with self.assertRaisesRegex(RuntimeNotReady, "REFUSE_ROOT"):
             validate_runtime_config(self.env, uid=0)
@@ -61,6 +66,8 @@ class RuntimeConfigTests(unittest.TestCase):
             ("LHFM_DB_PORT", "0"),
             ("LHFM_DB_PORT", "injection"),
             ("LHFM_DB_NAME", "lhfm_restore_drill"),
+            ("LHFM_DB_NAME", "mysql"),
+            ("LHFM_DB_NAME", "bad-name"),
             ("LHFM_DB_PASSWORD", ""),
         ]:
             with self.subTest(name=name, value=value):
