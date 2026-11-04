@@ -1,5 +1,6 @@
 "use client";
 import {useState} from "react";
+import {BillingWorkspace} from "./BillingWorkspace";
 
 type Dataset="transactions"|"settlements";
 type ContractSegment={evidence_ref:string;text:string;pages:number[]};
@@ -460,5 +461,8 @@ export function WorkspaceClient(){
     Finanzentscheidung dokumentieren
    </button>
   </fieldset>
+  <BillingWorkspace key={tenant+"|"+entity+"|"+(audit?.audit_id??"")}
+   tenantId={tenant.trim()} legalEntityId={entity.trim()}
+   initialAuditId={audit?.audit_id??""}/>
  </div>;
 }
