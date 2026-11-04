@@ -168,6 +168,12 @@ def create_app(*, service: AuthenticatedApprovalService,
             from ..schema import require_operational_schema
             require_operational_schema(service.registry._connect)
             uploads.scanner.ping()
+            if promotion.require_candidate:
+                from ..docling_subprocess import DoclingSubprocessExtractor
+                if (candidates is None or
+                        not isinstance(candidates.extractor, DoclingSubprocessExtractor)):
+                    raise RuntimeError("trusted contract parser not configured")
+                candidates.extractor.preflight()
         except Exception as exc:
             # Do not expose DB structure, credentials or socket paths.
             raise HTTPException(status_code=503, detail={"code": "NOT_READY"}) from exc
@@ -730,7 +736,9 @@ def create_app_from_environment() -> FastAPI:
         from ..docling_subprocess import DoclingSubprocessExtractor
         candidate_service = ContractCandidateService(
             service=service, uploads=upload_service,
-            extractor=DoclingSubprocessExtractor(),
+            extractor=DoclingSubprocessExtractor(
+                launcher=os.environ.get("LHFM_DOCLING_SANDBOX_LAUNCHER"),
+            ),
         )
     promotion_service = (
         ReviewedBundleService(
