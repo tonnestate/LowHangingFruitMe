@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 import configparser
+from contextlib import ExitStack
 from hashlib import sha256
 import json
 import os
@@ -390,7 +391,8 @@ def verify_tar(file, identity, expected, destination):
             process.stdout.close()
 
 
-def verify_restore(*, defaults_file, backup_dir, identity, target_database, verification_key):
+def verify_restore(*, defaults_file, backup_dir, identity, target_database, verification_key,
+                   restore_upload_root=None, restore_source_root=None):
     if os.environ.get("LHFM_RESTORE_REHEARSAL_APPROVED") != "YES":
         raise DRError("explicit isolated restore approval required")
     if not NAME.fullmatch(target_database) or not target_database.startswith("lhfm_restore_"):
@@ -441,12 +443,33 @@ def verify_restore(*, defaults_file, backup_dir, identity, target_database, veri
             child.wait()
     if table_counts(credentials, target_database) != manifest["tables"]:
         raise DRError("restored database row counts differ from source snapshot")
-    with tempfile.TemporaryDirectory(prefix="lhfm-dr-verify-") as temp:
-        base = Path(temp)
-        for key, component in (("uploads",PARTS[1]),("sources",PARTS[2])):
-            place = base / key
-            place.mkdir(mode=0o700)
-            verify_tar(root / component,identity,manifest["files"][key],place)
+    if (restore_upload_root is None) != (restore_source_root is None):
+        raise DRError("both isolated private restore roots must be provided together")
+    with ExitStack() as stack:
+        if restore_upload_root is None:
+            temporary = stack.enter_context(
+                tempfile.TemporaryDirectory(prefix="lhfm-dr-verify-")
+            )
+            base = Path(temporary)
+            target_uploads, target_sources = base / "uploads", base / "sources"
+            target_uploads.mkdir(mode=0o700)
+            target_sources.mkdir(mode=0o700)
+        else:
+            target_uploads = private_dir(restore_upload_root)
+            target_sources = private_dir(restore_source_root)
+            if (target_uploads.resolve() == target_sources.resolve()
+                    or target_uploads.is_relative_to(root)
+                    or target_sources.is_relative_to(root)
+                    or root.is_relative_to(target_uploads)
+                    or root.is_relative_to(target_sources)
+                    or any(target.iterdir() for target in
+                           (target_uploads,target_sources))):
+                raise DRError("isolated restore directories must be empty and distinct")
+        for name, component, target in (
+            ("uploads",PARTS[1],target_uploads),
+            ("sources",PARTS[2],target_sources),
+        ):
+            verify_tar(root / component, identity,manifest["files"][name],target)
     return {"restore_verified": True, "table_counts_match": True,
             "target_database": target_database,
             "upload_files_checked": len(manifest["files"]["uploads"]),
@@ -464,6 +487,8 @@ def main():
     b = actions.add_parser("restore-verify")
     for field in ("defaults-file","backup-dir","age-identity","target-database","verification-key"):
         b.add_argument("--"+field, required=True)
+    for field in ("restore-upload-root","restore-source-root"):
+        b.add_argument("--"+field)
     options = parser.parse_args()
     try:
         if options.action == "backup":
@@ -477,7 +502,9 @@ def main():
                 defaults_file=options.defaults_file,
                 backup_dir=options.backup_dir,identity=options.age_identity,
                 target_database=options.target_database,
-                verification_key=options.verification_key)
+                verification_key=options.verification_key,
+                restore_upload_root=options.restore_upload_root,
+                restore_source_root=options.restore_source_root)
         print(json.dumps(result,sort_keys=True))
         return 0
     except Exception as exc:
