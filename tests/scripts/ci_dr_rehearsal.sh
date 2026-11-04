@@ -56,7 +56,6 @@ LHFM_RESTORE_REHEARSAL_APPROVED=YES python -m lowhangingfruitme.dr restore-verif
   --defaults-file "$scratch/client.cnf" --backup-dir "$scratch/snapshot" \
   --age-identity "$scratch/identity" --target-database lhfm_restore_ci \
   --verification-key "$scratch/verify.pem" \
-  --verification-key "$scratch/verify.pem" \
   > "$scratch/restore-result.json"
 python - "$scratch/restore-result.json" <<'PY'
 import json,sys
@@ -73,7 +72,7 @@ PY
 if LHFM_RESTORE_REHEARSAL_APPROVED=YES python -m lowhangingfruitme.dr restore-verify \
   --defaults-file "$scratch/client.cnf" --backup-dir "$scratch/snapshot" \
   --age-identity "$scratch/identity" --target-database lhfm_restore_ci \
-  > /dev/null 2>&1; then
+  --verification-key "$scratch/verify.pem" > /dev/null 2>&1; then
   echo "unsafe repeated restore accepted" >&2
   exit 2
 fi
