@@ -1,3 +1,4 @@
+import {encode,decode} from "next-auth/jwt";
 import test from "node:test";
 import assert from "node:assert/strict";
 import {checkedTokenEndpoint,authCookieName,sessionCookieNames,
@@ -102,4 +103,20 @@ test("auth cookie rotation handles chunks without exposing bearer value",()=>{
  assert.equal(clearAuthCookies(old,true).length,2);
  assert.throws(()=>rotateAuthCookies("x".repeat(8000),old,true),
   /OIDC_ENCRYPTED_SESSION_TOO_LARGE/);
+});
+
+
+test("rotated Auth.js encrypted session has correct cookie salt and no plaintext API bearer",async()=>{
+ const secret="synthetic-secret-only-for-cryptographic-ci-32chars";
+ const cookie=authCookieName(true);
+ const token={sub:"SYNTHETIC-REVIEWER",apiAccessToken:"SECRET-INTERNAL-BEARER",
+  apiExpiresAt:1700000000,apiRefreshToken:"SECRET-REFRESH"};
+ const encoded=await encode({token,secret,salt:cookie,maxAge:3600});
+ assert.ok(!encoded.includes("SECRET-INTERNAL-BEARER"));
+ assert.ok(!encoded.includes("SECRET-REFRESH"));
+ const cookies=rotateAuthCookies(encoded,[],true);
+ assert.ok(cookies.every(x=>x.includes("HttpOnly")&&x.includes("SameSite=Lax")));
+ const restored=await decode({token:encoded,secret,salt:cookie});
+ assert.equal(restored?.apiAccessToken,"SECRET-INTERNAL-BEARER");
+ assert.equal(restored?.apiRefreshToken,"SECRET-REFRESH");
 });
