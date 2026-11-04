@@ -99,3 +99,8 @@ Die SQL-009-Kandidatenakte und Ereignisse, hash- und mandantenbezogene Parserfun
 ### Sandbox-Gate für Vertrags-PDFs (04.11.2026)
 
 Implementierter Prüfungspfad: root-kontrollierter Sandbox-Launcher, real ausgeführter Netzwerk-Namespace-Probeprozess, hart begrenzte Parserausgabe, Timeout mit Prozessgruppen-Kill und Ressourcengrenzen im isolierten Worker. Negativtests für fehlenden Launcher, gemeinsame Netzwerk-Namespace, sichtbare Nicht-Loopback-Interfaces, Ausgabeüberlauf, Zeitüberschreitung und ungültige Workerantwort. **PASS – isolierte Python-CI:** [Actions 41841304792](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41841304792), 360 Tests auf 3.11 und 360 auf 3.12 einschließlich Ausgabeüberlauf, Timeout, fehlendem und ungültigem Sandbox-Launcher. Offline-Docling, OS-Sandbox und echter VPS bleiben gesondert **OFFEN**.
+
+
+### v0.14 – OAuth/OIDC-Erneuerung (04.11.2026)
+
+**PASS – synthetische CI:** [Actions 41842914601](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41842914601) mit 16 Node-Tests einschließlich JWE-Kryptoroundtrip, HTTPS-Issuer-Pinning, Fehler-/Replay-/Response-Limits und Cookie-Chunk-Reinigung sowie bestandenem Next.js-/TypeScript-/Browser-Build. **OFFEN:** echter Confidential-Client, Refresh unter realer Key Rotation, Revoke/Offboarding, MFA und VPS-Abnahme.

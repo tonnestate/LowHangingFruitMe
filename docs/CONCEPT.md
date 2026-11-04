@@ -238,3 +238,8 @@ Der Einstieg ist absichtlich nur PDF; DOCX wird nicht ohne Extraktionsbenchmark 
 ## Sicherheitsgate für die Vertrags-PDF-Extraktion (04.11.2026)
 
 Der Parser wird nur über einen root-kontrollierten Sandbox-Launcher gestartet; der Worker prüft die tatsächliche Netzwerk-Namespace-Differenz und die ausschließliche Sichtbarkeit des Loopback-Interfaces. Die Operatorbereitschaft benötigt einen aktiven Sandbox-Preflight; eine ungeprüfte Subprozesskonfiguration genügt nicht. Elternprozess-seitige harte Ausgabelimits und gezieltes Töten der Prozessgruppe ergänzen die Worker-Ressourcenlimits. Fehlende Isolation führt zu keiner Klausel-Extraktion und keiner signierten Vertragsfreigabe. Der fachliche Goldstandard, echte Docling-PDF-Benchmarks und die vollständige OS-Isolationsabnahme bleiben externe Go-Live-Gates.
+
+
+## API-Token-Erneuerung durch das vertrauliche BFF (04.11.2026)
+
+Das Next.js-Portal speichert OAuth-Refresh-Credentials ausschließlich als verschlüsseltes Auth.js-JWE in HttpOnly-Session-Cookies. Das BFF kann einen auslaufenden API-Token ausschließlich bei der serverseitig fest konfigurierten HTTPS-Issuer-Origin erneuern, übergibt ihn nur an die lokale Finanz-API und aktualisiert die verschlüsselte Session. Ohne Erneuerung wird explizit neu angemeldet; kein Fallback auf unsignierte Regeln oder erweiterte Mandantenrechte. Externe IAM-Abnahme bleibt Voraussetzung.

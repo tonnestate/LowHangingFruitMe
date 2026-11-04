@@ -25,6 +25,8 @@ async function call<T>(path:string,init:RequestInit={}):Promise<T>{
    (value as {detail:unknown}).detail:value;
   const code=detail && typeof detail==="object" && "code" in detail?
    String((detail as {code:unknown}).code):"HTTP_"+result.status;
+  if(code==="SESSION_REAUTH_REQUIRED")
+   throw new Error("Sitzung abgelaufen – bitte Seite neu laden und erneut anmelden.");
   throw new Error(code);
  }
  return value as T;

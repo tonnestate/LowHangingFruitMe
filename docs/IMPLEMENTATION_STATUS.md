@@ -145,3 +145,8 @@ Neues SQL 009 mit `lhfm_contract_candidates` und append-only Ereignissen, API f�
 ### Docling-Subprozess-Härtung (04.11.2026 – synthetische CI bestanden)
 
 Der dokumentenverarbeitende Unterprozess wurde auf inkrementell begrenzten stdout (1 MiB), 120-Sekunden-Abbruch mit Prozessgruppen-Kill, Worker-eigene Ressourcenlimits und zwingende root-kontrollierte Betriebssystem-Sandbox umgestellt. Die lokale Netzwerk-Namespace-Probe ist unter `lhfm-docling-check` und bei `/readyz` integriert; ohne konfigurierten sicheren Launcher verweigert die Parserstrecke jede Extraktion. **CI bestanden:** [GitHub Actions 41841304792](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41841304792), **360 Tests unter Python 3.11 und 360 unter Python 3.12**. Die CI nutzt ausschließlich synthetische CLI-Unterprozesse, keine echten Docling-PDF-Konvertierungen und keinen nachgewiesenen VPS.
+
+
+### OIDC-Refresh und Browser-Session (04.11.2026 – synthetische Portal-CI bestanden)
+
+Im BFF implementiert: gleichursprünglich gepinnter HTTPS-Token-Endpoint, Client-Credentials-Refresh mit Timeout und 16-KiB-Limit, prozesslokales Singleflight, erfolgreiche Access-/Refresh-Rotation mit Auth.js-JWE-Encode und Auth.js-kompatibler Cookie-Bereinigung; Fehler führt zur erneuten Anmeldung ohne Credentials an den Browser. **CI bestanden:** [Actions 41842914601](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41842914601), 16 Node-Unit-Tests, Next.js-Build, TypeScript und Playwright erfolgreich. Keine reale IdP-/MFA-/Multi-Worker-/VPS-Abnahme.

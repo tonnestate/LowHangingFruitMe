@@ -63,3 +63,10 @@ Der file-basierte `AccessTokenVerifier` prüft die öffentliche JWKS-Datei nun *
 
 
 **CI-Evidenz:** [Actions 41830627024](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41830627024), erfolgreich mit 338 Tests je Python 3.11/3.12, einschließlich Dateiwechsel, Widerruf eines alten KID, defekter Datei und Wiederherstellung. Die Race-Condition des gleichzeitigen JWKS-Snapshots wurde zusätzlich durch Serialisierung von Lesen/Validieren/Austauschen in [Commit 0aa7c0c](https://github.com/tonnestate/LowHangingFruitMe/commit/0aa7c0c5c8d2d163359538bc5644fce4013d1492) bereinigt. Keine Live-IdP-Abnahme.
+
+
+## Serverseitige OIDC-Token-Rotation (04.11.2026)
+
+Das geschützte Portal benötigt einen tatsächlichen HTTPS-Identity-Provider, einen Confidential-Client mit `refresh_token`, ein echtes `at+jwt` für die vom Python-Backend erwartete Audience sowie `AUTH_URL` und `AUTH_SECRET` (mindestens 32 Byte). Der feste `AUTH_OIDC_TOKEN_ENDPOINT` muss per HTTPS zur Issuer-Origin und deren Issuer-Pfad gehören. Tokens verbleiben im verschlüsselten HttpOnly/Secure/SameSite=Lax-Auth.js-JWE. Bei knapp abgelaufenem Access Token erneuert das BFF ihn durch begrenztes form-urlencoded POST ohne Weiterleitungen. Die JWE-Cookiefragmente werden bereinigt/neu geschrieben. Bei Refresh-Fehler wird die Browser-Sitzung geschlossen und eine neue Anmeldung erforderlich. Die Browser-Session-API liefert weiterhin keine Access-/Refresh-Credentials.
+
+Eine Singleflight-Sperre verhindert gleichzeitige identische Refresh-Anfragen innerhalb einer Node-Instanz, **nicht** zwischen mehreren Prozessen. Es wurden weder ein echter OIDC-Provider installiert noch MFA, Benutzerentzug, Provider-Key-Rotation oder ein Lasttest auf dem VPS abgenommen. Entsprechende Go-Live-Gates bleiben offen.

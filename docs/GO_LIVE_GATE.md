@@ -32,3 +32,8 @@ Python-/Browser-/Sicherheits-/Lasttests, reproduzierbare dependency locks/SBOM, 
 ### G1 – zusätzliche dokumentierte Sandbox-Prüfung (04.11.2026)
 
 Der Quellcode fordert einen root-kontrollierten, separat zu installierenden Launcher, einen anderen Linux-Netzwerk-Namespace ohne Nicht-Loopback-Interfaces und begrenzt die Ausgabe/Prozesslebenszeit. Das ist **nur implementierte technische Härtung**, keine nachgewiesene Installation. `lhfm-docling-check` und `/readyz` müssen auf dem echten VPS mit Bubblewrap und den offline Modellartefakten bestehen; die Vorlage `deploy/docling-bwrap-launcher.sh.example` ist ausdrücklich nicht unverändert produktionsfreigegeben. Freigabestatus G1: **OFFEN**.
+
+
+### G0 – erneuerbare API-Zugriffstokens (04.11.2026)
+
+Die BFF-Implementierung kann bereits einen Ablauf mit Server-Refresh, verschlüsselter Auth.js-JWE-Rotation, Session-Cookie-Bereinigung und erzwungener Neuanmeldung ausführen. **G0 bleibt OFFEN:** tatsächliche Issuer-Discovery/Audience, MFA, Benutzer-Offboarding, Refresh unter realem Provider und über mehrere Node-Prozesse, Apache/TLS und produktive Token-Rotation sind gesondert zu prüfen.
