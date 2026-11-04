@@ -58,3 +58,15 @@ Any future customer portal or upload API must use its own authenticated backend,
 `/arbeitsplatz` is guarded by server-side OIDC session checks; the allowlisted `/api/finance/*` Next.js BFF forwards only approved JWT-scoped routes to `LHFM_API_INTERNAL_URL` at a loopback origin. It supports upload intent/content, inspect source, reviewed contract bundle, audit run, recovery evidence and independent finance review. Report downloads `report.pdf`, `report.xlsx`, `report.json` are forwarded as binary-safe, no-store replies after the Python API checks reviewer/tenant/ledger permissions.
 
 This is a tested development flow, **not** proof of the customer's chosen identity provider, deployed server settings, TLS hardening, ClamAV daemon, retention, customer consent or legally billable fee. The existing neon PNG remains the only permitted visual brand source. See `../docs/FOUR_WEEK_ACCEPTANCE.md`.
+
+
+## Dokumentengebundene v0.14-Regelfreigabe
+
+Das Arbeitsportal verlangt vor einer signierten Audit-Registrierung jetzt die
+Extraktion und ausdrückliche Auswahl einer verifizierbaren Fundstelle aus einer
+gescannten Vertrags-PDF. Der gesonderte API-Kandidat durchläuft EXTRACTED,
+NEEDS_CONFIRMATION und APPROVED; die endgültige Freigabe erfolgt nur in der
+MariaDB-Transaktion der signierten Regelrevision. DOCX-Verträge sind im ersten
+schlanken Pilotablauf nicht zugelassen. Ein grüner Browser-Test belegt noch
+keine produktive Docling-Modellinstallation, Betriebssystem-Sandbox oder
+unabhängige juristische Vertragsauslegung.

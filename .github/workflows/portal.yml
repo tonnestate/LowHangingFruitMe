@@ -1,7 +1,7 @@
 name: Marketing website – build, brand and browser
 on:
   push:
-    branches: [main]
+    branches: [main, "feat/**"]
     paths:
       - "portal/**"
       - "docs/Neon-Low-Hanging-FruitMe-Banner.png"

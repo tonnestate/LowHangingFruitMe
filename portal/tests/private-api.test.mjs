@@ -5,6 +5,9 @@ import {verifiedApiPath,trustedApiOrigin,sameOrigin} from "../lib/private-api.mj
 test("BFF exposes only financial service allowlist",()=>{
  const id="12345678-1234-4abc-9def-123456789012";
  assert.equal(verifiedApiPath("GET",["me"]),"/v1/me");
+ assert.equal(verifiedApiPath("POST",["contract-candidates"]),"/v1/contract-candidates");
+ assert.equal(verifiedApiPath("POST",["contract-candidates",id,"review"]),"/v1/contract-candidates/"+id+"/review");
+ assert.equal(verifiedApiPath("GET",["contract-candidates",id]),"/v1/contract-candidates/"+id);
  assert.equal(verifiedApiPath("PUT",["uploads",id,"content"]),"/v1/uploads/"+id+"/content");
  assert.equal(verifiedApiPath("POST",["audits",id,"recovery-events"]),
               "/v1/audits/"+id+"/recovery-events");

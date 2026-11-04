@@ -3,6 +3,7 @@ const uuid="[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
 const routes = {
   GET: [
     /^me$/,
+    new RegExp("^contract-candidates/"+uuid+"$"),
     new RegExp("^uploads/"+uuid+"$"),
     new RegExp("^uploads/"+uuid+"/inspect$"),
     new RegExp("^uploads/"+uuid+"/invoice-preview$"),
@@ -11,7 +12,8 @@ const routes = {
     new RegExp("^audits/"+uuid+"/report\\.(?:pdf|json|xlsx)$"),
   ],
   POST: [
-    /^uploads$/, /^bundles$/, /^audits$/,
+    /^uploads$/, /^bundles$/, /^audits$/, /^contract-candidates$/,
+    new RegExp("^contract-candidates/"+uuid+"/review$"),
     new RegExp("^audits/"+uuid+"/recovery-events$"),
     new RegExp("^audits/"+uuid+"/case-status$"),
     new RegExp("^recovery-events/"+uuid+"/review$"),
