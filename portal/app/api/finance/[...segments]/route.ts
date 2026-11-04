@@ -54,7 +54,7 @@ async function forward(request:NextRequest,ctx:Context){
      !publicUrl?.startsWith("https://")){
     return json(503,"OIDC_NOT_CONFIGURED");
   }
-  if(method!=="GET"&&!sameOrigin(request.url,request.headers.get("origin")))
+  if(method!=="GET"&&!sameOrigin(publicUrl,request.headers.get("origin")))
     return json(403,"ORIGIN_FORBIDDEN");
 
   // Auth.js v5 uses Secure-prefixed cookies for the public HTTPS origin.
@@ -100,10 +100,11 @@ async function forward(request:NextRequest,ctx:Context){
                               clearAuthCookies(existingCookies,secureCookie));
   }
   if(!bearer)return json(401,"AUTH_REQUIRED");
+  const fail=(code:number,error:string)=>withSessionCookies(json(code,error),rotatedCookies);
   const url=new URL(apiPath,configured);
   const allowedQuery=new Set(["tenant_id","legal_entity_id","dataset","sheet_name"]);
   for(const [key,value] of request.nextUrl.searchParams){
-    if(!allowedQuery.has(key)||value.length>128)return json(400,"INVALID_QUERY");
+    if(!allowedQuery.has(key)||value.length>128)return fail(400,"INVALID_QUERY");
     url.searchParams.append(key,value);
   }
   const headers:Record<string,string>={"Authorization":"Bearer "+bearer};
@@ -115,13 +116,13 @@ async function forward(request:NextRequest,ctx:Context){
     const isBinary=method==="PUT";
     const contentType=request.headers.get("content-type")?.split(";",1)[0];
     if(contentType!==(isBinary?"application/octet-stream":"application/json"))
-      return json(415,"INVALID_CONTENT_TYPE");
+      return fail(415,"INVALID_CONTENT_TYPE");
     const limit=isBinary?MAX_FILE:MAX_JSON;
     const declared=request.headers.get("content-length");
     if(declared && (!/^\d+$/.test(declared)||+declared>limit))
-      return json(413,"REQUEST_TOO_LARGE");
+      return fail(413,"REQUEST_TOO_LARGE");
     body=await limitedBody(request,limit)??undefined;
-    if(!body)return json(413,"REQUEST_TOO_LARGE");
+    if(!body)return fail(413,"REQUEST_TOO_LARGE");
     headers["Content-Type"]=isBinary?"application/octet-stream":"application/json";
   }
   try{
@@ -133,15 +134,15 @@ async function forward(request:NextRequest,ctx:Context){
 
     if(/\/report\.(pdf|xlsx|json)$/.test(apiPath) && upstream.ok){
       const size=Number(upstream.headers.get("content-length")||"0");
-      if(size>4*1024*1024)return json(502,"REPORT_TOO_LARGE");
+      if(size>4*1024*1024)return fail(502,"REPORT_TOO_LARGE");
       const bytes=await upstream.arrayBuffer();
-      if(bytes.byteLength>4*1024*1024)return json(502,"REPORT_TOO_LARGE");
+      if(bytes.byteLength>4*1024*1024)return fail(502,"REPORT_TOO_LARGE");
       const fmt=apiPath.split(".").at(-1);
       const kind=fmt==="pdf"?"application/pdf":
        fmt==="xlsx"?"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
        "application/json; charset=utf-8";
       const match=/\/audits\/([0-9a-f-]{36})\/report\./.exec(apiPath);
-      if(!match)return json(502,"INVALID_REPORT_RESPONSE");
+      if(!match)return fail(502,"INVALID_REPORT_RESPONSE");
       return withSessionCookies(new Response(bytes,{status:upstream.status,headers:{
         "Content-Type":kind,"Cache-Control":"no-store",
         "X-Content-Type-Options":"nosniff",
@@ -149,7 +150,7 @@ async function forward(request:NextRequest,ctx:Context){
       }}),rotatedCookies);
     }
     const result=await upstream.text();
-    if(result.length>4*1024*1024)return json(502,"UPSTREAM_RESPONSE_TOO_LARGE");
+    if(result.length>4*1024*1024)return fail(502,"UPSTREAM_RESPONSE_TOO_LARGE");
     return withSessionCookies(new Response(result,{
       status:upstream.status,
       headers:{"Content-Type":"application/json; charset=utf-8",
