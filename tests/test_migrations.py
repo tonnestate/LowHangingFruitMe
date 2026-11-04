@@ -19,7 +19,7 @@ SQL = Path(__file__).parent.parent / "sql"
 class MigrationSafetyUnitTests(unittest.TestCase):
     def test_all_reviewed_sql_scripts_load(self):
         migrations = load_migrations(SQL)
-        self.assertEqual([x.number for x in migrations], list(range(1, 9)))
+        self.assertEqual([x.number for x in migrations], list(range(1, 10)))
         self.assertTrue(all(x.statements for x in migrations))
 
     def test_modified_local_sql_source_is_rejected_before_any_ddl(self):
@@ -81,7 +81,7 @@ class MigrationSafetyUnitTests(unittest.TestCase):
             verify_history([{
                 "migration_id": i, "checksum_sha256": "0" * 64,
                 "state": "APPLIED",
-            } for i in range(1, 10)], scripts)
+            } for i in range(1, 11)], scripts)
 
 
 @unittest.skipUnless(bool(os.environ.get("LHFM_DB_HOST")), "MariaDB CI required")

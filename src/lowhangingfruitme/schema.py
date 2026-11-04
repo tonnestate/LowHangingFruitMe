@@ -29,10 +29,13 @@ REQUIRED_TABLES = frozenset({
     "lhfm_rule_heads",
     "lhfm_rule_revision_events",
     "lhfm_schema_migrations",
+    "lhfm_contract_candidates",
+    "lhfm_contract_candidate_events",
 })
 
 REQUIRED_COLUMNS: dict[str, frozenset[str]] = {
     "lhfm_schema_migrations": frozenset({"migration_id", "checksum_sha256", "state", "applied_at"}),
+    "lhfm_contract_candidates": frozenset({"candidate_id","tenant_id","legal_entity_id","reviewer_id","contract_upload_id","document_sha256","reviewed_rule_sha256","reviewed_rule_json","state","approval_id","source_revision_id"}),
     "lhfm_recovery_cases": frozenset({"fee_rate_bps"}),
     "lhfm_approval_records": frozenset({
         "agreement_id", "rule_id", "rule_revision",
@@ -57,6 +60,8 @@ REQUIRED_CONSTRAINTS = frozenset({
     ("lhfm_rule_heads", "fk_rule_current_approval"),
     ("lhfm_rule_revision_events", "chk_rule_revision_event"),
     ("lhfm_mapping_approvals", "fk_mapping_contract_approval"),
+    ("lhfm_contract_candidates", "fk_candidate_approval"),
+    ("lhfm_contract_candidates", "chk_candidate_state"),
 })
 
 
@@ -122,7 +127,7 @@ def find_migration_ledger_mismatches(rows: list[dict[str, Any]]) -> list[str]:
 
 
 def require_operational_schema(connect: Callable[[], Any]) -> None:
-    """Deny serving real API requests if schema 001..008 is incomplete/drifted.
+    """Deny serving real API requests if schema 001..009 is incomplete/drifted.
 
     Metadata-only queries with the app's normal DB connection. This function
     has no CREATE, ALTER or data manipulation and is safe to call at startup.
@@ -163,7 +168,7 @@ def require_operational_schema(connect: Callable[[], Any]) -> None:
         raise SchemaMismatchError(
             "LowHangingFruitMe database is not compatible with current code: "
             + "; ".join(problems)
-            + ". Apply reviewed sql/001..008 migrations to the dedicated "
+            + ". Apply reviewed sql/001..009 migrations to the dedicated "
               "database before starting the API; do not run DDL on startup."
         )
 
