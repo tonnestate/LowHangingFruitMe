@@ -27,3 +27,8 @@ Echte Buchungs-/Bank-/Verrechnungsbelege unabhängig prüfen, Teilrealisierung, 
 Python-/Browser-/Sicherheits-/Lasttests, reproduzierbare dependency locks/SBOM, Schema-Migration 001..009 mit Prüfsummen und tatsächlich wiederhergestelltem Backup, Release-Rollback, Monitoring/Alerting, Fehlerbehandlung, Secrets- und Schlüsselrotation, DSGVO-Datenlöschung und Incident-Runbook auf dem vorgesehenen VPS abnehmen. Vorher `PUBLIC_LAUNCH_APPROVED=false` belassen.
 
 **Vollständige Produktivfreigabe:** Erst wenn für G0–G5 konkrete externe Belege, zuständige Entscheider und Abnahmedaten vorliegen. Keine Behauptung einer erfolgten Freigabe aus CI allein.
+
+
+### G1 – zusätzliche dokumentierte Sandbox-Prüfung (04.11.2026)
+
+Der Quellcode fordert einen root-kontrollierten, separat zu installierenden Launcher, einen anderen Linux-Netzwerk-Namespace ohne Nicht-Loopback-Interfaces und begrenzt die Ausgabe/Prozesslebenszeit. Das ist **nur implementierte technische Härtung**, keine nachgewiesene Installation. `lhfm-docling-check` und `/readyz` müssen auf dem echten VPS mit Bubblewrap und den offline Modellartefakten bestehen; die Vorlage `deploy/docling-bwrap-launcher.sh.example` ist ausdrücklich nicht unverändert produktionsfreigegeben. Freigabestatus G1: **OFFEN**.

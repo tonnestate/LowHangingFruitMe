@@ -58,3 +58,8 @@ The resource-server verifier can now reload an atomically replaced local public 
 ## v0.14 contract candidate trust boundary
 
 The customer HTTP signing path now requires a reviewer-scoped extracted contract candidate. The candidate's verified upload hash, source revision, agreement/rule/revision IDs and canonical rule checksum are checked again under the current MariaDB lineage lock during HMAC approval. Replays, cross-tenant references and arbitrary manually typed evidence references cannot authorize signing. A separate subprocess bounds Docling memory, CPU, wall time and result size; **it does not establish network isolation or a secure sandbox**. Actual deployment must enforce worker egress denial, low privileges, immutable local models, private document storage and independent PDF exploitation tests before accepting customer documents. Do not deploy an in-process fake extractor or a `require_candidate=False` bundle service.
+
+
+## Fail-closed Docling worker sandbox (04.11.2026)
+
+The customer-facing contract parser requires a root-owned executable launcher and root-controlled non-writable parent chain. The worker checks that it has a distinct network namespace with only loopback visible. The API `/readyz` probes this via a real subprocess. Pipe output is capped at 1 MiB, subprocess wall time at 120 seconds, failed workers and their process groups are terminated. Limits are applied inside the worker rather than unsafe webserver `preexec_fn`. This is an additional security boundary, not a claim that an operating-system sandbox has been deployed, that Docling models are installed offline, or that OCR and PDF exploits have been evaluated. See `docs/DOCLING_SANDBOX.md`.

@@ -87,3 +87,8 @@ After controlled SQL migration `008_rule_revisions.sql`, the existing `ApprovalR
 ## Source-bound contract candidate gate – v0.14 development
 
 The real bootstrap MUST instantiate `ReviewedBundleService(require_candidate=True)` and a scoped `ContractCandidateService`. The only permitted sign transition in the customer path is scanned PDF → extracted, hash-bound Docling evidence → JWT/DB-authorized human selection and confirmation → `NEEDS_CONFIRMATION` → HMAC receipt inside `ApprovalRegistry.register` → atomic `APPROVED`. Superseded or revoked approvals propagate into candidate state within the same DB transaction. `require_candidate=False` is allowed only in explicitly declared legacy synthetic test construction, never production. Proof of a hash-bound clause does not independently prove its legal interpretation. Python subprocess resource caps are not a network sandbox; external egress restriction and actual PDF acceptance remain mandatory.
+
+
+## Trusted document subprocess operator preflight
+
+Never run untrusted contract documents without `LHFM_DOCLING_SANDBOX_LAUNCHER` pointing to a root-controlled executable. The deployed launcher must use verified OS network isolation and restricted readonly mounts; the worker refuses a shared API netns or any interface beyond `lo`. `/readyz` must execute worker preflight. Do not remove pipe or process-group limits to make a failing external PDF pass. Offline Docling model delivery and real VPS tests are mandatory and are not supplied by synthetic Python CI.

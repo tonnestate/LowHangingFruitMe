@@ -233,3 +233,8 @@ Produktivstart zu verifizieren. Siehe `docs/GO_LIVE_GATE.md`.
 Die technisch synthetisch bestandene v0.14-Kandidatenstrecke ersetzt **keine**
 Freigabe für echte Vertragsdaten oder Kundenzahlungen. Die konkreten externen
 Produktionsgates G0–G5 sind unter `docs/GO_LIVE_GATE.md` verbindlich festgehalten.
+
+
+### Isolierte Docling-PDF-Verarbeitung
+
+Kunden-PDFs können nur noch bei einer root-kontrollierten Sandbox mit tatsächlich nachgewiesener Netzwerk-Namespace-Trennung verarbeitet werden. Ohne `LHFM_DOCLING_SANDBOX_LAUNCHER` verweigern Extraktion und `/readyz` den Dienst. Der Prozessbegrenzer liest Ergebnisse bis maximal 1 MiB und beendet bei Timeout die Prozessgruppe. Operatorcheck: `lhfm-docling-check`. Betriebs- und Hostabnahme siehe [Docling-Sandbox](docs/DOCLING_SANDBOX.md).
