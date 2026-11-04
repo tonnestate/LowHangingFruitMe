@@ -62,6 +62,7 @@ class AuthenticatedApprovalService:
         self, access_token: str, *, rule: dict[str, Any],
         document_sha256: str, source_revision_id: str,
         approval_id: str, tenant_id: str, legal_entity_id: str,
+        candidate_id: str | None = None,
     ) -> dict[str, str]:
         """Sign and register a rule only after real JWT and DB grant validation.
 
@@ -85,6 +86,7 @@ class AuthenticatedApprovalService:
             document_sha256=document_sha256,
             tenant_id=tenant_id, legal_entity_id=legal_entity_id,
             authenticated_actor_id=actor.subject,
+            candidate_id=candidate_id,
         )
         return receipt
 

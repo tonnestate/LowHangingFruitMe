@@ -95,6 +95,7 @@ class ReviewedPipelineTests(unittest.TestCase):
         self.uploads=UploadService(registry=self.registry,root=q,scanner=StubCleanScanner())
         self.promotion=ReviewedBundleService(
             service=self.service,uploads=self.uploads,store=self.store,
+            require_candidate=False,  # explicit legacy synthetic compatibility only
         )
         self.client=TestClient(create_app(
             service=self.service,store=self.store,

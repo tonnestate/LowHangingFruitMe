@@ -17,6 +17,7 @@ from uuid import uuid4
 
 from ..approval_service import AuthenticatedApprovalService
 from ..mapping_approval import MappingApprovalRegistry
+from .candidates import ContractCandidateService
 from ..rebate import BonusRule
 from ..universal_import import inspect_source, normalize_source
 from .store import PrivateAuditStore
@@ -50,10 +51,16 @@ class ReviewedBundleService:
     def __init__(
         self, *, service: AuthenticatedApprovalService,
         uploads: UploadService, store: PrivateAuditStore,
+        candidates: ContractCandidateService | None = None,
+        require_candidate: bool = True,
     ) -> None:
         self.service = service
         self.uploads = uploads
         self.store = store
+        self.candidates = candidates
+        self.require_candidate = require_candidate
+        if require_candidate and candidates is None:
+            raise ValueError("document-based candidate review is mandatory")
         self.mapping_registry = MappingApprovalRegistry(
             registry=service.registry, key=service.approval_key,
         )
@@ -87,12 +94,17 @@ class ReviewedBundleService:
         source_system: str, source_revision_id: str,
         controls: dict[str, Any] | None, completeness: dict[str, bool],
         confirm_contract_review: bool, confirm_mapping_review: bool,
+        candidate_id: str | None = None,
     ) -> dict[str, Any]:
         actor = self.service._verified_actor(
             access_token, scope="lhfm:approval:write",
             tenant_id=tenant_id, legal_entity_id=legal_entity_id,
         )
         actor.require_scope("lhfm:upload:write")
+        if self.require_candidate and not candidate_id:
+            raise ReviewRequired("verified extracted contract candidate required")
+        if candidate_id and self.candidates is None:
+            raise ReviewRequired("candidate review service not configured")
         if confirm_contract_review is not True or confirm_mapping_review is not True:
             raise ReviewRequired("human contract and mapping review must be confirmed")
         if not isinstance(source_revision_id, str) or not source_revision_id.strip():
@@ -197,11 +209,20 @@ class ReviewedBundleService:
                 staging.rename(final_dir)
                 moved = True
 
+                if candidate_id and self.candidates is not None:
+                    self.candidates.require_reviewed(
+                        candidate_id=candidate_id, actor_id=actor.subject,
+                        tenant_id=tenant_id, legal_entity_id=legal_entity_id,
+                        contract_upload_id=contract_upload_id,
+                        document_sha256=contract_digest,
+                        source_revision_id=source_revision_id, rule=rule,
+                    )
                 signed_id = str(uuid4())
                 receipt = self.service.approve(
                     access_token, rule=rule, document_sha256=contract_digest,
                     source_revision_id=source_revision_id, approval_id=signed_id,
                     tenant_id=tenant_id, legal_entity_id=legal_entity_id,
+                    candidate_id=candidate_id,
                 )
                 mapping_receipts = self.mapping_registry.register_bundle(
                     bundle_id=bundle_id, tenant_id=tenant_id,

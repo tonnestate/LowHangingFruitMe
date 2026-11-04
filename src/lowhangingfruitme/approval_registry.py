@@ -95,7 +95,7 @@ class ApprovalRegistry:
     def register(self, receipt: dict[str, Any], *, rule: dict[str, Any],
                  key: bytes, document_sha256: str,
                  tenant_id: str, legal_entity_id: str,
-                 authenticated_actor_id: str) -> None:
+                 authenticated_actor_id: str, candidate_id: str | None = None) -> None:
         """Atomically approve latest sourced revision and supersede its predecessor.
 
         This operation is only called after upstream authentication. A receipt
@@ -153,6 +153,25 @@ class ApprovalRegistry:
                             or previous["rule_id"] != rule_id
                             or previous["state"] not in ("ACTIVE", "REVOKED")):
                         raise RuntimeError("corrupted rule lineage, manual recovery required")
+                if candidate_id is not None:
+                    cursor.execute(
+                        """SELECT state,reviewer_id,document_sha256,
+                                  source_revision_id,reviewed_rule_sha256,
+                                  agreement_id,rule_id,rule_revision
+                           FROM lhfm_contract_candidates WHERE
+                           candidate_id=%s AND tenant_id=%s
+                           AND legal_entity_id=%s FOR UPDATE""",
+                        (candidate_id,tenant_id,legal_entity_id),
+                    )
+                    reviewed = cursor.fetchone()
+                    if (not reviewed or reviewed["state"]!="NEEDS_CONFIRMATION"
+                            or reviewed["reviewer_id"]!=actor
+                            or reviewed["document_sha256"]!=verified["document_sha256"]
+                            or reviewed["source_revision_id"]!=source_revision_id
+                            or reviewed["reviewed_rule_sha256"]!=verified["rule_sha256"]
+                            or (reviewed["agreement_id"],reviewed["rule_id"],
+                                reviewed["rule_revision"])!=(agreement_id,rule_id,revision)):
+                        raise PermissionError("candidate is not human-reviewed for this exact source")
                 cursor.execute(
                     """SELECT role, active FROM lhfm_reviewer_grants
                        WHERE tenant_id=%s AND legal_entity_id=%s AND reviewer_id=%s
@@ -217,6 +236,44 @@ class ApprovalRegistry:
                        VALUES (%s,%s,%s,%s,'APPROVED')""",
                     (receipt["approval_id"], tenant_id, legal_entity_id, actor),
                 )
+                if candidate_id is not None:
+                    cursor.execute(
+                        """UPDATE lhfm_contract_candidates SET
+                           state='APPROVED', approval_id=%s,
+                           approved_at=UTC_TIMESTAMP(6)
+                           WHERE candidate_id=%s AND tenant_id=%s
+                             AND legal_entity_id=%s AND state='NEEDS_CONFIRMATION'""",
+                        (receipt["approval_id"],candidate_id,tenant_id,legal_entity_id),
+                    )
+                    if cursor.rowcount != 1:
+                        raise RuntimeError("candidate approval transition failed")
+                    cursor.execute(
+                        """INSERT INTO lhfm_contract_candidate_events
+                           (candidate_id,tenant_id,legal_entity_id,actor_id,event_type)
+                           VALUES (%s,%s,%s,%s,'APPROVED')""",
+                        (candidate_id,tenant_id,legal_entity_id,actor),
+                    )
+                if previous_id and previous and previous["state"] == "ACTIVE":
+                    cursor.execute(
+                        """SELECT candidate_id FROM lhfm_contract_candidates
+                           WHERE approval_id=%s AND tenant_id=%s
+                             AND legal_entity_id=%s AND state='APPROVED' FOR UPDATE""",
+                        (previous_id,tenant_id,legal_entity_id),
+                    )
+                    prior_candidate=cursor.fetchone()
+                    if prior_candidate:
+                        cursor.execute(
+                            """UPDATE lhfm_contract_candidates SET state='SUPERSEDED'
+                               WHERE candidate_id=%s AND state='APPROVED'""",
+                            (prior_candidate["candidate_id"],),
+                        )
+                        cursor.execute(
+                            """INSERT INTO lhfm_contract_candidate_events
+                               (candidate_id,tenant_id,legal_entity_id,actor_id,event_type)
+                               VALUES (%s,%s,%s,%s,'SUPERSEDED')""",
+                            (prior_candidate["candidate_id"],tenant_id,legal_entity_id,actor),
+                        )
+
             connection.commit()
         except Exception:
             connection.rollback()
@@ -311,6 +368,26 @@ class ApprovalRegistry:
                        VALUES (%s,%s,%s,%s,'REVOKED')""",
                     (approval_id, tenant_id, legal_entity_id, actor),
                 )
+                cursor.execute(
+                    """SELECT candidate_id FROM lhfm_contract_candidates
+                       WHERE approval_id=%s AND tenant_id=%s
+                         AND legal_entity_id=%s AND state='APPROVED' FOR UPDATE""",
+                    (approval_id,tenant_id,legal_entity_id),
+                )
+                linked = cursor.fetchone()
+                if linked:
+                    cursor.execute(
+                        """UPDATE lhfm_contract_candidates SET state='REVOKED'
+                           WHERE candidate_id=%s AND state='APPROVED'""",
+                        (linked["candidate_id"],),
+                    )
+                    cursor.execute(
+                        """INSERT INTO lhfm_contract_candidate_events
+                           (candidate_id,tenant_id,legal_entity_id,actor_id,event_type)
+                           VALUES (%s,%s,%s,%s,'REVOKED')""",
+                        (linked["candidate_id"],tenant_id,legal_entity_id,actor),
+                    )
+
             connection.commit()
             return True
         except Exception:
