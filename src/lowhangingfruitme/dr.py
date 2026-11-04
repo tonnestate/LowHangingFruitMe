@@ -49,7 +49,7 @@ def private_dir(path):
     if not path.is_absolute() or path.is_symlink():
         raise DRError("absolute nonsymlink directory required")
     s = path.stat()
-    if not stat.S_ISDIR(s.st_mode) or s.st_uid != os.geteuid() or s.st_mode & 0o077:
+    if not stat.S_ISDIR(s.st_mode) or (os.geteuid() != 0 and s.st_uid != os.geteuid()) or s.st_mode & 0o077:
         raise DRError("operator directory must be owner-only")
     return path
 
@@ -59,7 +59,7 @@ def private_file(path):
     if not path.is_absolute() or path.is_symlink():
         raise DRError("absolute nonsymlink file required")
     s = path.stat()
-    if not stat.S_ISREG(s.st_mode) or s.st_uid != os.geteuid() or s.st_mode & 0o077:
+    if not stat.S_ISREG(s.st_mode) or (os.geteuid() != 0 and s.st_uid != os.geteuid()) or s.st_mode & 0o077:
         raise DRError("operator file must be owner-only")
     return path
 
@@ -121,19 +121,20 @@ def file_manifest(root):
     root = private_dir(root)
     result = {}
     total = 0
+    owner = root.stat().st_uid
     for directory, children, filenames in os.walk(root, followlinks=False):
         children.sort()
         filenames.sort()
         for folder in children:
             s = (Path(directory) / folder).lstat()
-            if (not stat.S_ISDIR(s.st_mode) or s.st_uid != os.geteuid()
+            if (not stat.S_ISDIR(s.st_mode) or s.st_uid != owner
                     or s.st_mode & 0o077):
                 raise DRError("symlinked or externally accessible directory")
         for filename in filenames:
             path = Path(directory) / filename
             s = path.lstat()
             if (not stat.S_ISREG(s.st_mode) or s.st_nlink != 1
-                    or s.st_uid != os.geteuid() or s.st_mode & 0o077
+                    or s.st_uid != owner or s.st_mode & 0o077
                     or s.st_size > MAX_FILE or len(result) >= 100000):
                 raise DRError("unsafe or oversized private file")
             digest = sha256()
@@ -196,6 +197,8 @@ def encrypt_tar(root, entries, *, recipient, target):
                     path = root / relative
                     s = path.lstat()
                     if (not stat.S_ISREG(s.st_mode) or s.st_nlink != 1
+                            or s.st_uid != root.stat().st_uid
+                            or s.st_mode & 0o077
                             or s.st_size != info["size"]):
                         raise DRError("file changed during archive creation")
                     member = tarfile.TarInfo("data/" + relative)
