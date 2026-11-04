@@ -57,6 +57,9 @@ Existing tests additionally verify DB row-lock behavior during concurrent revoca
 **Production release remains blocked** pending a real IdP tenant, hardened HTTP boundary, authentic provisioning, secure document registry, end-to-end and penetration tests, legal/compliance approval and recovery/billing implementation.
 
 
-## Vertrauenswürdige JWKS-Dateirotation (04.11.2026 – CI ausstehend)
+## Vertrauenswürdige JWKS-Dateirotation (04.11.2026 – CI bestanden)
 
 Der file-basierte `AccessTokenVerifier` prüft die öffentliche JWKS-Datei nun **vor jeder Token-Verifikation** erneut auf reguläre Datei, No-Follow, Maximalgröße und SHA-256-Änderung. Nur vollständig validierte RS256-RSA-Public-Keys werden unter einem Lock atomar ersetzt. Ungültige/fehlende Dateien führen bis zur Korrektur zu verweigerter Authentifizierung; zuvor akzeptierte Schlüssel werden nach gültiger Rotation nicht stillschweigend weiter angenommen. Ein direkter `AccessTokenVerifier` mit explizit übergebenen Testschlüsseln bleibt unverändert. Weder issuer-Discovery noch externe JWKS-Netzabfragen, IdP-Provisioning oder Token-Refresh sind dadurch geschaffen. Die Datei muss von einem vertrauenswürdigen Betreiber atomar veröffentlicht und auf dem echten Host getestet werden.
+
+
+**CI-Evidenz:** [Actions 41830627024](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41830627024), erfolgreich mit 338 Tests je Python 3.11/3.12, einschließlich Dateiwechsel, Widerruf eines alten KID, defekter Datei und Wiederherstellung. Die Race-Condition des gleichzeitigen JWKS-Snapshots wurde zusätzlich durch Serialisierung von Lesen/Validieren/Austauschen in [Commit 0aa7c0c](https://github.com/tonnestate/LowHangingFruitMe/commit/0aa7c0c5c8d2d163359538bc5644fce4013d1492) bereinigt. Keine Live-IdP-Abnahme.
