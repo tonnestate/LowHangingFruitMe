@@ -49,6 +49,13 @@ jobs:
         run: python tests/scripts/setup_approval_registry.py
       - name: Compile
         run: python -m compileall -q src tests
+      - name: Production runtime must reject synthetic CI defaults
+        run: |
+          set +e
+          lhfm-runtime-check
+          code=$?
+          set -e
+          test "$code" -eq 2
       - name: Tests
         run: python -m unittest discover -s tests -v
       - name: Existing kernel CLI smoke (unapproved calculation preview)
