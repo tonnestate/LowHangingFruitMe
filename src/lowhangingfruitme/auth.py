@@ -138,18 +138,20 @@ class AccessTokenVerifier:
         if self._jwks_file is None:
             return
         try:
-            raw = self._read_public_jwks_file(self._jwks_file)
-            digest = sha256(raw).hexdigest()
+            # Hold the same lock during file reading, validation and swap.
+            # Otherwise two concurrent verifications could publish an old
+            # snapshot after a newer JWKS revision had already been installed.
             with self._key_lock:
+                raw = self._read_public_jwks_file(self._jwks_file)
+                digest = sha256(raw).hexdigest()
                 if digest == self._jwks_digest:
                     return
-            candidate = AccessTokenVerifier(
-                issuer=self.issuer, audience=self.audience,
-                jwks=json.loads(raw.decode("utf-8")),
-                allowed_client_ids=tuple(sorted(self.allowed_client_ids)),
-                max_lifetime_seconds=self.max_lifetime_seconds,
-            )
-            with self._key_lock:
+                candidate = AccessTokenVerifier(
+                    issuer=self.issuer, audience=self.audience,
+                    jwks=json.loads(raw.decode("utf-8")),
+                    allowed_client_ids=tuple(sorted(self.allowed_client_ids)),
+                    max_lifetime_seconds=self.max_lifetime_seconds,
+                )
                 self._keys = candidate._keys
                 self._jwks_digest = digest
         except (OSError, UnicodeError, ValueError, TypeError, KeyError,
