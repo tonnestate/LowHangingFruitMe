@@ -11,7 +11,7 @@ import sys
 from typing import Any, Callable
 from .migrations import PINNED_SQL_SHA256
 
-# Required structures across sql/001 .. sql/011. These are the minimum
+# Required structures across sql/001 .. sql/012. These are the minimum
 # objects actually read or written by the current audit/upload/recovery paths.
 REQUIRED_TABLES = frozenset({
     "lhfm_reviewer_grants",
@@ -36,11 +36,13 @@ REQUIRED_TABLES = frozenset({
     "lhfm_billing_packets",
     "lhfm_billing_packet_events",
     "lhfm_upload_housekeeping_events",
+    "lhfm_audit_reconciliation_events",
 })
 
 REQUIRED_COLUMNS: dict[str, frozenset[str]] = {
     "lhfm_schema_migrations": frozenset({"migration_id", "checksum_sha256", "state", "applied_at"}),
     "lhfm_upload_housekeeping_events": frozenset({"event_id","upload_id","prior_state","removed_partials","recorded_at"}),
+    "lhfm_audit_reconciliation_events": frozenset({"event_id","audit_id","tenant_id","legal_entity_id","operator_id","incident_ref","prior_state","recorded_at"}),
     "lhfm_contract_candidates": frozenset({"candidate_id","tenant_id","legal_entity_id","reviewer_id","contract_upload_id","document_sha256","reviewed_rule_sha256","reviewed_rule_json","state","approval_id","source_revision_id"}),
     "lhfm_recovery_cases": frozenset({"fee_rate_bps"}),
     "lhfm_commercial_terms": frozenset({"tenant_id","legal_entity_id",
@@ -85,6 +87,9 @@ REQUIRED_CONSTRAINTS = frozenset({
     ("lhfm_upload_housekeeping_events", "uq_housekeeping_upload"),
     ("lhfm_upload_housekeeping_events", "chk_housekeeping_prior"),
     ("lhfm_upload_housekeeping_events", "chk_housekeeping_partials"),
+    ("lhfm_audit_reconciliation_events", "uq_audit_reconciliation_run"),
+    ("lhfm_audit_reconciliation_events", "fk_audit_reconciliation_run"),
+    ("lhfm_audit_reconciliation_events", "chk_audit_reconciliation_prior"),
 })
 
 
@@ -150,7 +155,7 @@ def find_migration_ledger_mismatches(rows: list[dict[str, Any]]) -> list[str]:
 
 
 def require_operational_schema(connect: Callable[[], Any]) -> None:
-    """Deny serving real API requests if schema 001..011 is incomplete/drifted.
+    """Deny serving real API requests if schema 001..012 is incomplete/drifted.
 
     Metadata-only queries with the app's normal DB connection. This function
     has no CREATE, ALTER or data manipulation and is safe to call at startup.
@@ -191,7 +196,7 @@ def require_operational_schema(connect: Callable[[], Any]) -> None:
         raise SchemaMismatchError(
             "LowHangingFruitMe database is not compatible with current code: "
             + "; ".join(problems)
-            + ". Apply reviewed sql/001..011 migrations to the dedicated "
+            + ". Apply reviewed sql/001..012 migrations to the dedicated "
               "database before starting the API; do not run DDL on startup."
         )
 

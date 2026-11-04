@@ -7,7 +7,8 @@ type ContractSegment={evidence_ref:string;text:string;pages:number[]};
 type Preview={headers:string[];rows:number;source_sha256:string;
   proposed_mapping:Record<string,string[]>;options:Record<string,string>};
 type Uploaded={upload_id:string;kind:string;sha256:string;state:string};
-type Audit={audit_id:string;status:string;audit_executed:boolean};
+type Audit={audit_id:string;status:string;audit_executed:boolean;
+ operator_reconciliation_required?:boolean};
 type Ledger={confirmed_realization_net:string;fee_proposal_net:string;fee_rate:string;
   fee_due_net:string;events:Array<{event_id:string;state:string;amount_net:string;kind:string}>};
 const TX=["external_id","supplier_id","date","currency","amount_net","kind","posted","basis"];
@@ -143,7 +144,8 @@ export function WorkspaceClient(){
   const detail=await call<Audit&{report:Record<string,unknown>|null}>(
    "audits/"+id+"?"+qs);
   setAudit({audit_id:detail.audit_id,status:detail.status,
-    audit_executed:detail.audit_executed});
+    audit_executed:detail.audit_executed,
+    operator_reconciliation_required:detail.operator_reconciliation_required});
   setReport(detail.report??null);setBundle("");setLedger(null);setFinanceEvent("");
   setPriorAuditId(detail.audit_id);
   return "Gespeicherten Audit geladen: "+detail.status+
@@ -422,6 +424,7 @@ export function WorkspaceClient(){
     </button>
    </div>}
    {audit&&<div className="info-block"><h3>Auditstatus: {audit.status}</h3>
+    {audit.operator_reconciliation_required&&<p className="note">Diese Prüfung ist seit über einer Stunde als PROCESSING registriert. Eine sichere Fortsetzung erfordert die dokumentierte Betriebsprüfung; bitte keinen neuen Auftrag mit derselben Idempotency-Key-Referenz erzwingen.</p>}
     <p>Audit-ID: <code>{audit.audit_id}</code></p>
     {report&&<p>Erwartet: {String(report.expected_bonus_net??"—")} EUR.
      Verbucht: {String(report.recorded_bonus_net??"—")} EUR.

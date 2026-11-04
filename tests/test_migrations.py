@@ -19,7 +19,7 @@ SQL = Path(__file__).parent.parent / "sql"
 class MigrationSafetyUnitTests(unittest.TestCase):
     def test_all_reviewed_sql_scripts_load(self):
         migrations = load_migrations(SQL)
-        self.assertEqual([x.number for x in migrations], list(range(1, 12)))
+        self.assertEqual([x.number for x in migrations], list(range(1, 13)))
         self.assertTrue(all(x.statements for x in migrations))
 
     def test_modified_local_sql_source_is_rejected_before_any_ddl(self):

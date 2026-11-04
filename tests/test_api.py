@@ -266,6 +266,34 @@ class AuditApiIntegrationTests(unittest.TestCase):
         a=self.submit().json()["audit_id"]
         self.assertEqual(self.get_report(a,tenant="OTHER").status_code,403)
 
+    def test_abandoned_processing_is_visible_without_auto_retry(self):
+        key=str(uuid4())
+        reserved,created=self.store.reserve_run(
+            tenant_id=TENANT,legal_entity_id=LEGAL,reviewer_id=ACTOR,
+            bundle_id=self.bundle_id,idempotency_key=key,
+        )
+        self.assertTrue(created)
+        db=self.registry._connect()
+        try:
+            with db.cursor() as c:
+                c.execute(
+                    "UPDATE lhfm_api_runs SET"
+                    " started_at=DATE_SUB(UTC_TIMESTAMP(6),INTERVAL 90 MINUTE)"
+                    " WHERE audit_id=%s",(reserved["audit_id"],),
+                )
+            db.commit()
+        finally:
+            db.close()
+        stale=self.get_report(reserved["audit_id"])
+        self.assertEqual(stale.status_code,200)
+        self.assertEqual(stale.json()["status"],"PROCESSING")
+        self.assertTrue(stale.json()["operator_reconciliation_required"])
+        self.assertIsNone(stale.json()["report"])
+        replay=self.submit(key=key)
+        self.assertEqual(replay.status_code,202)
+        self.assertTrue(replay.json()["operator_reconciliation_required"])
+        self.assertTrue(replay.json()["replayed"])
+
     def test_atomic_parallel_idempotency_reservation(self):
         key = str(uuid4())
         def attempt(_):

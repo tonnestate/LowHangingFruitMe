@@ -63,6 +63,13 @@ jobs:
           code=$?
           set -e
           test "$code" -eq 2
+      - name: Unapproved audit reconciliation must refuse state changes
+        run: |
+          set +e
+          lhfm-audit-reconcile --audit-id 12345678-1234-4abc-9def-123456789012 --tenant-id T-SYN-1 --legal-entity-id LE-SYN-1 --operator-id CI-SYN-1 --incident-ref CI-REJECT --apply
+          code=$?
+          set -e
+          test "$code" -eq 2
       - name: Tests
         run: python -m unittest discover -s tests -v
       - name: Existing kernel CLI smoke (unapproved calculation preview)

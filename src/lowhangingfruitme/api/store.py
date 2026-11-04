@@ -251,7 +251,9 @@ class PrivateAuditStore:
                 )
                 created = cursor.rowcount == 1
                 cursor.execute(
-                    """SELECT audit_id, request_sha256, status, audit_executed
+                    """SELECT audit_id, request_sha256, status, audit_executed,
+                              TIMESTAMPDIFF(SECOND,started_at,UTC_TIMESTAMP(6))
+                                AS elapsed_seconds
                        FROM lhfm_api_runs WHERE tenant_id=%s AND
                        legal_entity_id=%s AND reviewer_id=%s AND idempotency_key=%s
                        FOR UPDATE""",
@@ -310,7 +312,9 @@ class PrivateAuditStore:
         try:
             with connection.cursor() as cursor:
                 cursor.execute(
-                    """SELECT audit_id, status, audit_executed, report_json
+                    """SELECT audit_id, status, audit_executed, report_json,
+                              TIMESTAMPDIFF(SECOND,started_at,UTC_TIMESTAMP(6))
+                                AS elapsed_seconds
                        FROM lhfm_api_runs
                        WHERE audit_id=%s AND tenant_id=%s AND legal_entity_id=%s
                          AND reviewer_id=%s""",
@@ -324,6 +328,11 @@ class PrivateAuditStore:
                 "status": row["status"],
                 "audit_executed": bool(row["audit_executed"]),
                 "report": json.loads(row["report_json"]) if row["report_json"] else None,
+                "operator_reconciliation_required": (
+                    row["status"] == "PROCESSING"
+                    and row["elapsed_seconds"] is not None
+                    and int(row["elapsed_seconds"]) >= 3600
+                ),
             }
         finally:
             connection.close()
