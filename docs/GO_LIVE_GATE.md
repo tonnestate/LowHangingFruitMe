@@ -24,7 +24,7 @@ Echte Buchungs-/Bank-/Verrechnungsbelege unabhängig prüfen, Teilrealisierung, 
 
 ## G5 – Release und Observability: OPEN
 
-Python-/Browser-/Sicherheits-/Lasttests, reproduzierbare dependency locks/SBOM, Schema-Migration 001..009 mit Prüfsummen und tatsächlich wiederhergestelltem Backup, Release-Rollback, Monitoring/Alerting, Fehlerbehandlung, Secrets- und Schlüsselrotation, DSGVO-Datenlöschung und Incident-Runbook auf dem vorgesehenen VPS abnehmen. Vorher `PUBLIC_LAUNCH_APPROVED=false` belassen.
+Python-/Browser-/Sicherheits-/Lasttests, reproduzierbare dependency locks/SBOM, Schema-Migration 001..010 mit Prüfsummen und tatsächlich wiederhergestelltem Backup, Release-Rollback, Monitoring/Alerting, Fehlerbehandlung, Secrets- und Schlüsselrotation, DSGVO-Datenlöschung und Incident-Runbook auf dem vorgesehenen VPS abnehmen. Vorher `PUBLIC_LAUNCH_APPROVED=false` belassen.
 
 **Vollständige Produktivfreigabe:** Erst wenn für G0–G5 konkrete externe Belege, zuständige Entscheider und Abnahmedaten vorliegen. Keine Behauptung einer erfolgten Freigabe aus CI allein.
 
@@ -48,3 +48,15 @@ Bank-/Verrechnungsbestätigung, Steuerprüfung und ein
 Rechnungsaussteller mit eindeutiger Rechnungsnummer fehlen weiter.
 Daher kein automatisches Payment und `fee_due_net=0.00`.
 G4: **TEILWEISE IMPLEMENTIERT, KEINE PRODUKTIVFREIGABE**.
+
+
+### G5 – verschlüsselte DR-Wiederherstellungsstrecke (04.11.2026)
+
+Eine alterungsunabhängige, separat signierte und age-verschlüsselte
+DB-plus-Dateibaum-Sicherung mit isolierter Restore-Prüfung ist im
+Code vorhanden. Die CI verwendet ausschließlich synthetische Daten.
+**Nicht nachgewiesen:** tatsächlicher Backup-/Restore-Lauf auf dem
+VPS, eine durch den Betreiber erzwungene Wartungs-/Schreibsperre,
+Offsite-Backup und Löschfristen, unabhängige Schlüsselaufbewahrung,
+RPO/RTO oder der Vollwiederanlauf von Apache, OIDC, ClamAV und Docling.
+G5 bleibt daher **OFFEN**. Siehe `docs/DISASTER_RECOVERY.md`.

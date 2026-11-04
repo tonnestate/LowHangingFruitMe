@@ -97,3 +97,8 @@ Never run untrusted contract documents without `LHFM_DOCLING_SANDBOX_LAUNCHER` p
 ## Billing handoff v0.15 – separate customer/legal and finance authorities
 
 Never infer commercial authorization from a synthetic bonus amount, a customer reviewer or an API `confirmed=true` flag. The billing path must read only verified recovery events, require out-of-band operator-provisioned active and correctly rated commercial terms with acceptance/legal clearance references, and enforce a second distinct billing actor for releasing an immutable snapshot. Later confirmed events and reversals must mark that packet stale. A released packet is **NOT** an invoice: `fee_due_net=0.00`, `invoice_created=false`. Never expose any HTTP endpoint that self-certifies legal clearance or accepted fee terms. Preserve historical 300-bps cases, new 500-bps cases and case locks. See `docs/BILLING_HANDOFF.md`.
+
+
+## Offline encrypted disaster recovery evidence – operational gate G5
+
+Backup must protect all three shared state surfaces: MariaDB plus private CLEAN-upload and audit/source roots. Never claim a DB-only dump is a complete recovery. The `lhfm-dr` operator CLI refuses unconfirmed maintenance, unencrypted intermediates, unsigned backup manifests, hardlink/symlink leakage, nonempty target databases or any restore database without the `lhfm_restore_` prefix. Only age-encrypted components with an independently pinned Ed25519 manifest verification key can be replayed into an empty disposable schema. Real VPS and full application stack recovery, RPO/RTO, key custody, restoration of production files and offsite retention still require external verification. See `docs/DISASTER_RECOVERY.md`.

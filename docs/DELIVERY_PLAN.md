@@ -178,3 +178,16 @@ Billing-Rollen, Vertragssatzabgleich, Vor-/Nachrealisierungs-Korrektur-
 Erkennung und belastbarer Historie. **Noch offen:** echtes
 Rechnungsformat/B2B-Steuerangaben, externe Rechnungsausgabe, reale
 Vertrags-/Kundenunterschrift, Bankabgleich und regulatorische Abnahme.
+
+
+## v0.16 – verschlüsselter, prüfbarer Disaster-Recovery-Pfad
+
+Implementiert ist ein eigenständiger Operatorbefehl für age-verschlüsselte
+MariaDB-11.4-Dumps und die beiden privaten Dokumentenablagen, ein
+Ed25519-signiertes verschlüsseltes Manifest, eine strikte
+Rehearsal-Datenbank-Sperre und Hash-/Schema-/Zeilenzahlprüfung. Ein
+synthetisches CI-Recovery stellt die Daten in einer zweiten Datenbank
+und zwei neuen privaten Verzeichnissen wieder her. Noch offen sind
+**ein tatsächlicher VPS-Restore**, die vollständige Wiederanlaufkette,
+ausgelagerte Aufbewahrung, Betriebsschlüsselverwaltung und gemessene
+RPO/RTO-Werte. Kein produktiver Restore wird automatisiert ausgeführt.

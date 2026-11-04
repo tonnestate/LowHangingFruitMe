@@ -115,3 +115,14 @@ vereinbarte Vergütungsbedingungen → zweifach autorisierte
 Negativtests: fehlende Terms, falscher Satz, unerlaubte Identität,
 unreviewte Quelle, Doppelfreigabe, Storno vor und nach Freigabe und
 Dokumentationspflicht für externe Korrektur. **PASS – isolierte MariaDB-CI:** [Actions 41850007747](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41850007747), 424 bestandene Tests je Python-Version. [Portal CI 41848399198](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41848399198) ebenfalls grün. Änderungen der Terms-/Legalprüf-Hashes erfordern eine neue Akte; Widerruf aktiver Bedingungen markiert RELEASED-Stände als stale. Realer Bank-/Rechnungs- und Rechtsnachweis separat OFFEN.
+
+
+### v0.16 – isolierte Disaster-Recovery-Regressionsabnahme (04.11.2026)
+
+Zwei unabhängige Codegates: alle Python-Unittests auf 3.11/3.12 und
+separater GitHub-Actions-Lauf mit age + MariaDB-11.4-Dump und tatsächlichem
+isoliertem Einspielen von SQL sowie privaten Daten. Signed/encrypted
+Manifest, SHA-256-Ciphertext/Dateien, Original-Dateivergleich,
+Rollback-Sicherheit durch leere Restore-Namensräume, Replay- und
+Manipulationsabwehr sind zwingende Testkriterien. **CI-Endabnahme
+steht noch aus; externe Betriebserprobung bleibt OPEN.**

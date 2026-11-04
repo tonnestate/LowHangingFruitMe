@@ -259,3 +259,19 @@ Nachträgliche Stornos oder Änderungen erfordern eine belegte
 Korrekturakte; keine Neuberechnung einer bereits ausgestellten
 Rechnung im Hintergrund. Die tatsächliche Rechnungsausgabe und
 Zahlungsverbuchung sind eigene, noch offene Abnahmebausteine.
+
+
+## v0.16 – Datenintegrität bei Backup und isoliertem Restore (04.11.2026)
+
+Das Produkt persistiert geschäfts- und personenbezogene Evidenz in
+MariaDB **und** zwei nichtöffentlichen Dateibereichen. Ein vollständiges
+technisches Wiederherstellungsset muss alle drei über dieselbe
+extern erzwungene Wartungs-/Schreibsperre konsistent erfassen. Die
+Operatorstrecke verschlüsselt DB-Dump und beide Dateibäume ohne
+unverschlüsseltes Zwischenarchiv, prüft für das Gesamtset ein
+verschlüsseltes, Ed25519-signiertes Manifest und erlaubt nur die
+Wiederherstellung in eine isolierte, bereits leere Testdatenbank.
+Verifikationen der Original-Dateihashes, Anwendungs-Migrationshistorie
+und Tabellenzeilen sind technische Teilnachweise, **keine**
+freigegebenen Buchhaltungs- oder Kundenstammdaten. Externe Wiederanlauf-
+und RPO/RTO-Abnahmen bleiben notwendig.

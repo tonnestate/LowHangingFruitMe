@@ -253,3 +253,15 @@ Rechnungskorrekturen. **Kein Entgelt wird dadurch automatisch fällig
 und keine Rechnung erzeugt.** Migration 010, API und Belegketten siehe
 `docs/BILLING_HANDOFF.md`. Eine echte Rechnungsausgabe und externe
 fachliche, steuerliche und juristische Abnahme bleiben erforderlich.
+
+
+### Verschlüsseltes Disaster-Recovery-Verfahren
+
+Zusätzlich zu den kontrollierten SQL-Migrationen stellt `lhfm-dr` eine
+verschlüsselte Sicherung von MariaDB, privaten Uploads und dem
+Audit-Quellverzeichnis bereit. Die drei age-Ciphertexte sind an ein
+verschlüsseltes und Ed25519-signiertes Manifest gebunden. Ein Restore
+ist nur in eine leere, separat angelegte `lhfm_restore_*`-Datenbank und
+private Prüfordner zulässig. Enthält **keinen** automatischen
+Produktiv-Cutover. Voraussetzungen, exakte Operator-Aufrufe und die
+externen Abnahmen: [Disaster-Recovery-Runbook](docs/DISASTER_RECOVERY.md).

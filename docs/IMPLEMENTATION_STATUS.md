@@ -163,3 +163,18 @@ Stale-/Reversal-/Correction-Prüfung und abgegrenzte BFF-Routen.
 **CI bestanden:** [Actions 41850007747](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41850007747), 424/424 Python-Tests auf 3.11 und 3.12. Zusätzlich [Portal Actions 41848399198](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41848399198), Build/Typecheck/Browser erfolgreich. Tests schließen Vertragsrevision, Entzug der kommerziellen Freigabe, unterschiedliche Vertragsraten, unabhängige Zweitfreigabe, Reversal, Void und falsche Mandanten ein;
 **eine produktive Rechnung, Bankverifikation und externe Rechtsfreigabe
 sind NICHT nachgewiesen**.
+
+
+### v0.16 – signiertes verschlüsseltes Disaster Recovery (04.11.2026 – CI-Abnahme ausstehend)
+
+Der dedizierte Befehl `lhfm-dr` erstellt während bestätigter
+Schreibstillstandsphase einen age-verschlüsselten MariaDB-Dump und zwei
+age-verschlüsselte Archive aller privaten Audit-/Upload-Dateien. Das
+verschlüsselte Manifest enthält Datenbanktabellen-Zeilenanzahlen und
+Dateihashes und ist Ed25519-signiert; der Prüfprozess verlangt
+unabhängig bereitgestellte Verifikationsschlüssel. Die
+Wiederherstellung schreibt nur in eine vorab erzeugte leere
+`lhfm_restore_*`-DB und optionale isolierte private Verzeichnisse.
+Kein unverschlüsselter Dump auf Festplatte, keine automatische
+Produktivrestaurierung. Operativer VPS-Test und unabhängige RPO-/RTO-
+Abnahme fehlen weiterhin.
