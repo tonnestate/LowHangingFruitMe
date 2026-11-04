@@ -168,3 +168,13 @@ Zuerst eine atomare, mandantengetrennte aktuelle Regelrevision im bestehenden si
 ## v0.14 Vertragskandidaten-Pflichtstrecke (04.11.2026 – vor CI)
 
 Implementiert auf dem Feature-Branch: geprüfter Upload → Docling-Subprozess → Dokumenthash-Fundstellen → persistierter Kandidat → explizite menschliche Bestätigung → gesperrte HMAC-Regelrevision mit atomarer Kandidatenfreigabe → bestehende deterministische Bonusberechnung. Der Produktionspfad verweigert alte Freitextquellen ohne Kandidat; der Browser zeigt Fundstellen statt unsichere automatische Akzeptanz. Noch abzusichern sind echte Originaldokumente, OS-Prozessnetzwerkisolation, Lizenz-/Supply-Chain-Review, echte Identity-Lifecycle- und Honorarfreigabe sowie unabhängiger Goldstandard.
+
+
+## v0.15 – Abschluss des kaufmännischen Übergabevertrags
+
+Technisch implementiert: SQL-010-Releaseakte mit unveränderlicher
+Ledger-SHA, selbst nicht abrechenbarem Gebührenvorschlag, zwei getrennten
+Billing-Rollen, Vertragssatzabgleich, Vor-/Nachrealisierungs-Korrektur-
+Erkennung und belastbarer Historie. **Noch offen:** echtes
+Rechnungsformat/B2B-Steuerangaben, externe Rechnungsausgabe, reale
+Vertrags-/Kundenunterschrift, Bankabgleich und regulatorische Abnahme.

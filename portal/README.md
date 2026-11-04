@@ -77,3 +77,14 @@ unabhängige juristische Vertragsauslegung.
 Das geschützte Portal benötigt einen tatsächlichen HTTPS-Identity-Provider, einen Confidential-Client mit `refresh_token`, ein echtes `at+jwt` für die vom Python-Backend erwartete Audience sowie `AUTH_URL` und `AUTH_SECRET` (mindestens 32 Byte). Der feste `AUTH_OIDC_TOKEN_ENDPOINT` muss per HTTPS zur Issuer-Origin und deren Issuer-Pfad gehören. Tokens verbleiben im verschlüsselten HttpOnly/Secure/SameSite=Lax-Auth.js-JWE. Bei knapp abgelaufenem Access Token erneuert das BFF ihn durch begrenztes form-urlencoded POST ohne Weiterleitungen. Die JWE-Cookiefragmente werden bereinigt/neu geschrieben. Bei Refresh-Fehler wird die Browser-Sitzung geschlossen und eine neue Anmeldung erforderlich. Die Browser-Session-API liefert weiterhin keine Access-/Refresh-Credentials.
 
 Eine Singleflight-Sperre verhindert gleichzeitige identische Refresh-Anfragen innerhalb einer Node-Instanz, **nicht** zwischen mehreren Prozessen. Es wurden weder ein echter OIDC-Provider installiert noch MFA, Benutzerentzug, Provider-Key-Rotation oder ein Lasttest auf dem VPS abgenommen. Entsprechende Go-Live-Gates bleiben offen.
+
+
+## Geschützter Billing-Handoff (noch keine automatische Rechnung)
+
+Die BFF-Route erlaubt nur `POST /v1/audits/{id}/billing-packets`,
+`POST /v1/billing-packets/{id}/release`, `POST /v1/billing-packets/{id}/void`
+und `GET /v1/billing-packets/{id}`. Die Python-API prüft jeweils
+unabhängig das `at+jwt`, Billing-Scope und aktive Datenbankrolle.
+Die Freigabe setzt zwei verschiedene Identitäten voraus; externe
+Vertragstexte und Legalvermerke sind niemals HTTP-Flags.
+Die Antwort ist eine beleggebundene Rechnungsgrundlage, keine Rechnung.

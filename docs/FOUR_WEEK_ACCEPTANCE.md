@@ -104,3 +104,15 @@ Implementierter Prüfungspfad: root-kontrollierter Sandbox-Launcher, real ausgef
 ### v0.14 – OAuth/OIDC-Erneuerung (04.11.2026)
 
 **PASS – synthetische CI:** [Actions 41842914601](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41842914601) mit 16 Node-Tests einschließlich JWE-Kryptoroundtrip, HTTPS-Issuer-Pinning, Fehler-/Replay-/Response-Limits und Cookie-Chunk-Reinigung sowie bestandenem Next.js-/TypeScript-/Browser-Build. **OFFEN:** echter Confidential-Client, Refresh unter realer Key Rotation, Revoke/Offboarding, MFA und VPS-Abnahme.
+
+
+### v0.15 – interne Rechnungsübergabe (04.11.2026)
+
+Kanonischer Nachweis: beleggestützter vollständiger Audit → gemeldete
+Realisation → unabhängige Finance-Bestätigung → extern erfasste
+vereinbarte Vergütungsbedingungen → zweifach autorisierte
+`PREPARED/RELEASED`-Akte → ggf. Stale-/Void-/neuer Packetstand.
+Negativtests: fehlende Terms, falscher Satz, unerlaubte Identität,
+unreviewte Quelle, Doppelfreigabe, Storno vor und nach Freigabe und
+Dokumentationspflicht für externe Korrektur. CI bis erfolgreichem
+Abschluss offen. Realer Bank-/Rechnungs- und Rechtsnachweis separat OFFEN.

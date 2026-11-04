@@ -173,3 +173,29 @@ Eine Änderung an Daten, Klausel oder Berechnung erzeugt einen **neuen AuditRun*
 - `POST /v1/bundles` mit `candidate_id`: nur bei passendem SHA-256-Dokument, Rule-Hash, Revisionsschlüssel, gültigem Reviewer und aktivem Kandidaten. Der eigentliche Übergang `APPROVED` wird atomar mit dem HMAC-Freigabebeleg und dem aktuellen Regelkopf durchgeführt. Replay führt zu Ablehnung; historische Audits bleiben historisch.
 
 Die Testkompatibilität mit ungebundenen Regelbelegen ist **kein** öffentlich aktivierter API-Pfad; der Runtime-Factory-Pfad erzwingt die Kandidatenakte. Echte Parser-/IAM-/Mandanten-Sicherheitsabnahmen bleiben offen.
+
+
+## v0.15 – geschützte Gebührenübergabe
+
+`POST /v1/audits/{audit_id}/billing-packets`: JWT- und DB-aktivierter
+Billing-Bearbeiter `lhfm:billing:prepare`, nur bei bestätigter
+wirtschaftlicher Netto-Realisierung, ohne unreviewte Events, mit
+passender außerhalb der API freigegebener Kunden-/Rechtsakte. Das
+Ergebnis `PREPARED` ist keine Rechnung.
+
+`POST /v1/billing-packets/{packet_id}/release`: zweiter aktiver
+Billing-Bearbeiter `lhfm:billing:release` prüft nochmals die
+unveränderte vollständige Ereigniskette und Vertragsbedingungen
+unter derselben MariaDB-Case-Sperre. Ein veralteter Ledger oder eine
+vorherige freigegebene Akte blockiert.
+
+`GET /v1/billing-packets/{packet_id}`: nur mit
+`lhfm:billing:read` und passender aktiver Mandantenrolle, liefert
+fixierten Snapshot mit Datengrundlage, SHA-256-Belegen, Satz, Netto-Rate,
+Zustand, Historie und Korrekturstatus; keine E-Rechnung.
+
+`POST /v1/billing-packets/{packet_id}/void`: nur mit
+`lhfm:billing:void`, zweitem Billing-Bearbeiter und belegtem externen
+Rechnungs-/Gutschriftkorrekturvermerk. `fee_due_net` bleibt Null,
+`invoice_created` bleibt `false` bis die externe
+Rechnungsstellung tatsächlich implementiert ist.

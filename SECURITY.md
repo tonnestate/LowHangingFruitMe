@@ -63,3 +63,8 @@ The customer HTTP signing path now requires a reviewer-scoped extracted contract
 ## Fail-closed Docling worker sandbox (04.11.2026)
 
 The customer-facing contract parser requires a root-owned executable launcher and root-controlled non-writable parent chain. The worker checks that it has a distinct network namespace with only loopback visible. The API `/readyz` probes this via a real subprocess. Pipe output is capped at 1 MiB, subprocess wall time at 120 seconds, failed workers and their process groups are terminated. Limits are applied inside the worker rather than unsafe webserver `preexec_fn`. This is an additional security boundary, not a claim that an operating-system sandbox has been deployed, that Docling models are installed offline, or that OCR and PDF exploits have been evaluated. See `docs/DOCLING_SANDBOX.md`.
+
+
+## Commercial fee handoff access boundary
+
+Billing operators require cryptographically verified API scopes AND separately maintained active MariaDB grants. A customer reviewer cannot create billable authority. Commercial fee terms are provisioned out of band, no HTTP client can assert legal clearance. The service requires separate preparer/releaser identities, revalidates the complete linked recovery event record under the locked case row, refuses ambiguous/reversed/bounded recovery data and exposes stale packets for documented manual correction. This software never becomes the sole bank evidence, legally accepted customer engagement or actual invoice issuer. A `RELEASED` packet has `invoice_created=false` by design.

@@ -37,3 +37,14 @@ Der Quellcode fordert einen root-kontrollierten, separat zu installierenden Laun
 ### G0 – erneuerbare API-Zugriffstokens (04.11.2026)
 
 Die BFF-Implementierung kann bereits einen Ablauf mit Server-Refresh, verschlüsselter Auth.js-JWE-Rotation, Session-Cookie-Bereinigung und erzwungener Neuanmeldung ausführen. **G0 bleibt OFFEN:** tatsächliche Issuer-Discovery/Audience, MFA, Benutzer-Offboarding, Refresh unter realem Provider und über mehrere Node-Prozesse, Apache/TLS und produktive Token-Rotation sind gesondert zu prüfen.
+
+
+### G4 – interne Billing-Akte, externe Rechnung weiterhin offen (04.11.2026)
+
+Kaufmännisch vorbereitete Gebührenakte mit SQL-010-Migration,
+zweifach autorisierter Freigabe und Belegänderungsprüfung ist
+implementiert. Eine extern tatsächlich akzeptierte Vergütungsanlage,
+Bank-/Verrechnungsbestätigung, Steuerprüfung und ein
+Rechnungsaussteller mit eindeutiger Rechnungsnummer fehlen weiter.
+Daher kein automatisches Payment und `fee_due_net=0.00`.
+G4: **TEILWEISE IMPLEMENTIERT, KEINE PRODUKTIVFREIGABE**.

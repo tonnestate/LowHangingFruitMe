@@ -140,3 +140,19 @@ Eine auf RDG und B2B-Vertragsgestaltung spezialisierte **externe** Rechtsprüfun
 5. Dokumentation der unterzeichneten schriftlichen Rechts- und Datenschutz-Freigabe, versioniert zum konkreten Pilotvertrag.
 
 Die externe Prüfung **liegt noch nicht vor**. Ein Code-Test kann weder eine Rechtsfreigabe noch echte Forderungsrealisierung nachweisen.
+
+
+## 13. Technischer Gebühren-Handoff v0.15 (04.11.2026)
+
+Eine zusätzliche transaktionsgesperrte Billing-Akte wird aus
+unabhängig bestätigten Recovery-Ereignissen erzeugt und erfordert eine
+separat erfasste, zum Fall passende Kundenannahme- und
+Rechtsprüfungsreferenz. Der Gebührenvorschlag wird nur mit
+historisch gespeicherter 3%- bzw. neuer 5%-Rate berechnet; spätere
+Reversals oder sonstige Ledgeränderungen werden als veraltete Akte
+sichtbar. Eine zweite aktive Billing-Person muss die Akte freigeben;
+diese Freigabe autorisiert ausschließlich die Prüfung und Erstellung
+einer Rechnung durch den externen Anbieter. Sie ist selbst keine
+rechtswirksame Rechnung und kein Nachweis der tatsächlichen
+Fälligkeit oder Umsatzsteuer. Die externen Rechts-, Steuer- und
+Vertragsprüfungen in Abschnitt 11 bleiben erforderlich.

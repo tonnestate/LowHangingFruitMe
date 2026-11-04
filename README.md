@@ -238,3 +238,18 @@ Produktionsgates G0–G5 sind unter `docs/GO_LIVE_GATE.md` verbindlich festgehal
 ### Isolierte Docling-PDF-Verarbeitung
 
 Kunden-PDFs können nur noch bei einer root-kontrollierten Sandbox mit tatsächlich nachgewiesener Netzwerk-Namespace-Trennung verarbeitet werden. Ohne `LHFM_DOCLING_SANDBOX_LAUNCHER` verweigern Extraktion und `/readyz` den Dienst. Der Prozessbegrenzer liest Ergebnisse bis maximal 1 MiB und beendet bei Timeout die Prozessgruppe. Operatorcheck: `lhfm-docling-check`. Betriebs- und Hostabnahme siehe [Docling-Sandbox](docs/DOCLING_SANDBOX.md).
+
+
+### Kaufmännische Honorarübergabe v0.15 (noch keine Rechnungsstellung)
+
+Die bestehende Recovery-Engine ist nun um eine mandantengetrennte, zweistufige
+Abrechnungsakte erweitert. Eine positive und fachlich bestätigte
+Zusatzrealisation kann ausschließlich bei bereits extern geprüfter und
+in der DB erfasster Vergütungsvereinbarung in eine unveränderliche
+Rechnungsgrundlage überführt werden. Separate Billing-Rollen müssen
+`PREPARED → RELEASED` auslösen. Stornos und nachträgliche Realisierungen
+markieren historische Übergaben als veraltet und erzwingen belegte
+Rechnungskorrekturen. **Kein Entgelt wird dadurch automatisch fällig
+und keine Rechnung erzeugt.** Migration 010, API und Belegketten siehe
+`docs/BILLING_HANDOFF.md`. Eine echte Rechnungsausgabe und externe
+fachliche, steuerliche und juristische Abnahme bleiben erforderlich.

@@ -243,3 +243,19 @@ Der Parser wird nur über einen root-kontrollierten Sandbox-Launcher gestartet; 
 ## API-Token-Erneuerung durch das vertrauliche BFF (04.11.2026)
 
 Das Next.js-Portal speichert OAuth-Refresh-Credentials ausschließlich als verschlüsseltes Auth.js-JWE in HttpOnly-Session-Cookies. Das BFF kann einen auslaufenden API-Token ausschließlich bei der serverseitig fest konfigurierten HTTPS-Issuer-Origin erneuern, übergibt ihn nur an die lokale Finanz-API und aktualisiert die verschlüsselte Session. Ohne Erneuerung wird explizit neu angemeldet; kein Fallback auf unsignierte Regeln oder erweiterte Mandantenrechte. Externe IAM-Abnahme bleibt Voraussetzung.
+
+
+## v0.15 – Kundenvergütung nur über zweistufige Billing-Handoff-Akte
+
+Die Auditdifferenz ist nie unmittelbar ein Honoraranspruch. Eine
+Abrechnungsgrundlage entsteht erst aus bestätigten, unabhängig
+finance-reviewten Realisierungs- und Korrekturereignissen. Über die
+Geschäftskundengesellschaft, Vertragskennung und gespeicherte
+300-/500-bps-Rate werden zuvor außerhalb der HTTP-API
+prüfvermerkte Vertragsannahme und externe Rechtsprüfung verknüpft.
+Zwei unterschiedliche Billing-Bearbeiter müssen den exakten Ledgerstand
+für die Übergabe an den externen Rechnungsaussteller bestätigen.
+Nachträgliche Stornos oder Änderungen erfordern eine belegte
+Korrekturakte; keine Neuberechnung einer bereits ausgestellten
+Rechnung im Hintergrund. Die tatsächliche Rechnungsausgabe und
+Zahlungsverbuchung sind eigene, noch offene Abnahmebausteine.

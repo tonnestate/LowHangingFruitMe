@@ -92,3 +92,8 @@ The real bootstrap MUST instantiate `ReviewedBundleService(require_candidate=Tru
 ## Trusted document subprocess operator preflight
 
 Never run untrusted contract documents without `LHFM_DOCLING_SANDBOX_LAUNCHER` pointing to a root-controlled executable. The deployed launcher must use verified OS network isolation and restricted readonly mounts; the worker refuses a shared API netns or any interface beyond `lo`. `/readyz` must execute worker preflight. Do not remove pipe or process-group limits to make a failing external PDF pass. Offline Docling model delivery and real VPS tests are mandatory and are not supplied by synthetic Python CI.
+
+
+## Billing handoff v0.15 – separate customer/legal and finance authorities
+
+Never infer commercial authorization from a synthetic bonus amount, a customer reviewer or an API `confirmed=true` flag. The billing path must read only verified recovery events, require out-of-band operator-provisioned active and correctly rated commercial terms with acceptance/legal clearance references, and enforce a second distinct billing actor for releasing an immutable snapshot. Later confirmed events and reversals must mark that packet stale. A released packet is **NOT** an invoice: `fee_due_net=0.00`, `invoice_created=false`. Never expose any HTTP endpoint that self-certifies legal clearance or accepted fee terms. Preserve historical 300-bps cases, new 500-bps cases and case locks. See `docs/BILLING_HANDOFF.md`.
