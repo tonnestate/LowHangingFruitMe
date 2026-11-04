@@ -348,7 +348,9 @@ def create_app(*, service: AuthenticatedApprovalService,
             raise HTTPException(status_code=503,detail={"code":"EXTRACTION_FAILED"}) from exc
         except BundleNotFound as exc:
             raise HTTPException(status_code=404,detail={"code":"CONTRACT_UPLOAD_NOT_FOUND"}) from exc
-        except (UploadRejected,CandidateConflict,ValueError) as exc:
+        except CandidateConflict as exc:
+            raise HTTPException(status_code=409,detail={"code":"CANDIDATE_CONFLICT"}) from exc
+        except (UploadRejected,ValueError) as exc:
             raise HTTPException(status_code=422,detail={"code":"CONTRACT_EVIDENCE_INVALID"}) from exc
 
     @app.get("/v1/contract-candidates/{candidate_id}")

@@ -10,6 +10,7 @@ from __future__ import annotations
 from hashlib import sha256
 import json
 from typing import Any, Callable
+from pymysql.err import IntegrityError
 from uuid import uuid4
 
 from ..approval import rule_sha256
@@ -121,6 +122,9 @@ class ContractCandidateService:
                     (candidate_id,tenant_id,legal_entity_id,actor),
                 )
             db.commit()
+        except IntegrityError as exc:
+            db.rollback()
+            raise CandidateConflict("candidate already exists for this document revision") from exc
         except Exception:
             db.rollback()
             raise

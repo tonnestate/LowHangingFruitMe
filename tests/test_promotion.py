@@ -201,6 +201,14 @@ class ReviewedPipelineTests(unittest.TestCase):
                 "source_revision_id": payload["source_revision_id"],
             }, headers=self.headers())
             self.assertEqual(candidate.status_code, 201, candidate.text)
+            duplicate = client.post("/v1/contract-candidates", json={
+                **self.scope(), "contract_upload_id": co,
+                "agreement_id": self.rule["agreement_id"],
+                "rule_id": self.rule["rule_id"],
+                "rule_revision": self.rule["revision"],
+                "source_revision_id": payload["source_revision_id"],
+            }, headers=self.headers())
+            self.assertEqual(duplicate.status_code, 409, duplicate.text)
             self.assertEqual(candidate.json()["state"], "EXTRACTED")
             cid = candidate.json()["candidate_id"]
             self.assertEqual(candidate.json()["segments"][0]["evidence_ref"], cite)
