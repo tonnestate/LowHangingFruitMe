@@ -152,3 +152,21 @@ class DoclingSubprocessExtractor:
     def __call__(self, path: Path) -> dict[str, Any]:
         # A real parse is also re-attested by the worker; health can be stale.
         return self._execute(str(path))
+
+
+
+def main() -> int:
+    """Operator check: sandbox networking only, not real PDF/OCR acceptance."""
+    try:
+        DoclingSubprocessExtractor(
+            launcher=os.environ.get("LHFM_DOCLING_SANDBOX_LAUNCHER"),
+        ).preflight()
+    except Exception:
+        print("DOCUMENT_SANDBOX_NOT_READY", file=sys.stderr)
+        return 2
+    print("DOCUMENT_SANDBOX_NETWORK_ISOLATED")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

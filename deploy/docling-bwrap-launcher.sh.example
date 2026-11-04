@@ -1,0 +1,51 @@
+#!/bin/sh
+# Example only. Adjust absolute paths to the actual root-controlled deployment.
+# Install as root:root 0755 under /usr/local/libexec/lowhangingfruitme/.
+# This targets Debian/Ubuntu with usrmerge and rootless bubblewrap,
+# a wheel-installed private venv and pre-provisioned OFFLINE Docling models.
+set -eu
+PYTHON="/srv/lowhangingfruitme/python/bin/python"
+MODELS="/srv/lowhangingfruitme/docling-models"
+BWRAP="/usr/bin/bwrap"
+
+[ "$#" -eq 5 ] || exit 2
+[ "$1" = "$PYTHON" ] || exit 2
+[ "$2" = "-I" ] && [ "$3" = "-m" ] &&
+  [ "$4" = "lowhangingfruitme.documents_worker" ] || exit 2
+[ -x "$BWRAP" ] && [ -x "$PYTHON" ] && [ -d "$MODELS" ] || exit 2
+[ -n "$LHFM_PARENT_NETNS" ] || exit 2
+case "$5" in
+  --preflight) ;;
+  /tmp/lhfm-source-snapshot-*/source.pdf)
+    [ -f "$5" ] && [ ! -L "$5" ] || exit 2 ;;
+  *) exit 2 ;;
+esac
+
+sandbox() {
+  exec "$BWRAP" \
+    --unshare-all --die-with-parent --new-session --cap-drop ALL \
+    --clearenv \
+    --ro-bind /usr /usr \
+    --symlink usr/lib /lib \
+    --symlink usr/lib64 /lib64 \
+    --ro-bind /sys /sys \
+    --ro-bind /srv/lowhangingfruitme/python /srv/lowhangingfruitme/python \
+    --ro-bind "$MODELS" "$MODELS" \
+    --tmpfs /tmp --dir /mnt --dev /dev --proc /proc \
+    --setenv HOME "$MODELS" \
+    --setenv HF_HOME "$MODELS" \
+    --setenv HF_HUB_OFFLINE 1 \
+    --setenv TRANSFORMERS_OFFLINE 1 \
+    --setenv PYTHONNOUSERSITE 1 \
+    --setenv PYTHONDONTWRITEBYTECODE 1 \
+    --setenv LHFM_PARENT_NETNS "$LHFM_PARENT_NETNS" \
+    --chdir /tmp \
+    "$@"
+}
+
+if [ "$5" = "--preflight" ]; then
+  sandbox "$PYTHON" -I -m lowhangingfruitme.documents_worker --preflight
+else
+  sandbox --ro-bind "$5" /mnt/contract.pdf \
+    "$PYTHON" -I -m lowhangingfruitme.documents_worker /mnt/contract.pdf
+fi
