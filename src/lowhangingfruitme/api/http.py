@@ -20,6 +20,8 @@ from ..approval_service import AuthenticatedApprovalService
 from ..invoices import extract_invoice_preview
 from .store import BundleNotFound, PrivateAuditStore, RunConflict
 from .promotion import ReviewedBundleService, ReviewRequired, RuleSemanticReviewRequired
+from .candidates import (ContractCandidateService, CandidateNotFound,
+                         CandidateConflict, CandidateUnavailable)
 from .recovery import RecoveryLedger, CaseConflict
 from .reports import customer_case, render_export, ReportNotReady
 from .uploads import (ClamAVScanner, MAX_UPLOAD, ScannerUnavailable,
@@ -58,6 +60,26 @@ class ReviewedBundleRequest(BaseModel):
     completeness: dict[str, bool]
     confirm_contract_review: Literal[True]
     confirm_mapping_review: Literal[True]
+    candidate_id: UUID | None = None
+
+
+class CandidateExtractRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    tenant_id: str = Field(min_length=1,max_length=128,pattern=r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
+    legal_entity_id: str = Field(min_length=1,max_length=128,pattern=r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
+    contract_upload_id: UUID
+    agreement_id: str = Field(min_length=1,max_length=128)
+    rule_id: str = Field(min_length=1,max_length=128)
+    rule_revision: str = Field(min_length=1,max_length=128)
+    source_revision_id: str = Field(min_length=1,max_length=128)
+
+
+class CandidateReviewRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    tenant_id: str = Field(min_length=1,max_length=128,pattern=r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
+    legal_entity_id: str = Field(min_length=1,max_length=128,pattern=r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
+    rule: dict[str,Any]
+    confirm_clause_review: Literal[True]
 
 
 class RecoveryEventRequest(BaseModel):
@@ -90,7 +112,8 @@ def create_app(*, service: AuthenticatedApprovalService,
                store: PrivateAuditStore,
                uploads: UploadService | None = None,
                promotion: ReviewedBundleService | None = None,
-               recovery: RecoveryLedger | None = None) -> FastAPI:
+               recovery: RecoveryLedger | None = None,
+               candidates: ContractCandidateService | None = None) -> FastAPI:
     """Dependencies injected by a trusted bootstrap, never from HTTP input."""
     app = FastAPI(
         title="LowHangingFruitMe Audit API", version="0.12.0",
@@ -138,6 +161,7 @@ def create_app(*, service: AuthenticatedApprovalService,
     def readiness():
         """Operational check. Liveness is never proof of audit/upload readiness."""
         if (uploads is None or promotion is None or recovery is None
+                or (promotion.require_candidate and candidates is None)
                 or not isinstance(uploads.scanner, ClamAVScanner)):
             raise HTTPException(status_code=503, detail={"code": "NOT_READY"})
         try:
@@ -300,6 +324,74 @@ def create_app(*, service: AuthenticatedApprovalService,
         except (UploadRejected, ValueError) as exc:
             raise HTTPException(status_code=422, detail={"code":"SOURCE_INSPECTION_FAILED"}) from exc
 
+    @app.post("/v1/contract-candidates", status_code=201)
+    def extract_contract_candidate(
+        body: CandidateExtractRequest, token: str = Depends(access_token),
+    ):
+        authorized_actor(
+            token,tenant=body.tenant_id,entity=body.legal_entity_id,
+            required_scope="lhfm:approval:write",
+        )
+        if candidates is None:
+            raise HTTPException(status_code=503,detail={"code":"CANDIDATES_UNAVAILABLE"})
+        try:
+            return candidates.extract(
+                token,tenant_id=body.tenant_id,legal_entity_id=body.legal_entity_id,
+                contract_upload_id=str(body.contract_upload_id),
+                agreement_id=body.agreement_id,rule_id=body.rule_id,
+                rule_revision=body.rule_revision,
+                source_revision_id=body.source_revision_id,
+            )
+        except CandidateUnavailable as exc:
+            raise HTTPException(status_code=503,detail={"code":"EXTRACTION_UNAVAILABLE"}) from exc
+        except RuntimeError as exc:
+            raise HTTPException(status_code=503,detail={"code":"EXTRACTION_FAILED"}) from exc
+        except BundleNotFound as exc:
+            raise HTTPException(status_code=404,detail={"code":"CONTRACT_UPLOAD_NOT_FOUND"}) from exc
+        except (UploadRejected,CandidateConflict,ValueError) as exc:
+            raise HTTPException(status_code=422,detail={"code":"CONTRACT_EVIDENCE_INVALID"}) from exc
+
+    @app.get("/v1/contract-candidates/{candidate_id}")
+    def read_contract_candidate(
+        candidate_id: UUID,
+        tenant_id: Annotated[str,Query(min_length=1,max_length=128,
+            pattern=r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")],
+        legal_entity_id: Annotated[str,Query(min_length=1,max_length=128,
+            pattern=r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")],
+        token: str = Depends(access_token),
+    ):
+        authorized_actor(token,tenant=tenant_id,entity=legal_entity_id,
+                         required_scope="lhfm:approval:write")
+        if candidates is None:
+            raise HTTPException(status_code=503,detail={"code":"CANDIDATES_UNAVAILABLE"})
+        try:
+            return candidates.get(
+                token,candidate_id=str(candidate_id),
+                tenant_id=tenant_id,legal_entity_id=legal_entity_id,
+            )
+        except CandidateNotFound as exc:
+            raise HTTPException(status_code=404,detail={"code":"CANDIDATE_NOT_FOUND"}) from exc
+
+    @app.post("/v1/contract-candidates/{candidate_id}/review")
+    def review_contract_candidate(
+        candidate_id: UUID, body: CandidateReviewRequest,
+        token: str = Depends(access_token),
+    ):
+        authorized_actor(token,tenant=body.tenant_id,entity=body.legal_entity_id,
+                         required_scope="lhfm:approval:write")
+        if candidates is None:
+            raise HTTPException(status_code=503,detail={"code":"CANDIDATES_UNAVAILABLE"})
+        try:
+            return candidates.review(
+                token,candidate_id=str(candidate_id),
+                tenant_id=body.tenant_id,legal_entity_id=body.legal_entity_id,
+                rule=body.rule,confirm_clause_review=body.confirm_clause_review,
+            )
+        except CandidateNotFound as exc:
+            raise HTTPException(status_code=404,detail={"code":"CANDIDATE_NOT_FOUND"}) from exc
+        except CandidateConflict as exc:
+            raise HTTPException(status_code=409,detail={"code":"CANDIDATE_REVIEW_REQUIRED"}) from exc
+
     @app.post("/v1/bundles", status_code=201)
     def approve_and_prepare_bundle(
         body: ReviewedBundleRequest, token: str = Depends(access_token),
@@ -324,6 +416,7 @@ def create_app(*, service: AuthenticatedApprovalService,
                 controls=body.controls, completeness=body.completeness,
                 confirm_contract_review=body.confirm_contract_review,
                 confirm_mapping_review=body.confirm_mapping_review,
+                candidate_id=str(body.candidate_id) if body.candidate_id else None,
             )
         except BundleNotFound as exc:
             raise HTTPException(status_code=404, detail={"code":"UPLOAD_NOT_FOUND"}) from exc
@@ -333,7 +426,7 @@ def create_app(*, service: AuthenticatedApprovalService,
                 detail={"code":"RULE_SEMANTICS_NEEDS_REVIEW",
                         "next_action":"CHECK_ORIGINAL_CONTRACT_AND_CONFIRM_TIER_APPLICATION"},
             ) from exc
-        except (ReviewRequired, UploadRejected, ValueError) as exc:
+        except (ReviewRequired, UploadRejected, CandidateConflict, CandidateNotFound, ValueError) as exc:
             raise HTTPException(status_code=422, detail={"code":"BUNDLE_REVIEW_FAILED"}) from exc
         except PermissionError as exc:
             raise HTTPException(status_code=403, detail={"code":"NOT_AUTHORIZED"}) from exc
@@ -630,9 +723,18 @@ def create_app_from_environment() -> FastAPI:
             registry=service.registry, root=private_upload_root,
             scanner=ClamAVScanner(scanner_socket),
         )
+    candidate_service = None
+    if upload_service is not None:
+        from ..docling_subprocess import DoclingSubprocessExtractor
+        candidate_service = ContractCandidateService(
+            service=service, uploads=upload_service,
+            extractor=DoclingSubprocessExtractor(),
+        )
     promotion_service = (
-        ReviewedBundleService(service=service, uploads=upload_service, store=store)
-        if upload_service is not None else None
+        ReviewedBundleService(
+            service=service, uploads=upload_service, store=store,
+            candidates=candidate_service, require_candidate=True,
+        ) if upload_service is not None else None
     )
     recovery_service = (
         RecoveryLedger(registry=service.registry,store=store,uploads=upload_service)
@@ -640,4 +742,4 @@ def create_app_from_environment() -> FastAPI:
     )
     return create_app(service=service, store=store,
                       uploads=upload_service,promotion=promotion_service,
-                      recovery=recovery_service)
+                      recovery=recovery_service,candidates=candidate_service)
