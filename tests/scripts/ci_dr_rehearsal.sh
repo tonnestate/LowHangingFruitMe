@@ -22,6 +22,19 @@ chmod 600 "$scratch/client.cnf"
 age-keygen -o "$scratch/identity" >/dev/null 2>&1
 chmod 600 "$scratch/identity"
 recipient="$(age-keygen -y "$scratch/identity")"
+python - "$scratch/signing.pem" "$scratch/verify.pem" <<'PY'
+import os,sys
+from pathlib import Path
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+from cryptography.hazmat.primitives.serialization import (
+    Encoding, PrivateFormat, PublicFormat, NoEncryption,
+)
+key=Ed25519PrivateKey.generate()
+Path(sys.argv[1]).write_bytes(key.private_bytes(Encoding.PEM,PrivateFormat.PKCS8,NoEncryption()))
+Path(sys.argv[2]).write_bytes(key.public_key().public_bytes(Encoding.PEM,PublicFormat.SubjectPublicKeyInfo))
+os.chmod(sys.argv[1],0o600)
+os.chmod(sys.argv[2],0o600)
+PY
 test -n "$recipient"
 
 # The service-created lhfm account has only the synthetic lhfm_test database.
@@ -34,13 +47,16 @@ LHFM_MAINTENANCE_CONFIRMED=YES python -m lowhangingfruitme.dr backup \
   --defaults-file "$scratch/client.cnf" --database lhfm_test \
   --upload-root "$scratch/uploads" --source-root "$scratch/sources" \
   --destination "$scratch/snapshot" --age-recipient "$recipient" \
+  --signing-key "$scratch/signing.pem" \
   > "$scratch/backup-result.json"
-test "$(find "$scratch/snapshot" -type f | wc -l)" -eq 4
-test "$(find "$scratch/snapshot" -type f ! -name '*.age' | wc -l)" -eq 0
+test "$(find "$scratch/snapshot" -type f | wc -l)" -eq 5
+test "$(find "$scratch/snapshot" -type f ! -name '*.age' | wc -l)" -eq 1
 
 LHFM_RESTORE_REHEARSAL_APPROVED=YES python -m lowhangingfruitme.dr restore-verify \
   --defaults-file "$scratch/client.cnf" --backup-dir "$scratch/snapshot" \
   --age-identity "$scratch/identity" --target-database lhfm_restore_ci \
+  --verification-key "$scratch/verify.pem" \
+  --verification-key "$scratch/verify.pem" \
   > "$scratch/restore-result.json"
 python - "$scratch/restore-result.json" <<'PY'
 import json,sys
@@ -62,14 +78,25 @@ if LHFM_RESTORE_REHEARSAL_APPROVED=YES python -m lowhangingfruitme.dr restore-ve
   exit 2
 fi
 
-# Failed encrypted archive digest is detected BEFORE any restore attempt.
-printf X >> "$scratch/snapshot/uploads.tar.age"
+# A replaced unsigned manifest cannot be used even if age decryption works.
+cp "$scratch/snapshot/manifest.sig" "$scratch/original.sig"
+printf X >> "$scratch/snapshot/manifest.sig"
 MYSQL_PWD=testing-root-only mariadb --host=127.0.0.1 --user=root \
   --execute="CREATE DATABASE lhfm_restore_corrupt; GRANT ALL ON lhfm_restore_corrupt.* TO 'lhfm'@'%';"
 if LHFM_RESTORE_REHEARSAL_APPROVED=YES python -m lowhangingfruitme.dr restore-verify \
   --defaults-file "$scratch/client.cnf" --backup-dir "$scratch/snapshot" \
   --age-identity "$scratch/identity" --target-database lhfm_restore_corrupt \
-  > /dev/null 2>&1; then
+  --verification-key "$scratch/verify.pem" > /dev/null 2>&1; then
+  echo "forged manifest signature accepted" >&2
+  exit 2
+fi
+mv "$scratch/original.sig" "$scratch/snapshot/manifest.sig"
+# Changed encrypted component must be blocked before touching the empty restore.
+printf X >> "$scratch/snapshot/uploads.tar.age"
+if LHFM_RESTORE_REHEARSAL_APPROVED=YES python -m lowhangingfruitme.dr restore-verify \
+  --defaults-file "$scratch/client.cnf" --backup-dir "$scratch/snapshot" \
+  --age-identity "$scratch/identity" --target-database lhfm_restore_corrupt \
+  --verification-key "$scratch/verify.pem" > /dev/null 2>&1; then
   echo "tampered ciphertext accepted" >&2
   exit 2
 fi

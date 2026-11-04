@@ -72,17 +72,20 @@ class DisasterRecoverySafetyTests(unittest.TestCase):
             with self.assertRaisesRegex(DRError,"maintenance"):
                 create_backup(defaults_file="/missing",database="lhfm_test",
                               upload_root="/missing",source_root="/missing",
-                              destination="/missing/backup",recipient="age1unused123456")
+                              destination="/missing/backup",recipient="age1unused123456",
+                              signing_key="/missing")
             with self.assertRaisesRegex(DRError,"approval"):
                 verify_restore(defaults_file="/missing",backup_dir="/missing",
-                               identity="/missing",target_database="lhfm_restore_test")
+                               identity="/missing",target_database="lhfm_restore_test",
+                               verification_key="/missing")
 
     def test_restore_never_accepts_original_or_arbitrary_database(self):
         with patch.dict(os.environ,{"LHFM_RESTORE_REHEARSAL_APPROVED":"YES"}):
             for database in ("lhfm_test","mysql","production","lhfm_restore_foo;DROP"):
                 with self.subTest(database=database),self.assertRaisesRegex(DRError,"ONLY"):
                     verify_restore(defaults_file="/missing",backup_dir="/missing",
-                                   identity="/missing",target_database=database)
+                                   identity="/missing",target_database=database,
+                                   verification_key="/missing")
 
     def test_defaults_file_must_be_private_and_loopback(self):
         with tempfile.TemporaryDirectory() as directory:
