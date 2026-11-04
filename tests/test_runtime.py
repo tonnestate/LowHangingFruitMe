@@ -69,6 +69,7 @@ class RuntimeConfigTests(unittest.TestCase):
             ("LHFM_DB_NAME", "mysql"),
             ("LHFM_DB_NAME", "bad-name"),
             ("LHFM_DB_PASSWORD", ""),
+            ("LHFM_DB_USER", "root"),
         ]:
             with self.subTest(name=name, value=value):
                 env = {**self.env, name: value}

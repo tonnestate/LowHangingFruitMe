@@ -52,6 +52,8 @@ def validate_runtime_config(
         raise RuntimeNotReady("DB_MUST_USE_LOOPBACK")
     if not env.get("LHFM_DB_USER") or not env.get("LHFM_DB_PASSWORD"):
         raise RuntimeNotReady("DB_CREDENTIALS_NOT_CONFIGURED")
+    if env["LHFM_DB_USER"].lower() in ("root", "mysql", "admin"):
+        raise RuntimeNotReady("PRIVILEGED_DB_ACCOUNT_FORBIDDEN")
     database = env.get("LHFM_DB_NAME", "")
     if (not re.fullmatch(r"[A-Za-z][A-Za-z0-9_]{2,63}", database)
             or database.lower() in ("mysql", "information_schema", "performance_schema", "sys")
