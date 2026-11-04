@@ -1,6 +1,6 @@
 # TEMPLATE ONLY – review service account, path, Node location and host limits.
 [Unit]
-Description=LowHangingFruitMe standalone marketing website
+Description=LowHangingFruitMe standalone portal (public TLS via Apache only)
 After=network-online.target
 Wants=network-online.target
 
@@ -9,6 +9,7 @@ Type=simple
 User=lowhangingfruitme
 Group=lowhangingfruitme
 WorkingDirectory=/srv/lowhangingfruitme/portal
+EnvironmentFile=/etc/lowhangingfruitme/portal.env
 Environment=NODE_ENV=production
 Environment=HOSTNAME=127.0.0.1
 Environment=PORT=3107
@@ -20,6 +21,9 @@ NoNewPrivileges=true
 PrivateTmp=true
 ProtectHome=true
 ProtectSystem=full
+ProtectKernelModules=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
 UMask=0077
 MemoryMax=768M
 TasksMax=120

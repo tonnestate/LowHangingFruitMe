@@ -24,6 +24,7 @@ lhfm-schema-check = "lowhangingfruitme.schema:main"
 lhfm-migrate = "lowhangingfruitme.migrations:main"
 lhfm-docling-check = "lowhangingfruitme.docling_subprocess:main"
 lhfm-dr = "lowhangingfruitme.dr:main"
+lhfm-runtime-check = "lowhangingfruitme.runtime:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
