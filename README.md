@@ -228,3 +228,8 @@ bleiben **ausschließlich in als synthetisch markierten Tests** möglich.
 Die tatsächliche Docling-Modellinstallation und vom Netz getrennte
 Parser-Ausführung sowie authentifizierte Unternehmenszugänge sind vor
 Produktivstart zu verifizieren. Siehe `docs/GO_LIVE_GATE.md`.
+
+
+Die technisch synthetisch bestandene v0.14-Kandidatenstrecke ersetzt **keine**
+Freigabe für echte Vertragsdaten oder Kundenzahlungen. Die konkreten externen
+Produktionsgates G0–G5 sind unter `docs/GO_LIVE_GATE.md` verbindlich festgehalten.

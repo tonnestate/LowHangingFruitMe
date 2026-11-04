@@ -10,7 +10,7 @@ Einen realen OIDC-Provider registrieren, ausgehende Access Tokens mit `at+jwt` u
 
 Eigenen gesicherten Server mit HTTPS, Apache-/BFF-Proxies, verschlüsselter Dateihaltung und MariaDB-Backups betreiben. Reale ClamAV-Installation und aktuelle Signaturen, angegriffene ZIP/XML/PDF-Dateien, 16-MiB-Grenze, Retention/Lösch-Workflow und Restore testen. Docling nur unter eigener eingeschränkter OS-Identität mit überwachten RAM/CPU/Timeout-Limits, **nachweislich gesperrtem Netz-Egress** und lokal bereitgestellten Modelldateien starten; tatsächliche Bild-PDFs und mehrseitige Tabellen mit kontrolliertem Goldstandard prüfen. Der Python-Subprozess allein ist keine Sandbox.
 
-## G2 – Vertrag/Regel: CODE IN REVIEW, EXTERNAL OPEN
+## G2 – Vertrag/Regel: SYNTHETIC CODE CI PASSED, EXTERNAL OPEN
 
 PDF-Kandidatenstufen EXTRACTED → NEEDS_CONFIRMATION → APPROVED und SUPERSEDED/REVOKED einschließlich Mapping/Revocation/Concurrency im gesamten API-/Portalpfad synthetisch abnehmen. Eine externe Fachperson muss die ursprüngliche Klausel einschließlich Nachträge, Satz und Zeitraum mit dem generierten Regelbefund kontrollieren. KI-Ergebnisse sind nur Vorschläge und keine juristische Interpretation.
 
