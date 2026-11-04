@@ -231,3 +231,8 @@ DSGVO-Retention-/Erasure-Prozess wird nicht behauptet.
 Die bestehende React-Arbeitsoberfläche bietet jetzt Bedienung für die bereits implementierte Billing-API: PREPARED erstellen, Akten lesen, durch eine getrennt berechtigte Person RELEASED setzen und mit externem Korrekturbeleg VOIDED dokumentieren. Der Zugriff erfolgt über bestehende JWT-Billing-Scopes und MariaDB-Grants; eine Upload-Reviewerrolle wird dem zweiten Billing-Bearbeiter nicht abverlangt. Angezeigt werden Rate, Realisierungsbetrag, Honorar, Status, Staleness, Historie und externe Rechnungspflicht. Mandant-/Gesellschaftswechsel verwirft frühere lokale Audit- und Finanzzustände. Die öffentliche Preisseite wurde um den tatsächlichen Recovery-Ledger-Stand berichtigt.
 
 Kein echtes IdP, keine reale Rechnungsstellung, keine kaufmännische Fremdabnahme und keine Produktionsinstallation. Der Frontend-Quellstand ist nur nach bestandener CI als buildgeprüft zu bezeichnen.
+
+
+### Audit-Wiederaufnahme im geschützten Arbeitsbereich (04.11.2026 – Entwicklungsstand)
+
+Die vorhandene geschützte `GET /v1/audits/{audit_id}`-Schnittstelle ist jetzt über ein Feld für die gespeicherte Audit-ID erreichbar. Nach einer neuen Browser-Sitzung kann derselbe weiterhin berechtigte Reviewer unter exakt demselben Mandanten und derselben Gesellschaft einen gespeicherten Prüfstatus und Bericht laden, ohne den Bonus erneut zu berechnen. Die vorhandenen Berichtsexporte und der Recovery-Ledger-Leseweg bleiben bei einem abgeschlossenen Audit bedienbar, auch wenn kein neues Quellenbundle in der aktuellen Browsersitzung erzeugt wurde. Backend-Zugriffskontrolle bleibt unverändert. Unberechtigte Wiederaufnahme wird im BFF-Testpfad abgewiesen; ein echter zwei-Sitzungen-IdP-Browsertest und realer VPS-Zugriff bleiben offen.

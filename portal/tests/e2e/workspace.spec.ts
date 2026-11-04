@@ -18,4 +18,7 @@ test("protected workplace blocks uploads when no identity service is configured"
   data:{tenant_id:"TEST",legal_entity_id:"TEST"},
  });
  expect([401,403,503]).toContain(billingPost.status());
+ const priorAudit=await request.get("/api/finance/audits/"+billingId+
+  "?tenant_id=TEST&legal_entity_id=TEST");
+ expect([401,503]).toContain(priorAudit.status());
 });
