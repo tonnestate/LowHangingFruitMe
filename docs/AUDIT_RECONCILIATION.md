@@ -48,3 +48,5 @@ jeder Worker auf sämtlichen Servern beendet wurde. Die beiden
 Umgebungsfreigaben ersetzen keine reale Betriebskontrolle. Das
 Verfahren ist kontrollierte Störungsbehandlung, keine persistente
 asynchrone Jobqueue. Es wurden keine Live-Kundendaten bearbeitet.
+
+Die bestehende private API zeigt bei einer seit mindestens 60 Minuten offenen `PROCESSING`-Reservierung das Feld `operator_reconciliation_required=true` sowohl in der GET-Antwort als auch bei einem idempotenten POST-Replay. Das bleibt ein **Hinweis**, nicht die Erlaubnis, ohne extern kontrollierten Worker-Stopp einen Auftrag zu verändern. Eine neue Browser-Sitzung zeigt diesen Zustand nach erfolgreicher rollen-/mandantenautorisierter Audit-Wiederaufnahme.
