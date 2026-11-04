@@ -24,6 +24,13 @@ class LocalSandboxRunner(DoclingSubprocessExtractor):
     def _command(self, argument: str) -> list[str]:
         return [sys.executable, "-c", self.program]
 
+    def _execute(self, argument: str):
+        # Probe transport only; the root-ownership check is tested separately.
+        # CI runner paths are not necessarily root-owned.
+        with patch("lowhangingfruitme.docling_subprocess._trusted_launcher",
+                   return_value=Path("/usr/bin/env")):
+            return super()._execute(argument)
+
 
 @unittest.skipUnless(sys.platform == "linux", "Linux worker required")
 class DocumentWorkerHardeningTests(unittest.TestCase):
