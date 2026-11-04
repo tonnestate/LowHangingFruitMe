@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 from lowhangingfruitme.dr import (
     DRError, archive_path, client_config, create_backup, file_manifest,
-    private_dir, private_file, verify_restore,
+    private_dir, private_file, require_key_outside, verify_restore,
 )
 
 
@@ -66,6 +66,20 @@ class DisasterRecoverySafetyTests(unittest.TestCase):
             (root / "linked").symlink_to(source)
             with self.assertRaisesRegex(DRError,"unsafe"):
                 file_manifest(root)
+
+    def test_operator_signing_authority_cannot_be_part_of_backup(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "private"
+            root.mkdir(mode=0o700)
+            embedded = root / "signing.pem"
+            embedded.write_bytes(b"synthetic-not-a-real-key")
+            embedded.chmod(0o600)
+            external = Path(directory) / "external-key.pem"
+            external.write_bytes(b"synthetic-public-only")
+            external.chmod(0o600)
+            with self.assertRaisesRegex(DRError, "outside backup"):
+                require_key_outside(embedded, root)
+            require_key_outside(external, root)
 
     def test_wrong_operator_confirmations_prevent_data_access(self):
         with patch.dict(os.environ,{},clear=True):
