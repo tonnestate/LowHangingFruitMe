@@ -7,7 +7,7 @@ separate immutable source manifest before any calculation.
 from __future__ import annotations
 
 import asyncio
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 from hashlib import sha256
 import os
 from pathlib import Path
@@ -243,26 +243,47 @@ class UploadService:
         if record["state"] != "CLEAN" or record["kind"] not in accepted_kinds:
             raise UploadRejected("upload not clean or wrong dataset/document class")
         suffix = FORMATS[record["kind"]][0]
-        target = self.root / (upload_id + suffix)
-        if target.is_symlink() or not target.is_file():
-            raise UploadRejected("clean source is missing or unsafe")
-        if stat.S_IMODE(target.stat().st_mode) & 0o077:
-            raise UploadRejected("source permissions are not private")
-        with tempfile.TemporaryDirectory(prefix="lhfm-source-snapshot-") as tmp:
-            copied = Path(tmp) / ("source" + suffix)
-            count = 0
-            digest = sha256()
-            with target.open("rb") as inp, copied.open("xb") as out:
-                while chunk := inp.read(65536):
-                    count += len(chunk)
-                    if count > MAX_UPLOAD or count > record["expected_size"]:
-                        raise UploadRejected("source changed since upload")
-                    digest.update(chunk)
-                    out.write(chunk)
-            if (count != record["expected_size"] or
-                    digest.hexdigest() != record["expected_sha256"]):
-                raise UploadRejected("source changed since scan")
-            yield copied, record
+        if not all(hasattr(os, key) for key in ("O_DIRECTORY", "O_NOFOLLOW")):
+            raise UploadRejected("safe private upload descriptor access unavailable")
+        # Hold the private directory and actual file descriptors. Separate
+        # is_symlink()/stat()/open() calls allowed a replacement between checks.
+        with ExitStack() as stack:
+            try:
+                directory_fd = os.open(
+                    self.root, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+                )
+                stack.callback(os.close, directory_fd)
+                file_fd = os.open(
+                    upload_id + suffix,
+                    os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK,
+                    dir_fd=directory_fd,
+                )
+                stack.callback(os.close, file_fd)
+            except OSError as exc:
+                raise UploadRejected("clean source is missing or unsafe") from exc
+            source = stack.enter_context(os.fdopen(os.dup(file_fd), "rb"))
+            metadata = os.fstat(source.fileno())
+            if not stat.S_ISREG(metadata.st_mode):
+                raise UploadRejected("clean source must be a regular file")
+            if stat.S_IMODE(metadata.st_mode) & 0o077:
+                raise UploadRejected("source permissions are not private")
+            if metadata.st_size != record["expected_size"] or metadata.st_size > MAX_UPLOAD:
+                raise UploadRejected("source size differs from clean upload ledger")
+            with tempfile.TemporaryDirectory(prefix="lhfm-source-snapshot-") as tmp:
+                copied = Path(tmp) / ("source" + suffix)
+                count = 0
+                digest = sha256()
+                with copied.open("xb") as out:
+                    while chunk := source.read(65536):
+                        count += len(chunk)
+                        if count > MAX_UPLOAD or count > record["expected_size"]:
+                            raise UploadRejected("source changed since upload")
+                        digest.update(chunk)
+                        out.write(chunk)
+                if (count != record["expected_size"] or
+                        digest.hexdigest() != record["expected_sha256"]):
+                    raise UploadRejected("source changed since scan")
+                yield copied, record
 
     async def receive(
         self, *, upload_id: str, tenant_id: str,

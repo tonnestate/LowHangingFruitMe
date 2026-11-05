@@ -16,6 +16,7 @@ import struct
 from tempfile import TemporaryDirectory
 import threading
 import unittest
+from unittest.mock import patch
 from uuid import uuid4
 
 from fastapi.testclient import TestClient
@@ -148,6 +149,40 @@ class UploadApiTests(unittest.TestCase):
         self.assertEqual(uploaded.read_bytes(), self.csv)
         self.assertEqual(uploaded.stat().st_mode & 0o777, 0o600)
         self.assertEqual(self.get_status(upload_id).json()["state"], "CLEAN")
+
+    def test_clean_snapshot_denies_symlink_swapped_at_file_open(self):
+        upload_id = self.intent().json()["upload_id"]
+        self.assertEqual(self.put(upload_id).status_code, 200)
+        saved = self.stage / (upload_id + ".csv")
+        with TemporaryDirectory(prefix="lhfm-external-upload-") as outside_dir:
+            foreign = Path(outside_dir) / "matching.csv"
+            foreign.write_bytes(saved.read_bytes())  # matching SHA does NOT grant access
+            original_open = os.open
+            swapped = False
+
+            def swap_during_open(path, flags, *args, **kwargs):
+                nonlocal swapped
+                if path == upload_id + ".csv" and kwargs.get("dir_fd") is not None:
+                    swapped = True
+                    saved.rename(self.stage / (upload_id + ".original.csv"))
+                    saved.symlink_to(foreign)
+                return original_open(path, flags, *args, **kwargs)
+
+            with patch("lowhangingfruitme.api.uploads.os.open",
+                       side_effect=swap_during_open):
+                with self.assertRaises(UploadRejected):
+                    with self.uploads.snapshot_clean(
+                        upload_id=upload_id, tenant_id=TENANT,
+                        legal_entity_id=ENTITY, reviewer_id=ACTOR,
+                        accepted_kinds=("ERP_CSV",),
+                    ):
+                        self.fail("replaced clean upload was accepted")
+            self.assertTrue(swapped)
+            self.assertEqual(foreign.read_bytes(), self.csv)
+            self.assertEqual(
+                (self.stage / (upload_id + ".original.csv")).read_bytes(), self.csv,
+            )
+            self.assertEqual(self.get_status(upload_id).json()["state"], "CLEAN")
 
     def test_no_token_or_wrong_scope_cannot_open_upload_intent(self):
         body = {
