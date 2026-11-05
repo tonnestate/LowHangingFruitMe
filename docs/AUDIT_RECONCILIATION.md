@@ -50,3 +50,8 @@ Verfahren ist kontrollierte Störungsbehandlung, keine persistente
 asynchrone Jobqueue. Es wurden keine Live-Kundendaten bearbeitet.
 
 Die bestehende private API zeigt bei einer seit mindestens 60 Minuten offenen `PROCESSING`-Reservierung das Feld `operator_reconciliation_required=true` sowohl in der GET-Antwort als auch bei einem idempotenten POST-Replay. Das bleibt ein **Hinweis**, nicht die Erlaubnis, ohne extern kontrollierten Worker-Stopp einen Auftrag zu verändern. Eine neue Browser-Sitzung zeigt diesen Zustand nach erfolgreicher rollen-/mandantenautorisierter Audit-Wiederaufnahme.
+
+
+## SQL-013 – Ausschluss doppelter Berechnungen
+
+Eine neue MariaDB-Unique-Constraint auf (Mandant, Gesellschaft, Reviewer, signiertes Bundle) verhindert auch bei direkten API-Aufrufen, parallelen Requests oder fremden Idempotency-Keys eine zweite Ausführung desselben geprüften Datenpakets. Die API antwortet in diesem Fall mit `409 IDEMPOTENCY_CONFLICT`; ursprüngliche Belege und Ergebnisse bleiben unverändert. Der Migration Runner prüft vor dem SQL-013-DDL auf bereits vorhandene mehrfache Audits und hält **ohne IN_PROGRESS-Markierung oder Löschung** an. Bestandsfälle müssen separat geprüft werden; keine automatische Deduplikation von Finanzdaten. Für einen echten neuen Audit ist ein neu geprüftes, signiertes Bundle erforderlich.

@@ -11,7 +11,7 @@ import sys
 from typing import Any, Callable
 from .migrations import PINNED_SQL_SHA256
 
-# Required structures across sql/001 .. sql/012. These are the minimum
+# Required structures across sql/001 .. sql/013. These are the minimum
 # objects actually read or written by the current audit/upload/recovery paths.
 REQUIRED_TABLES = frozenset({
     "lhfm_reviewer_grants",
@@ -90,6 +90,7 @@ REQUIRED_CONSTRAINTS = frozenset({
     ("lhfm_audit_reconciliation_events", "uq_audit_reconciliation_run"),
     ("lhfm_audit_reconciliation_events", "fk_audit_reconciliation_run"),
     ("lhfm_audit_reconciliation_events", "chk_audit_reconciliation_prior"),
+    ("lhfm_api_runs", "uq_audit_bundle_once"),
 })
 
 
@@ -155,7 +156,7 @@ def find_migration_ledger_mismatches(rows: list[dict[str, Any]]) -> list[str]:
 
 
 def require_operational_schema(connect: Callable[[], Any]) -> None:
-    """Deny serving real API requests if schema 001..012 is incomplete/drifted.
+    """Deny serving real API requests if schema 001..013 is incomplete/drifted.
 
     Metadata-only queries with the app's normal DB connection. This function
     has no CREATE, ALTER or data manipulation and is safe to call at startup.
@@ -196,7 +197,7 @@ def require_operational_schema(connect: Callable[[], Any]) -> None:
         raise SchemaMismatchError(
             "LowHangingFruitMe database is not compatible with current code: "
             + "; ".join(problems)
-            + ". Apply reviewed sql/001..012 migrations to the dedicated "
+            + ". Apply reviewed sql/001..013 migrations to the dedicated "
               "database before starting the API; do not run DDL on startup."
         )
 

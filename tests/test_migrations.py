@@ -10,7 +10,7 @@ import unittest
 
 from lowhangingfruitme.migrations import (
     MigrationError, load_migrations, split_statements, verify_history,
-    migrate_database,
+    migrate_database, require_single_audit_per_bundle,
 )
 
 SQL = Path(__file__).parent.parent / "sql"
@@ -19,8 +19,20 @@ SQL = Path(__file__).parent.parent / "sql"
 class MigrationSafetyUnitTests(unittest.TestCase):
     def test_all_reviewed_sql_scripts_load(self):
         migrations = load_migrations(SQL)
-        self.assertEqual([x.number for x in migrations], list(range(1, 13)))
+        self.assertEqual([x.number for x in migrations], list(range(1, 14)))
         self.assertTrue(all(x.statements for x in migrations))
+
+    def test_duplicate_audits_block_migration_before_ddl_marker(self):
+        class DummyCursor:
+            def __init__(self,count):
+                self.count=count
+            def execute(self,statement):
+                self.statement=statement
+            def fetchone(self):
+                return {"duplicates":self.count}
+        self.assertIsNone(require_single_audit_per_bundle(DummyCursor(0)))
+        with self.assertRaisesRegex(MigrationError,"historical duplicate audits"):
+            require_single_audit_per_bundle(DummyCursor(1))
 
     def test_modified_local_sql_source_is_rejected_before_any_ddl(self):
         with TemporaryDirectory() as directory:
