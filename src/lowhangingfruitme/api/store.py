@@ -225,6 +225,46 @@ class PrivateAuditStore:
                 copied[role] = dst
             yield copied
 
+    @staticmethod
+    def _reviewed_bundle_still_current(cursor: Any, *, bundle_id: str,
+                                       tenant_id: str, legal_entity_id: str) -> bool:
+        """Only an ACTIVE approval which is still the rule head can repeat no audit.
+
+        Superseded/revoked bundles must remain recheckable to NEEDS_REVIEW,
+        but may never persist a second completed financial report.
+        """
+        cursor.execute(
+            """SELECT manifest_json FROM lhfm_api_bundles
+               WHERE bundle_id=%s AND tenant_id=%s AND legal_entity_id=%s""",
+            (bundle_id, tenant_id, legal_entity_id),
+        )
+        row = cursor.fetchone()
+        if not row:
+            raise RunConflict("reviewed bundle disappeared")
+        try:
+            approval_id = json.loads(row["manifest_json"])["approval_receipt"]["approval_id"]
+        except (ValueError, TypeError, KeyError) as exc:
+            raise RunConflict("bundle approval metadata unavailable") from exc
+        if not isinstance(approval_id, str) or not approval_id or len(approval_id) > 128:
+            raise RunConflict("invalid bundle approval identity")
+        cursor.execute(
+            """SELECT a.state, h.current_approval_id
+               FROM lhfm_approval_records a
+               LEFT JOIN lhfm_rule_heads h
+                 ON h.tenant_id=a.tenant_id
+                AND h.legal_entity_id=a.legal_entity_id
+                AND h.agreement_id=a.agreement_id
+                AND h.rule_id=a.rule_id
+               WHERE a.approval_id=%s AND a.tenant_id=%s
+                 AND a.legal_entity_id=%s""",
+            (approval_id, tenant_id, legal_entity_id),
+        )
+        approval = cursor.fetchone()
+        if not approval:
+            raise RunConflict("bundle approval record unavailable")
+        return (approval["state"] == "ACTIVE"
+                and approval["current_approval_id"] == approval_id)
+
     def reserve_run(self, *, tenant_id: str, legal_entity_id: str,
                     reviewer_id: str, bundle_id: str,
                     idempotency_key: str) -> tuple[dict[str, Any], bool]:
@@ -262,6 +302,28 @@ class PrivateAuditStore:
                 existing = cursor.fetchone()
                 if not existing or existing["request_sha256"] != signature:
                     raise RunConflict("idempotency key reused with different bundle")
+                if created:
+                    # The unique PROCESSING constraint serializes concurrent
+                    # reservations even when they carry different keys. Once a
+                    # prior run has finished, only a superseded/revoked rule
+                    # warrants a fresh non-final review for the old bundle.
+                    cursor.execute(
+                        """SELECT audit_id FROM lhfm_api_runs
+                           WHERE tenant_id=%s AND legal_entity_id=%s
+                             AND reviewer_id=%s AND bundle_id=%s
+                             AND status='COMPLETED' AND audit_id<>%s
+                           FOR UPDATE""",
+                        (tenant_id, legal_entity_id, reviewer_id,
+                         bundle_id, existing["audit_id"]),
+                    )
+                    if (cursor.fetchone() is not None
+                            and self._reviewed_bundle_still_current(
+                                cursor, bundle_id=bundle_id,
+                                tenant_id=tenant_id,
+                                legal_entity_id=legal_entity_id)):
+                        raise RunConflict(
+                            "current approved bundle has a completed audit"
+                        )
             connection.commit()
             return existing, created
         except Exception:
