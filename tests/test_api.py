@@ -14,6 +14,7 @@ import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
+from unittest.mock import patch
 from uuid import uuid4
 
 from cryptography.hazmat.primitives.asymmetric import rsa
@@ -383,6 +384,63 @@ class AuditApiIntegrationTests(unittest.TestCase):
                 bundle_id=str(uuid4()),tenant_id=TENANT,
                 legal_entity_id=LEGAL,manifest=manifest,
             )
+
+    def test_source_snapshot_denies_matching_hash_symlink_swapped_after_path_check(self):
+        with TemporaryDirectory(prefix="lhfm-external-source-") as outside_root:
+            outside = Path(outside_root) / "transactions.csv"
+            original = self.root / "transactions.csv"
+            outside.write_bytes(original.read_bytes())  # same hash is NOT permission
+            real_check = self.store._private_path
+            swapped = False
+
+            def swap_after_validation(relative):
+                nonlocal swapped
+                candidate = real_check(relative)
+                if relative == "transactions.csv" and not swapped:
+                    swapped = True
+                    candidate.rename(self.root / "transactions.backup.csv")
+                    candidate.symlink_to(outside)
+                return candidate
+
+            with patch.object(self.store, "_private_path", side_effect=swap_after_validation):
+                with self.assertRaises((OSError, ValueError)):
+                    with self.store.snapshot(self.manifest):
+                        self.fail("symlink swapped after validation was followed")
+            self.assertTrue(swapped)
+            self.assertEqual(outside.read_bytes(),
+                             (self.root / "transactions.backup.csv").read_bytes())
+
+    def test_source_snapshot_denies_swapped_parent_directory(self):
+        with TemporaryDirectory(prefix="lhfm-external-directory-") as outside_root:
+            original = self.root / "transactions.csv"
+            trusted = self.root / "trusted"
+            trusted.mkdir()
+            (trusted / "transactions.csv").write_bytes(original.read_bytes())
+            external = Path(outside_root) / "foreign"
+            external.mkdir()
+            (external / "transactions.csv").write_bytes(original.read_bytes())
+            manifest = deepcopy(self.manifest)
+            manifest["files"]["transactions"] = self.ref("trusted/transactions.csv")
+            real_check = self.store._private_path
+            swapped = False
+
+            def swap_directory_after_validation(relative):
+                nonlocal swapped
+                candidate = real_check(relative)
+                if relative == "trusted/transactions.csv" and not swapped:
+                    swapped = True
+                    trusted.rename(self.root / "saved-trusted")
+                    trusted.symlink_to(external, target_is_directory=True)
+                return candidate
+
+            with patch.object(self.store, "_private_path",
+                              side_effect=swap_directory_after_validation):
+                with self.assertRaises((OSError, ValueError)):
+                    with self.store.snapshot(manifest):
+                        self.fail("swapped directory symlink was traversed")
+            self.assertTrue(swapped)
+            self.assertEqual((external / "transactions.csv").read_bytes(),
+                             (self.root / "saved-trusted" / "transactions.csv").read_bytes())
 
     def test_bundle_path_traversal_and_symlink_rejected(self):
         link=self.root/"other.csv"
