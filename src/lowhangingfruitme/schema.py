@@ -43,7 +43,6 @@ REQUIRED_COLUMNS: dict[str, frozenset[str]] = {
     "lhfm_schema_migrations": frozenset({"migration_id", "checksum_sha256", "state", "applied_at"}),
     "lhfm_upload_housekeeping_events": frozenset({"event_id","upload_id","prior_state","removed_partials","recorded_at"}),
     "lhfm_audit_reconciliation_events": frozenset({"event_id","audit_id","tenant_id","legal_entity_id","operator_id","incident_ref","prior_state","recorded_at"}),
-    "lhfm_api_runs": frozenset({"processing_bundle_id","completed_bundle_id"}),
     "lhfm_contract_candidates": frozenset({"candidate_id","tenant_id","legal_entity_id","reviewer_id","contract_upload_id","document_sha256","reviewed_rule_sha256","reviewed_rule_json","state","approval_id","source_revision_id"}),
     "lhfm_recovery_cases": frozenset({"fee_rate_bps"}),
     "lhfm_commercial_terms": frozenset({"tenant_id","legal_entity_id",
@@ -91,8 +90,7 @@ REQUIRED_CONSTRAINTS = frozenset({
     ("lhfm_audit_reconciliation_events", "uq_audit_reconciliation_run"),
     ("lhfm_audit_reconciliation_events", "fk_audit_reconciliation_run"),
     ("lhfm_audit_reconciliation_events", "chk_audit_reconciliation_prior"),
-    ("lhfm_api_runs", "uq_audit_processing_once"),
-    ("lhfm_api_runs", "uq_audit_completed_once"),
+    ("lhfm_api_runs", "uq_audit_bundle_state"),
 })
 
 
