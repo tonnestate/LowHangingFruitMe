@@ -28,6 +28,7 @@ SQL_FILES = (
     "010_billing_handoff.sql",
     "011_upload_housekeeping.sql",
     "012_audit_reconciliation.sql",
+    "013_audit_bundle_uniqueness.sql",
 )
 # Immutable release baseline: SHA-256 of the exact, reviewed UTF-8 SQL source.
 # New migrations must be appended and explicitly reviewed; historical hashes
@@ -45,6 +46,7 @@ PINNED_SQL_SHA256 = (
     "03fdff7973d04ab4bf005353edff9f3d1703ee05cdcb7e1545608a3664464c92",
     "9a4de7c321079b33d2a90009fb1d2693cae2e3c9f4e55cd5f296a1645ca9621e",
     "8469bb2246dad33fffa118b238011a12427d894e59334ca2393fcac12347cc96",
+    "a184cbe9179ae1c78fe86c9716a4aea2f69bd92fcf047da14524932521afdd04",
 )
 
 TRACKING_DDL = """
@@ -130,6 +132,27 @@ def verify_history(rows: list[dict[str, Any]], scripts: tuple[Migration, ...]) -
     return len(rows)
 
 
+
+
+def require_single_audit_per_bundle(cur: Any) -> None:
+    """Stop BEFORE creating an IN_PROGRESS migration marker if old data conflicts.
+
+    Never discard, merge, or select a winning financial audit automatically.
+    """
+    cur.execute(
+        "SELECT COUNT(*) AS duplicates FROM ("
+        " SELECT 1 FROM lhfm_api_runs"
+        " GROUP BY tenant_id, legal_entity_id, reviewer_id, bundle_id, status"
+        " HAVING COUNT(*) > 1 LIMIT 1"
+        ") duplicate_groups"
+    )
+    row = cur.fetchone()
+    if row and int(row["duplicates"]) > 0:
+        raise MigrationError(
+            "SQL-013 blocked: historical duplicate audits for a reviewed bundle; "
+            "reconcile existing financial evidence before applying the constraint"
+        )
+
 def migrate_database(
     connect: Callable[[], Any], sql_dir: Path, *,
     apply: bool, backup_confirmed: bool = False,
@@ -188,6 +211,8 @@ def migrate_database(
             if not apply:
                 return tuple(script.name for script in pending)
             for script in pending:
+                if script.number == 13:
+                    require_single_audit_per_bundle(cur)
                 # Persist the in-progress marker BEFORE any non-transactional DDL.
                 cur.execute(
                     "INSERT INTO lhfm_schema_migrations "

@@ -25,7 +25,7 @@ from lowhangingfruitme.approval_registry import ApprovalRegistry
 from lowhangingfruitme.approval_service import AuthenticatedApprovalService
 from lowhangingfruitme.auth import AccessTokenVerifier
 from lowhangingfruitme.api.http import create_app
-from lowhangingfruitme.api.store import PrivateAuditStore
+from lowhangingfruitme.api.store import PrivateAuditStore, RunConflict
 
 
 ROOT = Path(__file__).parent / "fixtures"
@@ -202,6 +202,59 @@ class AuditApiIntegrationTests(unittest.TestCase):
         self.assertEqual(b.status_code,200,b.text)
         self.assertTrue(b.json()["replayed"])
         self.assertEqual(b.json()["audit_id"],a.json()["audit_id"])
+
+    def test_same_bundle_with_different_key_is_not_executed_twice(self):
+        first=self.submit(key=str(uuid4()))
+        self.assertEqual(first.status_code,201,first.text)
+        second=self.submit(key=str(uuid4()))
+        self.assertEqual(second.status_code,409,second.text)
+        self.assertEqual(second.json()["detail"]["code"],"IDEMPOTENCY_CONFLICT")
+        db=self.registry._connect()
+        try:
+            with db.cursor() as c:
+                c.execute(
+                    "SELECT COUNT(*) AS n FROM lhfm_api_runs"
+                    " WHERE bundle_id=%s AND tenant_id=%s AND legal_entity_id=%s"
+                    " AND reviewer_id=%s",
+                    (self.bundle_id,TENANT,LEGAL,ACTOR),
+                )
+                self.assertEqual(c.fetchone()["n"],1)
+        finally:
+            db.close()
+
+    def test_concurrent_distinct_keys_one_bundle_one_reservation(self):
+        def attempt(_):
+            try:
+                _,created=self.store.reserve_run(
+                    tenant_id=TENANT,legal_entity_id=LEGAL,reviewer_id=ACTOR,
+                    bundle_id=self.bundle_id,idempotency_key=str(uuid4()),
+                )
+                return "CREATED" if created else "EXISTING"
+            except RunConflict:
+                return "CONFLICT"
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            results=list(pool.map(attempt,range(2)))
+        self.assertEqual(sorted(results),["CONFLICT","CREATED"])
+
+    def test_old_bundle_after_nonfinal_review_rejects_new_key(self):
+        self.registry.revoke(
+            self.receipt["approval_id"],tenant_id=TENANT,
+            legal_entity_id=LEGAL,authenticated_actor_id=ACTOR,
+        )
+        first=self.submit(key=str(uuid4()))
+        self.assertEqual(first.status_code,201,first.text)
+        self.assertEqual(first.json()["status"],"NEEDS_REVIEW")
+        second=self.submit(key=str(uuid4()))
+        self.assertEqual(second.status_code,409,second.text)
+        self.assertEqual(second.json()["detail"]["code"],"IDEMPOTENCY_CONFLICT")
+
+    def test_failed_bundle_does_not_reexecute_with_new_key(self):
+        (self.root/"transactions.csv").write_bytes(b"tampered-data\\n")
+        first=self.submit(key=str(uuid4()))
+        self.assertEqual(first.status_code,503,first.text)
+        again=self.submit(key=str(uuid4()))
+        self.assertEqual(again.status_code,409,again.text)
+        self.assertEqual(again.json()["detail"]["code"],"IDEMPOTENCY_CONFLICT")
 
     def test_idempotency_key_reuse_other_bundle_is_conflict(self):
         key=str(uuid4())

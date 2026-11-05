@@ -5,7 +5,7 @@ Status: **SOURCE AND STARTUP GATE IMPLEMENTED; TARGET VPS NOT INSTALLED OR VERIF
 The actual service factory, `create_app_from_environment()`, now performs
 the same read-only live runtime gate as the dedicated
 `lhfm-runtime-check` operator command. No API server is constructed
-with an unsecured upload/source root, an incomplete SQL 001–010 ledger,
+with an unsecured upload/source root, an incomplete SQL 001–013 ledger,
 unreachable local ClamAV, absent trusted public JWKS, or failed Docling
 network-isolation preflight. The injected `create_app(...)` constructor
 is for synthetic unit tests and does not replace this factory.
@@ -72,8 +72,11 @@ is for synthetic unit tests and does not replace this factory.
    operator-provisioned OIDC public JWKS. Place the portal's separate
    `portal.env` alongside it. Both must be root-owned 0600.
    The portal environment schema is in `portal/.env.example`.
-5. Apply pinned SQL migrations 001–010 from the controlled operator
+5. Apply pinned SQL migrations 001–013 from the controlled operator
    procedure only after a verified encrypted backup. Run
+   Before SQL-013, inspect duplicate historical runs for the same scoped
+   signed bundle. The migration blocks without modifying evidence if conflicts exist.
+   Never auto-delete historical runs. After controlled migration, run
    `lhfm-schema-check`, then `lhfm-runtime-check` **as the service UID**
    with the same systemd-loaded API environment.
 6. Review and adapt the two templates

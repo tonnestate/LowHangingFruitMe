@@ -50,3 +50,8 @@ Verfahren ist kontrollierte Störungsbehandlung, keine persistente
 asynchrone Jobqueue. Es wurden keine Live-Kundendaten bearbeitet.
 
 Die bestehende private API zeigt bei einer seit mindestens 60 Minuten offenen `PROCESSING`-Reservierung das Feld `operator_reconciliation_required=true` sowohl in der GET-Antwort als auch bei einem idempotenten POST-Replay. Das bleibt ein **Hinweis**, nicht die Erlaubnis, ohne extern kontrollierten Worker-Stopp einen Auftrag zu verändern. Eine neue Browser-Sitzung zeigt diesen Zustand nach erfolgreicher rollen-/mandantenautorisierter Audit-Wiederaufnahme.
+
+
+## SQL-013 – Ausschluss doppelter Berechnungen
+
+Eine MariaDB-Unique-Constraint auf (Mandant, Gesellschaft, Reviewer, signiertes Bundle, Auditstatus) erzwingt einen gleichzeitig laufenden (PROCESSING) und höchstens einen abgeschlossenen (COMPLETED) Finanz-Audit pro Bundle. Ein erneuter Start desselben aktiven und signierten Vertragsstands wird vor der Berechnung mit 409 IDEMPOTENCY_CONFLICT abgewiesen; auch abweichende Idempotency-Keys umgehen dies nicht. Nach Vertragsrevision oder Widerruf kann das ältere Bundle einmalig zu NEEDS_REVIEW (ohne neue finanzielle Abschlussdaten) geprüft werden. Bereits vorhandene historische Prüfberichte bleiben unverändert. Die Migration prüft sämtliche historischen Doppelbelegungen derselben Status-/Bundle-Kombination und stoppt **vor** dem IN_PROGRESS-DDL-Marker, damit Finanzdaten niemals automatisch gelöscht, zusammengeführt oder konvertiert werden.

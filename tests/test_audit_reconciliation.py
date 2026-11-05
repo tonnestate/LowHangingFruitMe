@@ -24,21 +24,9 @@ class AuditReconciliationTests(unittest.TestCase):
     def setUp(self):
         self.registry = ApprovalRegistry.from_environment()
         self.connect = self.registry._connect
-        self.bundle_id = str(uuid4())
+        self.bundle_ids = []
         self.ids = []
         self.addCleanup(self.clean)
-        db = self.connect()
-        try:
-            with db.cursor() as c:
-                c.execute(
-                    "INSERT INTO lhfm_api_bundles"
-                    " (bundle_id,tenant_id,legal_entity_id,manifest_json)"
-                    " VALUES (%s,%s,%s,%s)",
-                    (self.bundle_id,TENANT,ENTITY,"{}"),
-                )
-            db.commit()
-        finally:
-            db.close()
 
     def clean(self):
         db = self.connect()
@@ -50,7 +38,8 @@ class AuditReconciliationTests(unittest.TestCase):
                         (audit_id,),
                     )
                     c.execute("DELETE FROM lhfm_api_runs WHERE audit_id=%s",(audit_id,))
-                c.execute("DELETE FROM lhfm_api_bundles WHERE bundle_id=%s",(self.bundle_id,))
+                for bundle_id in self.bundle_ids:
+                    c.execute("DELETE FROM lhfm_api_bundles WHERE bundle_id=%s",(bundle_id,))
             db.commit()
         finally:
             db.close()
@@ -58,9 +47,16 @@ class AuditReconciliationTests(unittest.TestCase):
     def reservation(self, *, minutes=90, status="PROCESSING",
                     report_json=None, executed=False, finished=False):
         audit_id = str(uuid4())
+        bundle_id = str(uuid4())
         db = self.connect()
         try:
             with db.cursor() as c:
+                c.execute(
+                    "INSERT INTO lhfm_api_bundles"
+                    " (bundle_id,tenant_id,legal_entity_id,manifest_json)"
+                    " VALUES (%s,%s,%s,%s)",
+                    (bundle_id,TENANT,ENTITY,"{}"),
+                )
                 c.execute(
                     "INSERT INTO lhfm_api_runs"
                     " (audit_id,tenant_id,legal_entity_id,reviewer_id,bundle_id,"
@@ -69,7 +65,7 @@ class AuditReconciliationTests(unittest.TestCase):
                     " VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,"
                     " DATE_SUB(UTC_TIMESTAMP(6),INTERVAL %s MINUTE),"
                     " IF(%s,UTC_TIMESTAMP(6),NULL))",
-                    (audit_id,TENANT,ENTITY,"REVIEWER-REC-SYN",self.bundle_id,
+                    (audit_id,TENANT,ENTITY,"REVIEWER-REC-SYN",bundle_id,
                      str(uuid4()),"a"*64,status,int(executed),report_json,
                      minutes,int(finished)),
                 )
@@ -77,6 +73,7 @@ class AuditReconciliationTests(unittest.TestCase):
         finally:
             db.close()
         self.ids.append(audit_id)
+        self.bundle_ids.append(bundle_id)
         return audit_id
 
     def reconcile(self,audit_id,*,apply=False,approvals=None,entity=ENTITY,
