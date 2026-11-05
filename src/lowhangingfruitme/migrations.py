@@ -46,7 +46,7 @@ PINNED_SQL_SHA256 = (
     "03fdff7973d04ab4bf005353edff9f3d1703ee05cdcb7e1545608a3664464c92",
     "9a4de7c321079b33d2a90009fb1d2693cae2e3c9f4e55cd5f296a1645ca9621e",
     "8469bb2246dad33fffa118b238011a12427d894e59334ca2393fcac12347cc96",
-    "a2e165c7638660957a6d2ec867ee1397b26f53a0d378a84bc95ac38f23af098c",
+    "32b0ec4248d6e0001507ae3d0816188400268489139b7d3382dffde50a7c3649",
 )
 
 TRACKING_DDL = """
@@ -142,7 +142,8 @@ def require_single_audit_per_bundle(cur: Any) -> None:
     cur.execute(
         "SELECT COUNT(*) AS duplicates FROM ("
         " SELECT 1 FROM lhfm_api_runs"
-        " GROUP BY tenant_id, legal_entity_id, reviewer_id, bundle_id"
+        " WHERE status IN ('PROCESSING','COMPLETED')"
+        " GROUP BY tenant_id, legal_entity_id, reviewer_id, bundle_id, status"
         " HAVING COUNT(*) > 1 LIMIT 1"
         ") duplicate_groups"
     )

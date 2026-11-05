@@ -22,7 +22,7 @@ class MigrationSafetyUnitTests(unittest.TestCase):
         self.assertEqual([x.number for x in migrations], list(range(1, 14)))
         self.assertTrue(all(x.statements for x in migrations))
 
-    def test_duplicate_audits_block_migration_before_ddl_marker(self):
+    def test_multiple_active_or_completed_audits_block_migration_before_ddl_marker(self):
         class DummyCursor:
             def __init__(self,count):
                 self.count=count
