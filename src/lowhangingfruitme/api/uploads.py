@@ -276,11 +276,19 @@ class UploadService:
         staging = self.root / (upload_id + ".part")
         final = self.root / (upload_id + suffix)
         accepted = False
+        staging_owned = False
+        final_owned = False
         try:
             flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
             if hasattr(os, "O_NOFOLLOW"):
                 flags |= os.O_NOFOLLOW
-            fd = os.open(staging, flags, 0o600)
+            try:
+                fd = os.open(staging, flags, 0o600)
+            except FileExistsError as exc:
+                # An existing .part may belong to a crashed upload. It is NOT
+                # ours to delete, nor may a repeated request overwrite it.
+                raise UploadRejected("upload staging filename collision") from exc
+            staging_owned = True
             count = 0
             digest = sha256()
             with os.fdopen(fd, "wb") as target:
@@ -304,7 +312,11 @@ class UploadService:
             # _source needs the correct suffix. The verified bytes are already
             # in the exclusive .part file, so use os.link for the inspected name.
             inspected = self.root / (upload_id + ".inspect" + suffix)
-            os.link(staging, inspected)
+            try:
+                os.link(staging, inspected)
+            except FileExistsError as exc:
+                # Never unlink a pre-existing inspected source on collision.
+                raise UploadRejected("upload inspect filename collision") from exc
             try:
                 try:
                     _source(inspected)
@@ -316,7 +328,9 @@ class UploadService:
                 os.link(staging, final)  # O_EXCL-like: do not replace pre-existing path
             except FileExistsError as exc:
                 raise UploadRejected("upload filename collision") from exc
+            final_owned = True
             staging.unlink()
+            staging_owned = False
             self.settle(
                 upload_id=upload_id, state="CLEAN", tenant_id=tenant_id,
                 legal_entity_id=legal_entity_id, reviewer_id=reviewer_id,
@@ -328,8 +342,13 @@ class UploadService:
                     "usable_for_audit": False}
         finally:
             if not accepted:
-                staging.unlink(missing_ok=True)
-                final.unlink(missing_ok=True)
+                # Critical: only unlink paths this invocation *created*.
+                # A collision with a previously persisted final file or an
+                # orphaned .part must not erase evidence from another run.
+                if staging_owned:
+                    staging.unlink(missing_ok=True)
+                if final_owned:
+                    final.unlink(missing_ok=True)
                 try:
                     self.settle(
                         upload_id=upload_id, state="REJECTED",

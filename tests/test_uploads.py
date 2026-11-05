@@ -173,6 +173,46 @@ class UploadApiTests(unittest.TestCase):
         self.assertFalse(list(self.stage.iterdir()))
         self.assertEqual(self.put(upload_id).status_code,422)
 
+    def test_preexisting_staging_collision_keeps_foreign_partial(self):
+        upload_id = self.intent().json()["upload_id"]
+        existing = self.stage / (upload_id + ".part")
+        existing.write_bytes(b"previous-upload-partial-must-survive")
+        existing.chmod(0o600)
+        response = self.put(upload_id)
+        self.assertEqual(response.status_code, 422, response.text)
+        self.assertEqual(response.json()["detail"]["code"], "UPLOAD_REJECTED")
+        self.assertEqual(existing.read_bytes(), b"previous-upload-partial-must-survive")
+        self.assertEqual(self.get_status(upload_id).json()["state"], "REJECTED")
+        self.assertEqual(self.scanner.calls, 0)
+
+    def test_preexisting_inspect_collision_keeps_foreign_inspected_file(self):
+        upload_id = self.intent().json()["upload_id"]
+        existing = self.stage / (upload_id + ".inspect.csv")
+        existing.write_bytes(b"previous-inspection-must-survive")
+        existing.chmod(0o600)
+        response = self.put(upload_id)
+        self.assertEqual(response.status_code, 422, response.text)
+        self.assertEqual(response.json()["detail"]["code"], "UPLOAD_REJECTED")
+        self.assertEqual(existing.read_bytes(), b"previous-inspection-must-survive")
+        self.assertFalse((self.stage / (upload_id + ".part")).exists())
+        self.assertFalse((self.stage / (upload_id + ".csv")).exists())
+        self.assertEqual(self.get_status(upload_id).json()["state"], "REJECTED")
+        self.assertEqual(self.scanner.calls, 1)
+
+    def test_preexisting_final_collision_never_deletes_financial_source(self):
+        upload_id = self.intent().json()["upload_id"]
+        existing = self.stage / (upload_id + ".csv")
+        existing.write_bytes(b"existing-final-evidence-must-survive")
+        existing.chmod(0o600)
+        response = self.put(upload_id)
+        self.assertEqual(response.status_code, 422, response.text)
+        self.assertEqual(response.json()["detail"]["code"], "UPLOAD_REJECTED")
+        self.assertEqual(existing.read_bytes(), b"existing-final-evidence-must-survive")
+        self.assertFalse((self.stage / (upload_id + ".part")).exists())
+        self.assertFalse((self.stage / (upload_id + ".inspect.csv")).exists())
+        self.assertEqual(self.get_status(upload_id).json()["state"], "REJECTED")
+        self.assertEqual(self.scanner.calls, 1)
+
     def test_wrong_hash_rejected(self):
         upload_id=self.intent(sha="0"*64).json()["upload_id"]
         self.assertEqual(self.put(upload_id).status_code,422)
