@@ -236,6 +236,26 @@ class AuditApiIntegrationTests(unittest.TestCase):
             results=list(pool.map(attempt,range(2)))
         self.assertEqual(sorted(results),["CONFLICT","CREATED"])
 
+    def test_old_bundle_after_nonfinal_review_rejects_new_key(self):
+        self.registry.revoke(
+            self.receipt["approval_id"],tenant_id=TENANT,
+            legal_entity_id=LEGAL,authenticated_actor_id=ACTOR,
+        )
+        first=self.submit(key=str(uuid4()))
+        self.assertEqual(first.status_code,201,first.text)
+        self.assertEqual(first.json()["status"],"NEEDS_REVIEW")
+        second=self.submit(key=str(uuid4()))
+        self.assertEqual(second.status_code,409,second.text)
+        self.assertEqual(second.json()["detail"]["code"],"IDEMPOTENCY_CONFLICT")
+
+    def test_failed_bundle_does_not_reexecute_with_new_key(self):
+        (self.root/"transactions.csv").write_bytes(b"tampered-data\\n")
+        first=self.submit(key=str(uuid4()))
+        self.assertEqual(first.status_code,503,first.text)
+        again=self.submit(key=str(uuid4()))
+        self.assertEqual(again.status_code,409,again.text)
+        self.assertEqual(again.json()["detail"]["code"],"IDEMPOTENCY_CONFLICT")
+
     def test_idempotency_key_reuse_other_bundle_is_conflict(self):
         key=str(uuid4())
         self.assertEqual(self.submit(key=key).status_code,201)
