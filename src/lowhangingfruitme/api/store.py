@@ -308,15 +308,22 @@ class PrivateAuditStore:
                     # prior run has finished, only a superseded/revoked rule
                     # warrants a fresh non-final review for the old bundle.
                     cursor.execute(
-                        """SELECT audit_id FROM lhfm_api_runs
+                        """SELECT status FROM lhfm_api_runs
                            WHERE tenant_id=%s AND legal_entity_id=%s
                              AND reviewer_id=%s AND bundle_id=%s
-                             AND status='COMPLETED' AND audit_id<>%s
-                           FOR UPDATE""",
+                             AND status IN ('COMPLETED','NEEDS_REVIEW','FAILED')
+                             AND audit_id<>%s FOR UPDATE""",
                         (tenant_id, legal_entity_id, reviewer_id,
                          bundle_id, existing["audit_id"]),
                     )
-                    if (cursor.fetchone() is not None
+                    previous = {row["status"] for row in cursor.fetchall()}
+                    if "NEEDS_REVIEW" in previous or "FAILED" in previous:
+                        # Non-final and interrupted requests are permanent
+                        # evidence of this exact reviewed input. A new review
+                        # requires a newly signed source bundle, not a fresh
+                        # key attached to the same immutable bundle.
+                        raise RunConflict("bundle already has a non-final audit")
+                    if ("COMPLETED" in previous
                             and self._reviewed_bundle_still_current(
                                 cursor, bundle_id=bundle_id,
                                 tenant_id=tenant_id,
