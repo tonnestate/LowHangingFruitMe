@@ -7,11 +7,13 @@ before the existing deterministic audited calculation.
 """
 from __future__ import annotations
 
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 from hashlib import sha256
 import json
+import os
 from pathlib import Path
 import re
+import stat
 import tempfile
 from typing import Any, Iterator
 from uuid import uuid4
@@ -68,6 +70,39 @@ class PrivateAuditStore:
             raise ValueError("source path must reference a regular private file")
         return path
 
+    @contextmanager
+    def _open_private_source(self, relative: str) -> Iterator[Any]:
+        """Read by trusted directory descriptors, never by a revalidated path.
+
+        A file or parent directory can be replaced by a symlink after
+        _private_path() has checked it. O_NOFOLLOW on every component closes
+        that time-of-check/time-of-use gap. Linux-only production boundary.
+        """
+        if (not isinstance(relative, str) or not relative or len(relative) > 200):
+            raise ValueError("invalid private source path")
+        rel = Path(relative)
+        if (rel.is_absolute() or not rel.parts
+                or any(part in ("", ".", "..") for part in rel.parts)):
+            raise ValueError("source path escapes private root")
+        if not all(hasattr(os, flag) for flag in ("O_NOFOLLOW", "O_DIRECTORY")):
+            raise RuntimeError("private source descriptor safety not supported")
+        dir_flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+        file_flags = os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK
+        with ExitStack() as stack:
+            dir_fd = os.open(self.root, dir_flags)
+            stack.callback(os.close, dir_fd)
+            for component in rel.parts[:-1]:
+                next_fd = os.open(component, dir_flags, dir_fd=dir_fd)
+                stack.callback(os.close, next_fd)
+                dir_fd = next_fd
+            fd = os.open(rel.parts[-1], file_flags, dir_fd=dir_fd)
+            stack.callback(os.close, fd)
+            # Own a duplicate so a failed read cannot leak a raw descriptor.
+            stream = stack.enter_context(os.fdopen(os.dup(fd), "rb"))
+            if not stat.S_ISREG(os.fstat(stream.fileno()).st_mode):
+                raise ValueError("private source is not a regular file")
+            yield stream
+
     def _checked_copy(self, *, relative: str, expected_hash: str,
                       dest: Path, role: str) -> None:
         if not isinstance(expected_hash, str) or not HEX_SHA256.fullmatch(expected_hash):
@@ -76,16 +111,17 @@ class PrivateAuditStore:
         if (path.suffix.lower() not in CONTRACT_SUFFIXES if role == "contract"
                 else path.suffix.lower() != SUFFIX[role]):
             raise ValueError("invalid source suffix for " + role)
-        size = path.stat().st_size
-        if not 0 < size <= MAX_BYTES[role]:
-            raise ValueError("source file outside allowed size")
         digest = sha256()
-        with path.open("rb") as source, dest.open("xb") as out:
-            while chunk := source.read(65536):
-                digest.update(chunk)
-                out.write(chunk)
-                if out.tell() > MAX_BYTES[role]:
-                    raise ValueError("source grew beyond allowed size")
+        with self._open_private_source(relative) as source:
+            size = os.fstat(source.fileno()).st_size
+            if not 0 < size <= MAX_BYTES[role]:
+                raise ValueError("source file outside allowed size")
+            with dest.open("xb") as out:
+                while chunk := source.read(65536):
+                    digest.update(chunk)
+                    out.write(chunk)
+                    if out.tell() > MAX_BYTES[role]:
+                        raise ValueError("source grew beyond allowed size")
         if digest.hexdigest() != expected_hash:
             raise ValueError("operator-provisioned source changed since registration")
 
