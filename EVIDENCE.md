@@ -357,3 +357,46 @@ The reviewed bundle's canonical UUID now serves as the single audit Idempotency-
 real offline Docling/ClamAV runtime, real ERP coverage reconciliation, commercial/legal
 contracts, bank and invoice workflow, GDPR retention/erasure, observability and actual
 VPS failover/rollback acceptance. No production readiness certification is claimed.
+
+## Upload- und Audit-Dateiintegrität: gezielte Produktionsfehlerkorrekturen (05.11.2026)
+
+**PR #9 – kein Löschen fremder Dateien bei Upload-Kollisionen.**
+[PR #9](https://github.com/tonnestate/LowHangingFruitMe/pull/9), gemergt als
+[5f3627cd](https://github.com/tonnestate/LowHangingFruitMe/commit/5f3627cd89046ee7f248352005fc51e7feeebfae).
+Vollständige Python-3.11/3.12-MariaDB-CI
+[41999247536](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41999247536)
+und verschlüsselter DR-Lauf
+[41999247488](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/41999247488)
+beide erfolgreich. Vorher löschte `receive()` im Fehlerpfad auch ein bereits existierendes
+`.part` oder finales Quelldokument. Jetzt wird nur selbst angelegter Staging-/Finalbestand
+entfernt. Tests erzwingen Kollisionen mit `.part`, `.inspect.csv`, `.csv` und prüfen
+unveränderte fremde Bytes, Ablehnung mit 422 und den erwarteten DB-Status.
+
+**PR #10 – verzeichnisgebundenes Lesen von Audit-Snapshots.**
+[PR #10](https://github.com/tonnestate/LowHangingFruitMe/pull/10), gemergt als
+[7b1d9f47](https://github.com/tonnestate/LowHangingFruitMe/commit/7b1d9f47dd937153a7e521e5ebbb147bf04e2e5c).
+Python/MariaDB-CI
+[42000166638](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/42000166638)
+und verschlüsselter DR-Lauf
+[42000166257](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/42000166257)
+beide erfolgreich. Relevante Tests tauschen nach initialer Pfadprüfung sowohl
+Quelldatei als auch übergeordnetes Verzeichnis gegen externe Symlinks mit
+identischen Bytes. `openat`-artige `dir_fd`-/`O_NOFOLLOW`-Lesepfade
+unterbinden den Verzeichnisausbruch. Der Snapshot-SHA-256-Check bleibt erhalten.
+
+**PR #11 – verzeichnisgebundenes Lesen geprüfter Uploads.**
+[PR #11](https://github.com/tonnestate/LowHangingFruitMe/pull/11), gemergt als
+[7a042d57](https://github.com/tonnestate/LowHangingFruitMe/commit/7a042d57981cb6ecf20e1fc2f3878b159c14f806).
+Python/MariaDB-CI
+[42001078151](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/42001078151)
+und verschlüsselter DR-Lauf
+[42001078201](https://github.com/tonnestate/LowHangingFruitMe/actions/runs/42001078201)
+beide erfolgreich. Reproduzierter Austausch gegen externe Symlinks direkt am
+Dateiöffnungszeitpunkt wird abgelehnt. DB-gebundene Identität, Uploadtyp,
+Privatberechtigung, Dateigröße und SHA-256 werden weiterhin geprüft.
+
+**Freigabegrenze:** Dies sind Quellcode-Korrekturen und synthetische CI-Akzeptanztests.
+Sie ersetzen weder den Betrieb unter einem realen unprivilegierten VPS-UID noch
+reale ClamAV-/Docling-Installations-, Kunden-/OIDC-, Lösch-, ERP-, Vertrags- und
+Betriebsabnahmen. Die offenen G0–G5-Gates bleiben offen, und eine externe
+Produktionsfreigabe wird nicht behauptet.
